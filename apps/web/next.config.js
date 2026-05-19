@@ -8,7 +8,7 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
   reactStrictMode: true,
-  // Force webpack for now because next-pwa needs it
+  output: 'standalone',
   webpack: (config) => {
     return config;
   },

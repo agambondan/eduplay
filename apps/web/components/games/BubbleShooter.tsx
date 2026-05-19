@@ -27,7 +27,14 @@ export default function BubbleShooter() {
   const gameState = useRef({
     bubbles: [] as Bubble[],
     cannonX: 300,
-    projectiles: [] as { x: number; y: number; dx: number; dy: number; value: number }[],
+    projectiles: [] as {
+      x: number;
+      y: number;
+      dx: number;
+      dy: number;
+      value: number;
+      radius: number;
+    }[],
     lastSpawn: 0,
   });
 
@@ -174,6 +181,7 @@ export default function BubbleShooter() {
       dx: (dx / dist) * speed,
       dy: (dy / dist) * speed,
       value: Math.floor(Math.random() * 9) + 1,
+      radius: 10,
     });
   };
 

@@ -31,9 +31,16 @@ func setupGameTestDB() {
 	database.RDB = redis.NewClient(&redis.Options{Addr: mr.Addr()})
 }
 
-func TestGameService_SubmitScore(t *testing.T) {
-	setupGameTestDB()
+type mockAchievement struct{}
 
+func (m *mockAchievement) CheckAndUnlock(userID string, slug string) (bool, error) {
+	return false, nil
+}
+
+func TestGameService_SubmitScore(t *testing.T) {
+	setupTestDB()
+
+	// Seed test data
 	testUser := &model.User{Username: "player1", Email: "p1@test.com", Password: "pwd"}
 	database.DB.Create(testUser)
 
@@ -41,7 +48,8 @@ func TestGameService_SubmitScore(t *testing.T) {
 	database.DB.Create(testGame)
 
 	repo := repository.NewGameRepository()
-	svc := NewGameService(repo)
+	// Mock achSvc
+	svc := NewGameService(repo, &mockAchievement{})
 
 	req := SubmitScoreRequest{
 		Score:      250,

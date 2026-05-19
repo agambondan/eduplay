@@ -38,7 +38,9 @@ func Load() (*Config, error) {
     v.AddConfigPath(".")
     v.AutomaticEnv()
     if err := v.ReadInConfig(); err != nil {
-        return nil, err
+        if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+            return nil, err
+        }
     }
     var cfg Config
     cfg.App.Env = v.GetString("APP_ENV")

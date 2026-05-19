@@ -33,11 +33,16 @@ type GameService interface {
 }
 
 type gameService struct {
-	repo repository.GameRepository
+	repo   repository.GameRepository
+	achSvc interface {
+		CheckAndUnlock(userID string, slug string) (bool, error)
+	}
 }
 
-func NewGameService(repo repository.GameRepository) GameService {
-	return &gameService{repo: repo}
+func NewGameService(repo repository.GameRepository, achSvc interface {
+	CheckAndUnlock(userID string, slug string) (bool, error)
+}) GameService {
+	return &gameService{repo: repo, achSvc: achSvc}
 }
 
 func (s *gameService) ListGames() ([]model.Game, error) {
@@ -98,10 +103,26 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 
 	s.repo.UpsertHighscore(uid, g.ID, req.Score)
 
+	// Check per-game achievements
+	if s.achSvc != nil {
+		if slug == "math-quiz" && req.Score >= 500 {
+			s.achSvc.CheckAndUnlock(userID, "math-master")
+		}
+		if slug == "wordle" && req.Duration <= 60 { // assuming fast wordle solve
+			s.achSvc.CheckAndUnlock(userID, "wordle-genius")
+		}
+	}
+
 	var u model.User
 	if err := database.DB.Where("id = ?", userID).First(&u).Error; err == nil {
 		u.XP += xp
 		u.Level = model.LevelFromXP(u.XP)
+
+		// Check level achievement
+		if u.Level >= 5 && s.achSvc != nil {
+			s.achSvc.CheckAndUnlock(userID, "level-5")
+		}
+
 		now := time.Now()
 		u.LastActive = &now
 		database.DB.Save(&u)

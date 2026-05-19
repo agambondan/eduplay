@@ -1,0 +1,12 @@
+.git
+.gitignore
+*.md
+build/
+tmp/
+tests/
+test*
+.env*
+docker-compose*
+Dockerfile
+Makefile
+STRUCTURE.md

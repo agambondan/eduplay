@@ -1,19 +1,85 @@
+name: eduplay
+
 services:
+  api:
+    image: eduplay-api
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080'
+    environment:
+      APP_ENV: production
+      APP_PORT: 8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: edugame
+      DB_USER: admin
+      DB_PASSWORD: secret
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: supersecretjwt
+      JWT_ACCESS_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 168h
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - eduplay-network
+    restart: unless-stopped
+
+  web:
+    image: eduplay-web
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8080
+    ports:
+      - '3000:3000'
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    depends_on:
+      - api
+    networks:
+      - eduplay-network
+    restart: unless-stopped
+
   postgres:
     image: pgvector/pgvector:pg18
+    ports:
+      - '5435:5432'
     environment:
       POSTGRES_DB: edugame
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: secret
-    ports:
-      - '5433:5432'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U admin -d edugame']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eduplay-network
+    restart: unless-stopped
 
   redis:
     image: redis:8-alpine
     ports:
-      - '6380:6379'
+      - '6382:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - eduplay-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+  redis_data:
+
+networks:
+  eduplay-network:
+    driver: bridge

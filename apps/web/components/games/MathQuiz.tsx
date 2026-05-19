@@ -6,6 +6,7 @@ import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
 import { Difficulty } from '@/types/game';
 import { cn } from '@/lib/utils/cn';
+import { aiApi, AIQuestion } from '@/lib/api/ai';
 
 interface Question {
   text: string;
@@ -72,10 +73,44 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('easy');
   const [questionCount, setQuestionCount] = useState(0);
 
+  // AI questions state
+  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
+  const [useAI, setUseAI] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const fetchAIQuestions = async (diff: Difficulty) => {
+    setAiLoading(true);
+    try {
+      const q = await aiApi.getQuestions('math-quiz', diff, 10);
+      if (q && q.length > 0) {
+        setAiQuestions(q);
+      }
+    } catch (e) {
+      console.error('Failed to fetch AI questions, falling back to local generator');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const nextQuestion = useCallback(() => {
+    if (useAI && aiQuestions.length > 0) {
+      const q = aiQuestions.shift(); // Take first question from queue
+      if (q) {
+        setQuestion({
+          text: q.question,
+          options: q.options.map(Number),
+          answer: Number(q.answer),
+        });
+        setAiQuestions([...aiQuestions]); // trigger state update
+        setFeedback(null);
+        return;
+      }
+    }
+
+    // Fallback to local generator
     setQuestion(generateQuestion(difficulty));
     setFeedback(null);
-  }, [difficulty]);
+  }, [difficulty, useAI, aiQuestions]);
 
   useEffect(() => {
     if (isPlaying) nextQuestion();
@@ -99,12 +134,20 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
   const handleTimeUp = useCallback(async () => {
     endGame();
     const res = await submitScore();
-    if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
+    if (res) {
+      setResult({ xp: res.xp_earned, highscore: res.new_highscore });
+    } else {
+      // Guest mode or error
+      setResult({ xp: 0, highscore: false });
+    }
   }, [endGame, submitScore]);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     setResult(null);
     setQuestionCount(0);
+    if (useAI) {
+      await fetchAIQuestions(selectedDifficulty);
+    }
     startGame(selectedDifficulty);
   };
 
@@ -115,6 +158,20 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Jawab soal matematika secepat mungkin dalam 60 detik!
         </p>
+
+        <div className="mb-2 flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="useAI"
+            checked={useAI}
+            onChange={(e) => setUseAI(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <label htmlFor="useAI" className="text-sm font-medium text-gray-700 dark:text-slate-300">
+            Generate soal dengan AI (Claude) ✨
+          </label>
+        </div>
+
         <div className="flex gap-2">
           {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
             <button
@@ -133,9 +190,10 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
         </div>
         <button
           onClick={handleStart}
-          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+          disabled={aiLoading}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
         >
-          Mulai!
+          {aiLoading ? 'Menyiapkan Soal AI...' : 'Mulai!'}
         </button>
       </div>
     );
@@ -148,7 +206,13 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
         <ScoreBoard score={score} label="Final Score" />
         <div className="space-y-1 text-center text-sm text-gray-500 dark:text-slate-400">
           <p>{questionCount} soal dijawab</p>
-          <p>+{result.xp} XP earned</p>
+          {result.xp > 0 ? (
+            <p className="font-bold text-indigo-600 dark:text-indigo-400">+{result.xp} XP earned</p>
+          ) : (
+            <p className="font-medium italic text-amber-600">
+              Login/Daftar untuk simpan progres & XP!
+            </p>
+          )}
           {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
         </div>
         <button

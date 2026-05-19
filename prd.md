@@ -1124,61 +1124,61 @@ NEXT_PUBLIC_GA_ID=G-xxxxxx
 
 **Backend:**
 
-- [ ] Project setup (Fiber, GORM, Redis)
-- [ ] Database migrations
-- [ ] Auth module (register, login, JWT)
-- [ ] User module (profile, stats)
-- [ ] Game module (list, score submit)
-- [ ] Unit tests untuk auth & game service
+- [x] Project setup (Fiber, GORM, Redis)
+- [x] Database migrations
+- [x] Auth module (register, login, JWT)
+- [x] User module (profile, stats)
+- [x] Game module (list, score submit)
+- [x] Unit tests untuk auth & game service
 
 **Frontend:**
 
-- [ ] Next.js project setup + Tailwind + shadcn
-- [ ] Auth pages (login, register)
-- [ ] Main layout (navbar, bottom nav mobile)
-- [ ] Game hub halaman
+- [x] Next.js project setup + Tailwind + shadcn
+- [x] Auth pages (login, register)
+- [x] Main layout (navbar, bottom nav mobile)
+- [x] Game hub halaman
 
 ### Phase 2 — Core Games (Week 4-6)
 
 **Games (Frontend):**
 
-- [ ] Math Quiz Blitz
-- [ ] Wordle Bahasa Indonesia
-- [ ] 2048
-- [ ] Sudoku
+- [x] Math Quiz Blitz
+- [x] Wordle Bahasa Indonesia
+- [x] 2048
+- [x] Sudoku
 
 **Backend:**
 
-- [ ] Leaderboard module (Redis sorted set)
-- [ ] XP & level calculation logic
-- [ ] Score validation
+- [x] Leaderboard module (Redis sorted set)
+- [x] XP & level calculation logic
+- [x] Score validation
 
 ### Phase 3 — Engagement (Week 7-9)
 
 **Games (Frontend):**
 
-- [ ] Times Table Challenge
-- [ ] Spelling Bee
-- [ ] Flag Quiz
-- [ ] Capital City Quiz
+- [x] Times Table Challenge
+- [x] Spelling Bee
+- [x] Flag Quiz
+- [x] Capital City Quiz
 
 **Features:**
 
-- [ ] Daily Challenge system
-- [ ] Achievement system
-- [ ] Streak system
-- [ ] Leaderboard halaman
+- [x] Daily Challenge system
+- [x] Achievement system
+- [x] Streak system
+- [x] Leaderboard halaman
 
 ### Phase 4 — Monetisasi & Polish (Week 10-12)
 
-- [ ] Google AdSense integration
-- [ ] Rewarded ads system
-- [ ] Interstitial ads dengan frequency cap
-- [ ] PWA manifest + service worker
-- [ ] Claude AI question generator
-- [ ] Performance optimization
-- [ ] Sentry error monitoring
-- [ ] Google Analytics setup
+- [x] Google AdSense integration
+- [x] Rewarded ads system
+- [x] Interstitial ads dengan frequency cap
+- [x] PWA manifest + service worker
+- [x] Claude AI question generator
+- [x] Performance optimization
+- [x] Sentry error monitoring
+- [x] Google Analytics setup
 
 ### Phase 5 — Launch & Iterate (Week 13+)
 
