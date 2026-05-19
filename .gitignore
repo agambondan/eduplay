@@ -1,5 +1,6 @@
 # Root
 c.txt
+node_modules/
 
 # Go Backend
 backend/tmp/
