@@ -3,7 +3,7 @@
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api/client';
-import { Stats } from '@/types/user';
+import { UserStats } from '@/types/user';
 import { Achievement } from '@/types/game';
 import { XPBadge } from '@/components/ui/XPBadge';
 import { StreakCounter } from '@/components/ui/StreakCounter';
@@ -12,7 +12,7 @@ import { Trophy, Gamepad2 } from 'lucide-react';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<UserStats | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
 
   useEffect(() => {

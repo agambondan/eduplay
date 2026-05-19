@@ -13,7 +13,7 @@ const CLUES: Record<Difficulty, number> = { easy: 38, medium: 30, hard: 24 };
 
 function generateSudoku(diff: Difficulty): { puzzle: Board; solution: Board } {
   const solution = generateSolution();
-  const puzzle = solution.map((row) => [...row]);
+  const puzzle: Board = solution.map((row) => [...row]);
   const remove = 81 - CLUES[diff];
   const positions = Array.from({ length: 81 }, (_, i) => i);
   for (let i = positions.length - 1; i > 0; i--) {
