@@ -8,13 +8,6 @@ import (
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 )
 
-type Entry struct {
-	Rank     int    `json:"rank"`
-	UserID   string `json:"user_id"`
-	Username string `json:"username"`
-	Score    int    `json:"score"`
-}
-
 type LeaderboardResponse struct {
 	Entries  []Entry `json:"entries"`
 	UserRank *Entry  `json:"user_rank,omitempty"`
