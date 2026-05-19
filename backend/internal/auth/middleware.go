@@ -50,3 +50,35 @@ func Middleware(cfg *config.Config) fiber.Handler {
 		return c.Next()
 	}
 }
+
+func OptionalMiddleware(cfg *config.Config) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			return c.Next()
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			return c.Next()
+		}
+
+		tokenString := parts[1]
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			return []byte(cfg.JWT.Secret), nil
+		})
+
+		if err == nil && token.Valid {
+			if claims, ok := token.Claims.(jwt.MapClaims); ok && claims["typ"] == "access" {
+				jti := claims["jti"].(string)
+				ctx := context.Background()
+				val, _ := database.RDB.Get(ctx, "jwt:blacklist:"+jti).Result()
+				if val == "" {
+					c.Locals("user", token)
+					c.Locals("user_id", claims["sub"].(string))
+				}
+			}
+		}
+		return c.Next()
+	}
+}

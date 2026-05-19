@@ -3,6 +3,8 @@ package leaderboard
 import (
 	"context"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/agambondan/eduplay/backend/pkg/database"
 	"github.com/redis/go-redis/v9"
@@ -29,7 +31,27 @@ func NewRepository() Repository {
 
 func (r *repository) AddScore(key string, userID string, score float64) error {
 	ctx := context.Background()
-	return database.RDB.ZAdd(ctx, key, redis.Z{Score: score, Member: userID}).Err()
+	err := database.RDB.ZAdd(ctx, key, redis.Z{Score: score, Member: userID}).Err()
+	if err != nil {
+		return err
+	}
+
+	// If it's a weekly key, set expire to next Monday 00:00
+	if strings.HasSuffix(key, ":weekly") {
+		ttl, _ := database.RDB.TTL(ctx, key).Result()
+		if ttl < 0 {
+			now := time.Now()
+			// Find days until next Monday
+			daysUntilMonday := int((time.Monday - now.Weekday() + 7) % 7)
+			if daysUntilMonday == 0 {
+				daysUntilMonday = 7
+			}
+			nextMonday := time.Date(now.Year(), now.Month(), now.Day()+daysUntilMonday, 0, 0, 0, 0, now.Location())
+			database.RDB.ExpireAt(ctx, key, nextMonday)
+		}
+	}
+
+	return nil
 }
 
 func (r *repository) GetTopN(key string, n int64) ([]redis.Z, error) {

@@ -80,12 +80,12 @@ func main() {
 	achRepo := achievement.NewRepository()
 
 	// Services
-	authSvc := auth.NewService(cfg)
+	achSvc := achievement.NewService(achRepo)
+	authSvc := auth.NewService(cfg, userRepo, achSvc)
 	userSvc := user.NewService(userRepo)
 	gameSvc := game.NewService(gameRepo)
 	leadSvc := leaderboard.NewService(leadRepo, gameRepo)
 	dailySvc := daily.NewService(gameRepo)
-	achSvc := achievement.NewService(achRepo)
 	aiSvc := ai.NewService(cfg)
 
 	// Handlers
@@ -115,7 +115,7 @@ func main() {
 	gameGroup.Get("/:slug", gameHandler.GetGame)
 	gameGroup.Post("/:slug/score", auth.Middleware(cfg), gameHandler.SubmitScore)
 
-	leadGroup := apiV1.Group("/leaderboard")
+	leadGroup := apiV1.Group("/leaderboard", auth.OptionalMiddleware(cfg))
 	leadGroup.Get("/game/:slug", leadHandler.GetGameLeaderboard)
 	leadGroup.Get("/global", leadHandler.GetGlobalLeaderboard)
 

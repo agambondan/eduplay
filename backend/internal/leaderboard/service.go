@@ -8,9 +8,21 @@ import (
 	"github.com/agambondan/eduplay/backend/pkg/database"
 )
 
+type Entry struct {
+	Rank     int    `json:"rank"`
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+	Score    int    `json:"score"`
+}
+
+type LeaderboardResponse struct {
+	Entries  []Entry `json:"entries"`
+	UserRank *Entry  `json:"user_rank,omitempty"`
+}
+
 type Service interface {
-	GetGameLeaderboard(slug string, period string, limit int64) ([]Entry, error)
-	GetGlobalLeaderboard(limit int64) ([]Entry, error)
+	GetGameLeaderboard(slug string, period string, userID string, limit int64) (*LeaderboardResponse, error)
+	GetGlobalLeaderboard(userID string, limit int64) (*LeaderboardResponse, error)
 	AddGameScore(gameID string, userID string, score float64) error
 }
 
@@ -23,7 +35,7 @@ func NewService(repo Repository, gameRepo game.Repository) Service {
 	return &service{repo: repo, gameRepo: gameRepo}
 }
 
-func (s *service) GetGameLeaderboard(slug string, period string, limit int64) ([]Entry, error) {
+func (s *service) GetGameLeaderboard(slug string, period string, userID string, limit int64) (*LeaderboardResponse, error) {
 	g, err := s.gameRepo.FindBySlug(slug)
 	if err != nil {
 		return nil, err
@@ -52,10 +64,29 @@ func (s *service) GetGameLeaderboard(slug string, period string, limit int64) ([
 			Score:    score,
 		})
 	}
-	return entries, nil
+
+	resp := &LeaderboardResponse{Entries: entries}
+	if userID != "" {
+		rank, err := s.repo.GetUserRank(key, userID)
+		if err == nil {
+			var u user.User
+			database.DB.Select("username").Where("id = ?", userID).First(&u)
+			
+			// We need user's score too, but rank is 0-indexed
+			// Easiest is to get score by calling ZScore if rank is known, but GetUserRank returns rank.
+			// Just finding it from DB highscore or ZScore
+			resp.UserRank = &Entry{
+				Rank:     int(rank) + 1,
+				UserID:   userID,
+				Username: u.Username,
+			}
+		}
+	}
+
+	return resp, nil
 }
 
-func (s *service) GetGlobalLeaderboard(limit int64) ([]Entry, error) {
+func (s *service) GetGlobalLeaderboard(userID string, limit int64) (*LeaderboardResponse, error) {
 	results, err := s.repo.GetTopN("leaderboard:global:xp", limit)
 	if err != nil {
 		return nil, err
@@ -65,7 +96,7 @@ func (s *service) GetGlobalLeaderboard(limit int64) ([]Entry, error) {
 	for i, z := range results {
 		uid, score := ParseScore(z)
 		var u user.User
-		database.DB.Select("username").Where("id = ?", uid).First(&u)
+		database.DB.Select("username", "level", "xp").Where("id = ?", uid).First(&u)
 		entries = append(entries, Entry{
 			Rank:     i + 1,
 			UserID:   uid,
@@ -73,7 +104,23 @@ func (s *service) GetGlobalLeaderboard(limit int64) ([]Entry, error) {
 			Score:    score,
 		})
 	}
-	return entries, nil
+
+	resp := &LeaderboardResponse{Entries: entries}
+	if userID != "" {
+		rank, err := s.repo.GetUserRank("leaderboard:global:xp", userID)
+		if err == nil {
+			var u user.User
+			database.DB.Select("username", "xp").Where("id = ?", userID).First(&u)
+			resp.UserRank = &Entry{
+				Rank:     int(rank) + 1,
+				UserID:   userID,
+				Username: u.Username,
+				Score:    u.XP,
+			}
+		}
+	}
+
+	return resp, nil
 }
 
 func (s *service) AddGameScore(gameID string, userID string, score float64) error {

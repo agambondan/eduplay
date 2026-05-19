@@ -482,7 +482,7 @@ Dashboard (Logged In)
 └────────────────┬─────────────────────────────────┘
                  │
 ┌────────────────▼─────────────────────────────────┐
-│              Frontend (Next.js 14+)              │
+│              Frontend (Next.js 16+)              │
 │  - App Router                                    │
 │  - React Server Components                       │
 │  - PWA (next-pwa)                                │
@@ -509,8 +509,8 @@ Dashboard (Logged In)
 
 | Teknologi       | Versi  | Fungsi                      |
 | --------------- | ------ | --------------------------- |
-| Next.js         | 14+    | Framework utama, App Router |
-| React           | 18+    | UI library                  |
+| Next.js         | 16+    | Framework utama, App Router |
+| React           | 19+    | UI library                  |
 | TypeScript      | 5+     | Type safety                 |
 | Tailwind CSS    | 3+     | Styling                     |
 | shadcn/ui       | latest | Component library           |
@@ -525,7 +525,7 @@ Dashboard (Logged In)
 
 | Teknologi  | Versi  | Fungsi                              |
 | ---------- | ------ | ----------------------------------- |
-| Go         | 1.22+  | Bahasa utama                        |
+| Go         | 1.26+  | Bahasa utama                        |
 | Fiber      | v2     | HTTP framework (Express-like, fast) |
 | GORM       | v2     | ORM untuk PostgreSQL                |
 | go-redis   | v9     | Redis client                        |
@@ -1053,20 +1053,20 @@ Analytics  → Google Analytics 4 (gratis)
 version: '3.8'
 services:
   postgres:
-    image: postgres:16
+    image: pgvector/pgvector:pg18
     environment:
       POSTGRES_DB: edugame
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: secret
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     ports:
-      - '6379:6379'
+      - '6380:6379'
 
   backend:
     build: ./backend

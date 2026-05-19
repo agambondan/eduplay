@@ -2,8 +2,8 @@
 
 ## Architecture & Boundary Overview
 
-- **Backend:** Go 1.25 (Fiber v2, GORM, Postgres 16, Redis 7). Root: `backend/`.
-- **Frontend:** Next.js 14.1 App Router. Root: `frontend/`.
+- **Backend:** Go 1.26 (Fiber v2, GORM, Postgres 18, Redis 8). Root: `backend/`.
+- **Frontend:** Next.js 16 App Router. Root: `frontend/`.
 - **Project Goal:** PWA educational mini-games. No human/creature images (geometric/abstract only).
 
 ## Command Guide

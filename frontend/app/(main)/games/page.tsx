@@ -37,10 +37,10 @@ export default function GamesPage() {
             key={cat.value}
             onClick={() => setCategory(cat.value)}
             className={cn(
-              'px-4 py-2 rounded-full text-sm font-bold transition-all border',
+              'rounded-full border px-4 py-2 text-sm font-bold transition-all',
               category === cat.value
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                ? 'border-indigo-600 bg-indigo-600 text-white shadow-md'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
             )}
           >
             {cat.label}
@@ -49,14 +49,16 @@ export default function GamesPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-40 rounded-xl bg-gray-100 dark:bg-slate-800 animate-pulse" />
+            <div key={i} className="h-40 animate-pulse rounded-xl bg-gray-100 dark:bg-slate-800" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGames?.map((game) => <GameCard key={game.id} game={game} />)}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredGames?.map((game) => (
+            <GameCard key={game.id} game={game} />
+          ))}
           {filteredGames?.length === 0 && (
             <div className="col-span-full py-20 text-center">
               <p className="text-gray-500">Tidak ada game di kategori ini.</p>

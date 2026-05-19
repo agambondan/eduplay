@@ -41,9 +41,15 @@ func getTestConfig() *config.Config {
 	return cfg
 }
 
+type mockAchievement struct{}
+
+func (m *mockAchievement) CheckAndUnlock(userID string, slug string) (bool, error) {
+	return false, nil
+}
+
 func TestAuthService_Register(t *testing.T) {
 	setupTestDB()
-	svc := NewService(getTestConfig())
+	svc := NewService(getTestConfig(), user.NewRepository(), &mockAchievement{})
 
 	req := RegisterRequest{
 		Username: "testuser",
@@ -66,7 +72,7 @@ func TestAuthService_Register(t *testing.T) {
 
 func TestAuthService_Login(t *testing.T) {
 	setupTestDB()
-	svc := NewService(getTestConfig())
+	svc := NewService(getTestConfig(), user.NewRepository(), &mockAchievement{})
 
 	req := RegisterRequest{
 		Username: "loginuser",
@@ -98,7 +104,7 @@ func TestAuthService_Login(t *testing.T) {
 
 func TestAuthService_Logout(t *testing.T) {
 	setupTestDB()
-	svc := NewService(getTestConfig())
+	svc := NewService(getTestConfig(), user.NewRepository(), &mockAchievement{})
 
 	err := svc.Logout("test-jti-123", 1000)
 	require.NoError(t, err)

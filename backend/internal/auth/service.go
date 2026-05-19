@@ -25,11 +25,17 @@ type Service interface {
 }
 
 type service struct {
-	cfg *config.Config
+	cfg      *config.Config
+	userRepo user.Repository
+	achSvc   interface {
+		CheckAndUnlock(userID string, slug string) (bool, error)
+	}
 }
 
-func NewService(cfg *config.Config) Service {
-	return &service{cfg: cfg}
+func NewService(cfg *config.Config, userRepo user.Repository, achSvc interface {
+	CheckAndUnlock(userID string, slug string) (bool, error)
+}) Service {
+	return &service{cfg: cfg, userRepo: userRepo, achSvc: achSvc}
 }
 
 func (s *service) Register(req RegisterRequest) (*AuthResponse, error) {
@@ -80,6 +86,19 @@ func (s *service) Login(req LoginRequest) (*AuthResponse, error) {
 	}
 	u.LastActive = &now
 	database.DB.Save(&u)
+
+	// Check streak achievements
+	if s.achSvc != nil {
+		if u.Streak >= 3 {
+			s.achSvc.CheckAndUnlock(u.ID.String(), "streak-3")
+		}
+		if u.Streak >= 7 {
+			s.achSvc.CheckAndUnlock(u.ID.String(), "streak-7")
+		}
+		if u.Streak >= 30 {
+			s.achSvc.CheckAndUnlock(u.ID.String(), "streak-30")
+		}
+	}
 
 	return s.generateAuthResponse(&u)
 }

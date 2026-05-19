@@ -7,6 +7,15 @@ export function useAds() {
   const [rewardText, setRewardText] = useState<string>('Reward');
 
   const showInterstitial = useCallback(() => {
+    // 3-minute frequency cap (180000 ms)
+    const lastShown = localStorage.getItem('last_ad_shown');
+    const now = Date.now();
+    if (lastShown && now - parseInt(lastShown, 10) < 180000) {
+      console.log('Skipping ad: frequency cap (3 min)');
+      return;
+    }
+
+    localStorage.setItem('last_ad_shown', now.toString());
     setIsInterstitialOpen(true);
   }, []);
 
