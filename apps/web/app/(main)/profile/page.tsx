@@ -36,10 +36,15 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="container max-w-md py-20 text-center">
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Profil Kamu</h1>
-          <p className="text-gray-500 dark:text-slate-400 mb-6">Login untuk melihat progress, level, dan achievement kamu!</p>
-          <Link href="/login" className="block w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors">
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Profil Kamu</h1>
+          <p className="mb-6 text-gray-500 dark:text-slate-400">
+            Login untuk melihat progress, level, dan achievement kamu!
+          </p>
+          <Link
+            href="/login"
+            className="block w-full rounded-xl bg-indigo-600 py-3 font-bold text-white transition-colors hover:bg-indigo-700"
+          >
             Login Sekarang
           </Link>
         </div>

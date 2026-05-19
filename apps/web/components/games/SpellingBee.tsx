@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { cn } from '@/lib/utils/cn';
+import { aiApi, AIQuestion } from '@/lib/api/ai';
 
 interface SpellQuestion {
   word: string;
@@ -39,18 +40,54 @@ export default function SpellingBee() {
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
 
+  // AI questions state
+  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
+  const [useAI, setUseAI] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const fetchAIQuestions = async () => {
+    setAiLoading(true);
+    try {
+      const q = await aiApi.getQuestions('spelling-bee', 'medium', 5);
+      if (q && q.length > 0) setAiQuestions(q);
+    } catch (e) {
+      console.error('Failed to fetch AI questions');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const nextQuestion = useCallback(() => {
+    if (useAI && aiQuestions.length > 0) {
+      const q = aiQuestions.shift();
+      if (q) {
+        const word = String(q.answer).toUpperCase();
+        setQuestion({
+          word,
+          hint: q.question,
+          scrambled: word.split('').sort(() => Math.random() - 0.5),
+        });
+        setUserLetters([]);
+        setRemainingLetters(word.split('').sort(() => Math.random() - 0.5));
+        setAiQuestions([...aiQuestions]);
+        setFeedback(null);
+        return;
+      }
+    }
     const q = generateQuestion();
     setQuestion(q);
     setUserLetters([]);
     setRemainingLetters(q.scrambled);
     setFeedback(null);
-  }, []);
+  }, [useAI, aiQuestions]);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     setQuestionCount(0);
     setGameOver(false);
     setResult(null);
+    if (useAI) {
+      await fetchAIQuestions();
+    }
     nextQuestion();
     startGame('easy');
   };
@@ -103,11 +140,24 @@ export default function SpellingBee() {
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Susun kembali huruf acak menjadi kata yang benar!
         </p>
+        <div className="mb-2 flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="useAI"
+            checked={useAI}
+            onChange={(e) => setUseAI(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <label htmlFor="useAI" className="text-sm font-medium text-gray-700 dark:text-slate-300">
+            Generate kata unik dengan AI ✨
+          </label>
+        </div>
         <button
           onClick={handleStart}
-          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+          disabled={aiLoading}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
         >
-          Mulai!
+          {aiLoading ? 'Menyiapkan Soal...' : 'Mulai!'}
         </button>
       </div>
     );

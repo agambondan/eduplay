@@ -19,6 +19,30 @@ func NewAuthController(svc service.AuthService) *AuthController {
 	return &AuthController{svc: svc}
 }
 
+func (h *AuthController) setRefreshCookie(c *fiber.Ctx, token string, maxAge time.Duration) {
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    token,
+		Path:     "/api/v1/auth",
+		MaxAge:   int(maxAge.Seconds()),
+		HTTPOnly: true,
+		Secure:   c.Protocol() == "https",
+		SameSite: "Lax",
+	})
+}
+
+func (h *AuthController) clearRefreshCookie(c *fiber.Ctx) {
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/api/v1/auth",
+		MaxAge:   -1,
+		HTTPOnly: true,
+		Secure:   c.Protocol() == "https",
+		SameSite: "Lax",
+	})
+}
+
 func (h *AuthController) Register(c *fiber.Ctx) error {
 	var req service.RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -34,7 +58,12 @@ func (h *AuthController) Register(c *fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	return response.Success(c, res)
+	h.setRefreshCookie(c, res.RefreshToken, 7*24*time.Hour)
+
+	return response.Success(c, fiber.Map{
+		"user":         res.User,
+		"access_token": res.AccessToken,
+	})
 }
 
 func (h *AuthController) Login(c *fiber.Ctx) error {
@@ -52,21 +81,31 @@ func (h *AuthController) Login(c *fiber.Ctx) error {
 		return response.Error(c, fiber.StatusUnauthorized, err.Error())
 	}
 
-	return response.Success(c, res)
+	h.setRefreshCookie(c, res.RefreshToken, 7*24*time.Hour)
+
+	return response.Success(c, fiber.Map{
+		"user":         res.User,
+		"access_token": res.AccessToken,
+	})
 }
 
 func (h *AuthController) Refresh(c *fiber.Ctx) error {
-	var req service.RefreshRequest
-	if err := c.BodyParser(&req); err != nil {
-		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
+	refreshToken := c.Cookies("refresh_token")
+
+	if refreshToken == "" {
+		var req service.RefreshRequest
+		if err := c.BodyParser(&req); err == nil && req.RefreshToken != "" {
+			refreshToken = req.RefreshToken
+		}
 	}
 
-	if err := validator.Validate.Struct(&req); err != nil {
-		return response.ValidationError(c, err.Error())
+	if refreshToken == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "No refresh token provided")
 	}
 
-	token, err := h.svc.RefreshToken(req.RefreshToken)
+	token, err := h.svc.RefreshToken(refreshToken)
 	if err != nil {
+		h.clearRefreshCookie(c)
 		return response.Error(c, fiber.StatusUnauthorized, err.Error())
 	}
 
@@ -85,6 +124,8 @@ func (h *AuthController) Logout(c *fiber.Ctx) error {
 			return response.Error(c, fiber.StatusInternalServerError, "Failed to logout")
 		}
 	}
+
+	h.clearRefreshCookie(c)
 
 	return response.Success(c, fiber.Map{"message": "Logged out successfully"})
 }

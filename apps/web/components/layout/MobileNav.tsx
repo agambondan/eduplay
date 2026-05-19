@@ -2,38 +2,50 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Trophy, Gamepad2, User as UserIcon } from 'lucide-react';
+import { Home, Trophy, Gamepad2, User as UserIcon, CalendarCheck } from 'lucide-react';
+import { cn } from '@/lib/utils/cn';
+
+const navItems = [
+  { name: 'Home', path: '/', icon: Home },
+  { name: 'Games', path: '/games', icon: Gamepad2 },
+  { name: 'Daily', path: '/daily', icon: CalendarCheck },
+  { name: 'Rank', path: '/leaderboard', icon: Trophy },
+  { name: 'Profil', path: '/profile', icon: UserIcon },
+];
 
 export default function MobileNav() {
   const pathname = usePathname();
 
-  const navItems = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'Games', path: '/games', icon: Gamepad2 },
-    { name: 'Leader', path: '/leaderboard', icon: Trophy },
-    { name: 'Profile', path: '/profile', icon: UserIcon },
-  ];
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white md:hidden">
-      <div className="grid h-16 grid-cols-4">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/80 backdrop-blur-lg md:hidden dark:border-slate-700 dark:bg-slate-900/80">
+      <div className="mx-auto grid h-16 max-w-lg grid-cols-5">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.path;
+          const isActive =
+            pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
+
           return (
             <Link
               key={item.path}
               href={item.path}
-              className={`flex flex-col items-center justify-center text-xs font-medium ${
-                isActive ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-900'
-              }`}
+              className={cn(
+                'relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors',
+                isActive
+                  ? 'text-indigo-600 dark:text-indigo-400'
+                  : 'text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300'
+              )}
             >
-              <Icon className="mb-1 h-5 w-5" />
+              {isActive && (
+                <span className="absolute -top-px left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+              )}
+              <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
               <span>{item.name}</span>
             </Link>
           );
         })}
       </div>
+      {/* Safe area spacer for iOS */}
+      <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
   );
 }

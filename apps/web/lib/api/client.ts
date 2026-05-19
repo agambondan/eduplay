@@ -3,6 +3,7 @@ import { useAuthStore } from '@/lib/stores/authStore';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -20,15 +21,23 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    // Don't retry if it's already the refresh endpoint failing
+    if (originalRequest.url?.includes('/auth/refresh')) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const refreshToken = useAuthStore.getState().refreshToken;
-        const res = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {
-          refresh_token: refreshToken,
-        });
+        const res = await axios.post(
+          `${api.defaults.baseURL}/auth/refresh`,
+          {},
+          {
+            withCredentials: true,
+          }
+        );
         const { access_token } = res.data.data;
-        useAuthStore.getState().setTokens(access_token, refreshToken!);
+        useAuthStore.getState().setTokens(access_token, ''); // Clear refresh token from store since it's in cookie
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return api(originalRequest);
       } catch (refreshError) {

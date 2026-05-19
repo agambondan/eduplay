@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { cn } from '@/lib/utils/cn';
+import { aiApi, AIQuestion } from '@/lib/api/ai';
 
 interface CapitalQuestion {
   question: string;
   answer: string;
   options: string[];
-  type: 'country-to-capital' | 'capital-to-country';
+  type?: 'country-to-capital' | 'capital-to-country';
 }
 
 const CAPITAL_DATA = [
@@ -65,17 +66,48 @@ export default function CapitalQuiz() {
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
   const [streak, setStreak] = useState(0);
 
+  // AI questions state
+  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
+  const [useAI, setUseAI] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const fetchAIQuestions = async (diff: string) => {
+    setAiLoading(true);
+    try {
+      const q = await aiApi.getQuestions('capital-quiz', diff, 15);
+      if (q && q.length > 0) setAiQuestions(q);
+    } catch (e) {
+      console.error('Failed to fetch AI questions');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const nextQuestion = useCallback(() => {
+    if (useAI && aiQuestions.length > 0) {
+      const q = aiQuestions.shift();
+      if (q) {
+        setQuestion({
+          question: q.question,
+          answer: String(q.answer),
+          options: q.options.map(String),
+        });
+        setAiQuestions([...aiQuestions]);
+        setFeedback(null);
+        return;
+      }
+    }
     setQuestion(generateQuestion());
     setFeedback(null);
-  }, []);
+  }, [useAI, aiQuestions]);
 
-  const handleStart = () => {
-    setQuestionCount(0);
-    setGameOver(false);
+  const handleStart = async () => {
     setResult(null);
+    setQuestionCount(0);
     setStreak(0);
-    nextQuestion();
+    if (useAI) {
+      await fetchAIQuestions('medium');
+    }
     startGame('easy');
   };
 
@@ -116,11 +148,24 @@ export default function CapitalQuiz() {
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Tebak ibukota negara! Streak 3x = poin 2x!
         </p>
+        <div className="mb-2 flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="useAI"
+            checked={useAI}
+            onChange={(e) => setUseAI(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <label htmlFor="useAI" className="text-sm font-medium text-gray-700 dark:text-slate-300">
+            Generate negara & ibukota langka dengan AI ✨
+          </label>
+        </div>
         <button
           onClick={handleStart}
-          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+          disabled={aiLoading}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
         >
-          Mulai!
+          {aiLoading ? 'Menyiapkan Soal...' : 'Mulai!'}
         </button>
       </div>
     );
