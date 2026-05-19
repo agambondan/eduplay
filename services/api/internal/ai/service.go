@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/agambondan/eduplay/backend/config"
-	"github.com/agambondan/eduplay/backend/pkg/database"
+	"github.com/agambondan/eduplay/services/api/config"
+	"github.com/agambondan/eduplay/services/api/pkg/database"
 )
 
 type Question struct {

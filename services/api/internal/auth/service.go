@@ -5,10 +5,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/agambondan/eduplay/backend/config"
-	"github.com/agambondan/eduplay/backend/internal/user"
-	"github.com/agambondan/eduplay/backend/pkg/database"
-	"github.com/agambondan/eduplay/backend/pkg/logger"
+	"github.com/agambondan/eduplay/services/api/config"
+	"github.com/agambondan/eduplay/services/api/internal/user"
+	"github.com/agambondan/eduplay/services/api/pkg/database"
+	"github.com/agambondan/eduplay/services/api/pkg/logger"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"

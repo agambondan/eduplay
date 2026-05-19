@@ -3,9 +3,9 @@ package leaderboard
 import (
 	"fmt"
 
-	"github.com/agambondan/eduplay/backend/internal/game"
-	"github.com/agambondan/eduplay/backend/internal/user"
-	"github.com/agambondan/eduplay/backend/pkg/database"
+	"github.com/agambondan/eduplay/services/api/internal/game"
+	"github.com/agambondan/eduplay/services/api/internal/user"
+	"github.com/agambondan/eduplay/services/api/pkg/database"
 )
 
 type Entry struct {

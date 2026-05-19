@@ -1,8 +1,8 @@
 package game
 
 import (
-	"github.com/agambondan/eduplay/backend/pkg/response"
-	"github.com/agambondan/eduplay/backend/pkg/validator"
+	"github.com/agambondan/eduplay/services/api/pkg/response"
+	"github.com/agambondan/eduplay/services/api/pkg/validator"
 	"github.com/gofiber/fiber/v2"
 )
 

@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/agambondan/eduplay/backend/internal/ai"
-	"github.com/agambondan/eduplay/backend/internal/game"
-	"github.com/agambondan/eduplay/backend/pkg/database"
+	"github.com/agambondan/eduplay/services/api/internal/ai"
+	"github.com/agambondan/eduplay/services/api/internal/game"
+	"github.com/agambondan/eduplay/services/api/pkg/database"
 )
 
 func StartScheduler(gameRepo game.Repository, aiSvc ai.Service) {

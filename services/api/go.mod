@@ -1,9 +1,10 @@
-module github.com/agambondan/eduplay/backend
+module github.com/agambondan/eduplay/services/api
 
 go 1.26.0
 
 require (
 	github.com/alicebob/miniredis/v2 v2.38.0
+	github.com/getsentry/sentry-go v0.46.2
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/gofiber/fiber/v2 v2.52.13
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -24,7 +25,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
-	github.com/getsentry/sentry-go v0.46.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect

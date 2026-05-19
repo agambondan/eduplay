@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/agambondan/eduplay/backend/config"
-	"github.com/agambondan/eduplay/backend/pkg/database"
-	"github.com/agambondan/eduplay/backend/pkg/response"
+	"github.com/agambondan/eduplay/services/api/config"
+	"github.com/agambondan/eduplay/services/api/pkg/database"
+	"github.com/agambondan/eduplay/services/api/pkg/response"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"

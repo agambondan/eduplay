@@ -1,7 +1,7 @@
 package game
 
 import (
-	"github.com/agambondan/eduplay/backend/pkg/database"
+	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
 )
 

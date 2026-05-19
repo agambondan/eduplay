@@ -1,7 +1,7 @@
 package leaderboard
 
 import (
-	"github.com/agambondan/eduplay/backend/pkg/response"
+	"github.com/agambondan/eduplay/services/api/pkg/response"
 	"github.com/gofiber/fiber/v2"
 )
 

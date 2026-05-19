@@ -2,8 +2,8 @@ package database
 
 import (
     "context"
-    "github.com/agambondan/eduplay/backend/config"
-    "github.com/agambondan/eduplay/backend/pkg/logger"
+    "github.com/agambondan/eduplay/services/api/config"
+    "github.com/agambondan/eduplay/services/api/pkg/logger"
     "github.com/redis/go-redis/v9"
 )
 
