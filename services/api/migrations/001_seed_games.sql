@@ -6,5 +6,6 @@ INSERT INTO games (slug, name, description, category, is_active) VALUES
 ('flag-quiz', 'Flag Quiz', 'Tebak nama negara dari gambar benderanya', 'geography', true),
 ('capital-quiz', 'Capital City Quiz', 'Tebak ibukota dari nama negara', 'geography', true),
 ('sudoku', 'Sudoku', 'Classic Sudoku 9x9', 'logic', true),
-('2048', '2048', 'Classic 2048 — geser tile, gabungkan angka yang sama', 'logic', true)
+('2048', '2048', 'Classic 2048 — geser tile, gabungkan angka yang sama', 'logic', true),
+('nonogram', 'Nonogram', 'Asah logika dengan mengungkapkan gambar tersembunyi', 'logic', true)
 ON CONFLICT (slug) DO NOTHING;

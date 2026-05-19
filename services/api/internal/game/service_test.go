@@ -1,6 +1,7 @@
 package game
 
 import (
+	"context"
 	"testing"
 
 	"github.com/agambondan/eduplay/backend/internal/user"
@@ -8,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -19,12 +22,17 @@ func setupTestDB() {
 	}
 	db.AutoMigrate(&user.User{}, &Game{}, &GameSession{}, &UserHighscore{})
 	database.DB = db
+
+	mr, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	database.RDB = redis.NewClient(&redis.Options{Addr: mr.Addr()})
 }
 
 func TestGameService_SubmitScore(t *testing.T) {
 	setupTestDB()
 
-	// Seed test data
 	testUser := &user.User{Username: "player1", Email: "p1@test.com", Password: "pwd"}
 	database.DB.Create(testUser)
 
@@ -37,26 +45,25 @@ func TestGameService_SubmitScore(t *testing.T) {
 	req := SubmitScoreRequest{
 		Score:      250,
 		Duration:   45,
-		Difficulty: "medium", // Multiplier 1.5
+		Difficulty: "medium",
 	}
 
 	resp, err := svc.SubmitScore(testUser.ID.String(), "math-quiz", req)
 	require.NoError(t, err)
-
-	// XP logic in service:
-	// base_xp := score / 10
-	// 250 / 10 = 25
-	// 25 * 1.5 = 37 (rounded down to int)
 	assert.Equal(t, 37, resp.XPEarned)
 	assert.True(t, resp.NewHighscore)
 
-	// Submit lower score, shouldn't be highscore
-	req2 := SubmitScoreRequest{
-		Score:      150,
-		Duration:   30,
+	// Sleep or wait so rate limit is bypassed (or change the test key, actually rate limit blocks)
+	// For testing, just clear the redis key
+	database.RDB.Del(context.Background(), "ratelimit:submit_score:"+testUser.ID.String()+":math-quiz")
+
+	// Anti-cheat: duration too short with high score should fail
+	reqCheat := SubmitScoreRequest{
+		Score:      999,
+		Duration:   2,
 		Difficulty: "easy",
 	}
-	resp2, err := svc.SubmitScore(testUser.ID.String(), "math-quiz", req2)
-	require.NoError(t, err)
-	assert.False(t, resp2.NewHighscore)
+	_, err = svc.SubmitScore(testUser.ID.String(), "math-quiz", reqCheat)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid score for given duration")
 }
