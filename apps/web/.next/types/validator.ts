@@ -153,6 +153,15 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   type __Unused = __Check
 }
 
+// Validate ../../app/(main)/games/timeline-history/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/games/timeline-history">> = Specific
+  const handler = {} as typeof import("../../app/(main)/games/timeline-history/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/(main)/games/times-table/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/games/times-table">> = Specific

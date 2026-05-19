@@ -4,7 +4,7 @@ import { LeaderboardEntry } from '@/types/game';
 
 interface LeaderboardResponse {
   entries: LeaderboardEntry[];
-  user_rank?: number;
+  user_rank?: LeaderboardEntry;
 }
 
 export const leaderboardApi = {

@@ -11,5 +11,6 @@ INSERT INTO games (slug, name, description, category, is_active) VALUES
 ('mental-math', 'Mental Math Speed', 'Uji kecepatan berhitungmu dengan mengetik jawaban secepat mungkin', 'math', true),
 ('element-quiz', 'Element Quiz', 'Tebak nama unsur kimia dari simbolnya', 'science', true),
 ('word-search', 'Word Search', 'Asah ketelitianmu dengan mencari kata-kata tersembunyi', 'language', true),
-('timeline-history', 'Timeline History', 'Tebak tahun kejadian penting di Indonesia dan Dunia', 'history', true)
+('timeline-history', 'Timeline History', 'Tebak tahun kejadian penting di Indonesia dan Dunia', 'history', true),
+('crossword', 'Crossword Indonesia', 'Uji wawasan kosakata dengan Teka-Teki Silang', 'language', true)
 ON CONFLICT (slug) DO NOTHING;

@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { LeaderboardTable } from '@/components/ui/LeaderboardTable';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { cn } from '@/lib/utils/cn';
-import { Loader2, Trophy, Global } from 'lucide-react';
+import { Loader2, Trophy, Globe } from 'lucide-react';
 
 export default function LeaderboardPage() {
   const { user } = useAuthStore();
@@ -20,8 +20,8 @@ export default function LeaderboardPage() {
   const { data: leadData, isLoading } = useQuery({
     queryKey: ['leaderboard', tab, selectedGame, period],
     queryFn: () => {
-      if (tab === 'global') return leaderboardApi.global(period);
-      return leaderboardApi.game(selectedGame, period);
+      if (tab === 'global') return leaderboardApi.getGlobalLeaderboard(period);
+      return leaderboardApi.getGameLeaderboard(selectedGame, period);
     },
     enabled: tab === 'global' || !!selectedGame,
   });
