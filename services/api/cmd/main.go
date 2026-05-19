@@ -1,14 +1,15 @@
 package main
 
 import (
+	"os"
+	"time"
+
 	"github.com/agambondan/eduplay/services/api/config"
-	"github.com/agambondan/eduplay/services/api/internal/achievement"
-	"github.com/agambondan/eduplay/services/api/internal/ai"
-	"github.com/agambondan/eduplay/services/api/internal/auth"
-	"github.com/agambondan/eduplay/services/api/internal/daily"
-	"github.com/agambondan/eduplay/services/api/internal/game"
-	"github.com/agambondan/eduplay/services/api/internal/leaderboard"
-	"github.com/agambondan/eduplay/services/api/internal/user"
+	"github.com/agambondan/eduplay/services/api/internal/controller"
+	"github.com/agambondan/eduplay/services/api/internal/middleware"
+	"github.com/agambondan/eduplay/services/api/internal/model"
+	"github.com/agambondan/eduplay/services/api/internal/repository"
+	"github.com/agambondan/eduplay/services/api/internal/service"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/agambondan/eduplay/services/api/pkg/logger"
 	"github.com/getsentry/sentry-go"
@@ -17,8 +18,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"go.uber.org/zap"
-	"os"
-	"time"
 )
 
 func main() {
@@ -46,14 +45,14 @@ func main() {
 
 	// Auto Migration
 	database.DB.AutoMigrate(
-		&user.User{},
-		&game.Game{},
-		&game.GameSession{},
-		&game.UserHighscore{},
-		&daily.DailyChallenge{},
-		&daily.DailySubmission{},
-		&achievement.Achievement{},
-		&achievement.UserAchievement{},
+		&model.User{},
+		&model.Game{},
+		&model.GameSession{},
+		&model.UserHighscore{},
+		&model.DailyChallenge{},
+		&model.DailySubmission{},
+		&model.Achievement{},
+		&model.UserAchievement{},
 	)
 
 	app := fiber.New(fiber.Config{
@@ -74,37 +73,37 @@ func main() {
 	apiV1 := app.Group("/api/v1")
 
 	// Repositories
-	userRepo := user.NewRepository()
-	gameRepo := game.NewRepository()
-	leadRepo := leaderboard.NewRepository()
-	achRepo := achievement.NewRepository()
+	userRepo := repository.NewUserRepository()
+	gameRepo := repository.NewGameRepository()
+	leadRepo := repository.NewLeaderboardRepository()
+	achRepo := repository.NewAchievementRepository()
 
 	// Services
-	achSvc := achievement.NewService(achRepo)
-	authSvc := auth.NewService(cfg, userRepo, achSvc)
-	userSvc := user.NewService(userRepo)
-	gameSvc := game.NewService(gameRepo)
-	leadSvc := leaderboard.NewService(leadRepo, gameRepo)
-	dailySvc := daily.NewService(gameRepo)
-	aiSvc := ai.NewService(cfg)
+	achSvc := service.NewAchievementService(achRepo)
+	authSvc := service.NewAuthService(cfg, userRepo, achSvc)
+	userSvc := service.NewUserService(userRepo)
+	gameSvc := service.NewGameService(gameRepo)
+	leadSvc := service.NewLeaderboardService(leadRepo, gameRepo)
+	dailySvc := service.NewDailyService(gameRepo)
+	aiSvc := service.NewAIService(cfg)
 
-	// Handlers
-	authHandler := auth.NewHandler(authSvc)
-	userHandler := user.NewHandler(userSvc)
-	gameHandler := game.NewHandler(gameSvc)
-	leadHandler := leaderboard.NewHandler(leadSvc)
-	dailyHandler := daily.NewHandler(dailySvc)
-	achHandler := achievement.NewHandler(achSvc)
-	aiHandler := ai.NewHandler(aiSvc)
+	// Controllers
+	authHandler := controller.NewAuthController(authSvc)
+	userHandler := controller.NewUserController(userSvc)
+	gameHandler := controller.NewGameController(gameSvc)
+	leadHandler := controller.NewLeaderboardController(leadSvc)
+	dailyHandler := controller.NewDailyController(dailySvc)
+	achHandler := controller.NewAchievementController(achSvc)
+	aiHandler := controller.NewAIController(aiSvc)
 
 	// Routes
 	authGroup := apiV1.Group("/auth")
 	authGroup.Post("/register", authHandler.Register)
 	authGroup.Post("/login", authHandler.Login)
 	authGroup.Post("/refresh", authHandler.Refresh)
-	authGroup.Post("/logout", auth.Middleware(cfg), authHandler.Logout)
+	authGroup.Post("/logout", middleware.AuthMiddleware(cfg), authHandler.Logout)
 
-	userGroup := apiV1.Group("/user", auth.Middleware(cfg))
+	userGroup := apiV1.Group("/user", middleware.AuthMiddleware(cfg))
 	userGroup.Get("/me", userHandler.GetMe)
 	userGroup.Get("/stats", userHandler.GetStats)
 	userGroup.Patch("/profile", userHandler.UpdateProfile)
@@ -113,24 +112,24 @@ func main() {
 	gameGroup := apiV1.Group("/games")
 	gameGroup.Get("/", gameHandler.ListGames)
 	gameGroup.Get("/:slug", gameHandler.GetGame)
-	gameGroup.Post("/:slug/score", auth.Middleware(cfg), gameHandler.SubmitScore)
+	gameGroup.Post("/:slug/score", middleware.AuthMiddleware(cfg), gameHandler.SubmitScore)
 
-	leadGroup := apiV1.Group("/leaderboard", auth.OptionalMiddleware(cfg))
+	leadGroup := apiV1.Group("/leaderboard", middleware.OptionalAuthMiddleware(cfg))
 	leadGroup.Get("/game/:slug", leadHandler.GetGameLeaderboard)
 	leadGroup.Get("/global", leadHandler.GetGlobalLeaderboard)
 
 	dailyGroup := apiV1.Group("/daily")
 	dailyGroup.Get("/", dailyHandler.GetDailyChallenge)
-	dailyGroup.Post("/submit", auth.Middleware(cfg), dailyHandler.SubmitDailyChallenge)
+	dailyGroup.Post("/submit", middleware.AuthMiddleware(cfg), dailyHandler.SubmitDailyChallenge)
 
-	aiGroup := apiV1.Group("/ai", auth.Middleware(cfg), limiter.New(limiter.Config{
+	aiGroup := apiV1.Group("/ai", middleware.AuthMiddleware(cfg), limiter.New(limiter.Config{
 		Max:        10,
 		Expiration: 1 * time.Minute,
 	}))
 	aiGroup.Post("/questions", aiHandler.GenerateQuestions)
 
 	// Start schedulers
-	daily.StartScheduler(gameRepo, aiSvc)
+	service.StartDailyScheduler(gameRepo, aiSvc)
 
 	logger.Log.Info("Server starting", zap.String("port", cfg.App.Port))
 	if err := app.Listen(":" + cfg.App.Port); err != nil {

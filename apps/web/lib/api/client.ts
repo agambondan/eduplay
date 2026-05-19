@@ -28,7 +28,7 @@ api.interceptors.response.use(
           refresh_token: refreshToken,
         });
         const { access_token } = res.data.data;
-        useAuthStore.getState().setTokens(access_token, refreshToken);
+        useAuthStore.getState().setTokens(access_token, refreshToken!);
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return api(originalRequest);
       } catch (refreshError) {
