@@ -26,12 +26,13 @@ const EVENTS: TimelineEvent[] = [
   { year: 1939, event: 'Awal Perang Dunia II' },
   { year: 1969, event: 'Manusia Pertama Mendarat di Bulan' },
   { year: 1989, event: 'Runtuhnya Tembok Berlin' },
-  { year: 2020, event: 'Pandemi COVID-19 Melanda Dunia' }
+  { year: 2020, event: 'Pandemi COVID-19 Melanda Dunia' },
 ];
 
 export default function TimelineHistory() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore } = useGame('timeline-history');
-  
+  const { score, isPlaying, startGame, endGame, addScore, submitScore } =
+    useGame('timeline-history');
+
   const [currentEvent, setCurrentEvent] = useState<TimelineEvent | null>(null);
   const [options, setOptions] = useState<number[]>([]);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
@@ -42,7 +43,7 @@ export default function TimelineHistory() {
   const nextQuestion = useCallback(() => {
     const target = EVENTS[Math.floor(Math.random() * EVENTS.length)];
     setCurrentEvent(target);
-    
+
     const opts = new Set<number>([target.year]);
     while (opts.size < 4) {
       const offset = (Math.floor(Math.random() * 10) + 1) * (Math.random() > 0.5 ? 1 : -1);
@@ -71,7 +72,7 @@ export default function TimelineHistory() {
       addScore(-5);
     }
 
-    setCount(c => c + 1);
+    setCount((c) => c + 1);
     if (count + 1 >= 10) {
       setTimeout(async () => {
         setGameOver(true);
@@ -88,27 +89,41 @@ export default function TimelineHistory() {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Timeline History</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">Uji pengetahuan sejarahmu! Tebak tahun kejadian penting di Indonesia dan Dunia.</p>
-        <button onClick={handleStart} className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors">Mulai!</button>
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
+          Uji pengetahuan sejarahmu! Tebak tahun kejadian penting di Indonesia dan Dunia.
+        </p>
+        <button
+          onClick={handleStart}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+        >
+          Mulai!
+        </button>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col items-center gap-6 py-6">
-      <div className="flex items-center justify-between w-full max-w-md">
-        <Timer initialSeconds={90} onTimeUp={() => { setGameOver(true); endGame(); }} isRunning={isPlaying && !gameOver} />
+      <div className="flex w-full max-w-md items-center justify-between">
+        <Timer
+          initialSeconds={90}
+          onTimeUp={() => {
+            setGameOver(true);
+            endGame();
+          }}
+          isRunning={isPlaying && !gameOver}
+        />
         <ScoreBoard score={score} />
         <span className="text-sm font-bold text-gray-500">{count}/10</span>
       </div>
 
       {currentEvent && !gameOver && (
-        <div className="w-full max-w-lg space-y-8 animate-in fade-in zoom-in duration-300">
-          <div className="bg-white dark:bg-slate-800 border-2 border-indigo-100 dark:border-slate-700 p-8 rounded-3xl text-center shadow-sm">
-            <p className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+        <div className="animate-in fade-in zoom-in w-full max-w-lg space-y-8 duration-300">
+          <div className="rounded-3xl border-2 border-indigo-100 bg-white p-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <p className="text-2xl font-bold leading-tight text-gray-900 dark:text-white">
               Kapan terjadi peristiwa:
             </p>
-            <h2 className="text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-4 leading-snug">
+            <h2 className="mt-4 text-3xl font-black leading-snug text-indigo-600 dark:text-indigo-400">
               {currentEvent.event}
             </h2>
           </div>
@@ -120,12 +135,12 @@ export default function TimelineHistory() {
                 onClick={() => handleAnswer(year)}
                 disabled={feedback !== null}
                 className={cn(
-                  "py-4 px-6 rounded-2xl text-xl font-bold border-2 transition-all active:scale-95",
+                  'rounded-2xl border-2 px-6 py-4 text-xl font-bold transition-all active:scale-95',
                   feedback === null
-                    ? "bg-white border-gray-200 text-gray-800 hover:border-indigo-400 hover:bg-indigo-50 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                    ? 'border-gray-200 bg-white text-gray-800 hover:border-indigo-400 hover:bg-indigo-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white'
                     : year === currentEvent.year
-                      ? "bg-emerald-100 border-emerald-500 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                      : "bg-gray-50 border-gray-200 text-gray-400 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-500"
+                      ? 'border-emerald-500 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : 'border-gray-200 bg-gray-50 text-gray-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
                 )}
               >
                 {year}
@@ -136,13 +151,20 @@ export default function TimelineHistory() {
       )}
 
       {gameOver && (
-        <div className="text-center space-y-4">
+        <div className="space-y-4 text-center">
           <h2 className="text-2xl font-black text-emerald-600">Selesai!</h2>
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700">
-             <ScoreBoard score={score} label="Final Score" />
-             {result && <p className="mt-4 text-sm font-bold text-gray-500">+{result.xp} XP Earned</p>}
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+            <ScoreBoard score={score} label="Final Score" />
+            {result && (
+              <p className="mt-4 text-sm font-bold text-gray-500">+{result.xp} XP Earned</p>
+            )}
           </div>
-          <button onClick={handleStart} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors">Main Lagi</button>
+          <button
+            onClick={handleStart}
+            className="rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white transition-colors hover:bg-indigo-700"
+          >
+            Main Lagi
+          </button>
         </div>
       )}
     </div>

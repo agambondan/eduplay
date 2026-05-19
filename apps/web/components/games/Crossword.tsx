@@ -33,12 +33,40 @@ const PUZZLE_DATA = {
     ['#', 'S', 'N', 'A', 'K'],
   ],
   clues: [
-    { number: 1, direction: 'across', clue: 'Bagian tanaman yang indah', answer: 'BUNGA', r: 0, c: 0 },
+    {
+      number: 1,
+      direction: 'across',
+      clue: 'Bagian tanaman yang indah',
+      answer: 'BUNGA',
+      r: 0,
+      c: 0,
+    },
     { number: 4, direction: 'across', clue: 'Hari setelah Rabu', answer: 'KAMIS', r: 2, c: 0 },
-    { number: 6, direction: 'across', clue: 'Camilan ringan (Inggris)', answer: 'SNAK', r: 4, c: 1 },
+    {
+      number: 6,
+      direction: 'across',
+      clue: 'Camilan ringan (Inggris)',
+      answer: 'SNAK',
+      r: 4,
+      c: 1,
+    },
     { number: 1, direction: 'down', clue: 'Sumber ilmu tertulis', answer: 'BUKU', r: 0, c: 0 },
-    { number: 2, direction: 'down', clue: 'Nama orang atau kata ganti', answer: 'NAMA', r: 0, c: 2 },
-    { number: 3, direction: 'down', clue: 'Ibukota Jawa Tengah (Singkat)', answer: 'SMG', r: 0, c: 4 },
+    {
+      number: 2,
+      direction: 'down',
+      clue: 'Nama orang atau kata ganti',
+      answer: 'NAMA',
+      r: 0,
+      c: 2,
+    },
+    {
+      number: 3,
+      direction: 'down',
+      clue: 'Ibukota Jawa Tengah (Singkat)',
+      answer: 'SMG',
+      r: 0,
+      c: 4,
+    },
     { number: 5, direction: 'down', clue: 'Satuan ukuran luas', answer: 'ARE', r: 2, c: 3 },
   ] as Clue[],
 };
@@ -101,12 +129,12 @@ export default function Crossword() {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">TTS Indonesia</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Isi teka-teki silang dengan kata-kata yang tepat!
         </p>
         <button
           onClick={initGame}
-          className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors"
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
           Mulai!
         </button>
@@ -116,26 +144,33 @@ export default function Crossword() {
 
   return (
     <div className="flex flex-col items-center gap-6 py-6">
-      <div className="flex items-center justify-between w-full max-w-md">
-        <Timer initialSeconds={300} onTimeUp={() => { setGameOver(true); endGame(); }} isRunning={isPlaying && !gameOver} />
+      <div className="flex w-full max-w-md items-center justify-between">
+        <Timer
+          initialSeconds={300}
+          onTimeUp={() => {
+            setGameOver(true);
+            endGame();
+          }}
+          isRunning={isPlaying && !gameOver}
+        />
         <ScoreBoard score={score} />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="grid grid-cols-5 gap-1 bg-gray-900 p-1 border-2 border-gray-900 rounded-lg shadow-xl">
+      <div className="flex flex-col gap-8 md:flex-row">
+        <div className="grid grid-cols-5 gap-1 rounded-lg border-2 border-gray-900 bg-gray-900 p-1 shadow-xl">
           {grid.map((row, r) =>
             row.map((cell, c) => (
               <div
                 key={`${r}-${c}`}
                 className={cn(
-                  'relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center transition-all',
+                  'relative flex h-12 w-12 items-center justify-center transition-all sm:h-14 sm:w-14',
                   cell.isBlack ? 'bg-gray-900' : 'bg-white dark:bg-slate-800'
                 )}
               >
                 {!cell.isBlack && (
                   <>
                     {cell.number && (
-                      <span className="absolute top-0.5 left-1 text-[10px] font-bold text-gray-400">
+                      <span className="absolute left-1 top-0.5 text-[10px] font-bold text-gray-400">
                         {cell.number}
                       </span>
                     )}
@@ -144,8 +179,11 @@ export default function Crossword() {
                       value={cell.userInput}
                       onChange={(e) => handleInput(r, c, e.target.value)}
                       className={cn(
-                        'w-full h-full text-center text-xl font-black focus:outline-none focus:bg-indigo-50 dark:focus:bg-indigo-900/20 dark:text-white bg-transparent uppercase',
-                        cell.userInput !== '' && cell.userInput !== cell.letter && gameOver && 'text-red-500'
+                        'h-full w-full bg-transparent text-center text-xl font-black uppercase focus:bg-indigo-50 focus:outline-none dark:text-white dark:focus:bg-indigo-900/20',
+                        cell.userInput !== '' &&
+                          cell.userInput !== cell.letter &&
+                          gameOver &&
+                          'text-red-500'
                       )}
                       maxLength={1}
                     />
@@ -156,32 +194,46 @@ export default function Crossword() {
           )}
         </div>
 
-        <div className="w-full md:w-64 space-y-4 max-h-[400px] overflow-auto pr-2">
+        <div className="max-h-[400px] w-full space-y-4 overflow-auto pr-2 md:w-64">
           <div>
-            <h3 className="font-bold text-gray-900 dark:text-white border-b-2 border-indigo-500 mb-2">Mendatar</h3>
-            {PUZZLE_DATA.clues.filter(c => c.direction === 'across').map(clue => (
-              <p key={`${clue.number}-a`} className="text-sm text-gray-600 dark:text-slate-400 mb-1">
-                <span className="font-bold mr-2">{clue.number}.</span> {clue.clue}
-              </p>
-            ))}
+            <h3 className="mb-2 border-b-2 border-indigo-500 font-bold text-gray-900 dark:text-white">
+              Mendatar
+            </h3>
+            {PUZZLE_DATA.clues
+              .filter((c) => c.direction === 'across')
+              .map((clue) => (
+                <p
+                  key={`${clue.number}-a`}
+                  className="mb-1 text-sm text-gray-600 dark:text-slate-400"
+                >
+                  <span className="mr-2 font-bold">{clue.number}.</span> {clue.clue}
+                </p>
+              ))}
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 dark:text-white border-b-2 border-emerald-500 mb-2">Menurun</h3>
-            {PUZZLE_DATA.clues.filter(c => c.direction === 'down').map(clue => (
-              <p key={`${clue.number}-d`} className="text-sm text-gray-600 dark:text-slate-400 mb-1">
-                <span className="font-bold mr-2">{clue.number}.</span> {clue.clue}
-              </p>
-            ))}
+            <h3 className="mb-2 border-b-2 border-emerald-500 font-bold text-gray-900 dark:text-white">
+              Menurun
+            </h3>
+            {PUZZLE_DATA.clues
+              .filter((c) => c.direction === 'down')
+              .map((clue) => (
+                <p
+                  key={`${clue.number}-d`}
+                  className="mb-1 text-sm text-gray-600 dark:text-slate-400"
+                >
+                  <span className="mr-2 font-bold">{clue.number}.</span> {clue.clue}
+                </p>
+              ))}
           </div>
         </div>
       </div>
 
       {gameOver && (
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <p className="text-xl font-bold text-emerald-600">Selesai!</p>
           <button
             onClick={initGame}
-            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors"
+            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
           >
             Main Lagi
           </button>

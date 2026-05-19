@@ -104,8 +104,12 @@ export default function BrickBreaker() {
         if (b.status === 1) {
           const bc = Math.floor(i / gameState.current.brickRows);
           const br = i % gameState.current.brickRows;
-          const brickX = bc * (gameState.current.brickWidth + gameState.current.brickPadding) + gameState.current.brickOffsetLeft;
-          const brickY = br * (gameState.current.brickHeight + gameState.current.brickPadding) + gameState.current.brickOffsetTop;
+          const brickX =
+            bc * (gameState.current.brickWidth + gameState.current.brickPadding) +
+            gameState.current.brickOffsetLeft;
+          const brickY =
+            br * (gameState.current.brickHeight + gameState.current.brickPadding) +
+            gameState.current.brickOffsetTop;
           b.x = brickX;
           b.y = brickY;
           ctx.beginPath();
@@ -118,14 +122,25 @@ export default function BrickBreaker() {
 
       // Draw Ball
       ctx.beginPath();
-      ctx.arc(gameState.current.ball.x, gameState.current.ball.y, gameState.current.ball.radius, 0, Math.PI * 2);
+      ctx.arc(
+        gameState.current.ball.x,
+        gameState.current.ball.y,
+        gameState.current.ball.radius,
+        0,
+        Math.PI * 2
+      );
       ctx.fillStyle = '#ef4444';
       ctx.fill();
       ctx.closePath();
 
       // Draw Paddle
       ctx.beginPath();
-      ctx.rect(gameState.current.paddle.x, canvas.height - gameState.current.paddle.height, gameState.current.paddle.width, gameState.current.paddle.height);
+      ctx.rect(
+        gameState.current.paddle.x,
+        canvas.height - gameState.current.paddle.height,
+        gameState.current.paddle.width,
+        gameState.current.paddle.height
+      );
       ctx.fillStyle = '#10b981';
       ctx.fill();
       ctx.closePath();
@@ -151,19 +166,29 @@ export default function BrickBreaker() {
       });
 
       // Wall collisions
-      if (gameState.current.ball.x + gameState.current.ball.dx > canvas.width - gameState.current.ball.radius || gameState.current.ball.x + gameState.current.ball.dx < gameState.current.ball.radius) {
+      if (
+        gameState.current.ball.x + gameState.current.ball.dx >
+          canvas.width - gameState.current.ball.radius ||
+        gameState.current.ball.x + gameState.current.ball.dx < gameState.current.ball.radius
+      ) {
         gameState.current.ball.dx = -gameState.current.ball.dx;
       }
       if (gameState.current.ball.y + gameState.current.ball.dy < gameState.current.ball.radius) {
         gameState.current.ball.dy = -gameState.current.ball.dy;
-      } else if (gameState.current.ball.y + gameState.current.ball.dy > canvas.height - gameState.current.ball.radius) {
-        if (gameState.current.ball.x > gameState.current.paddle.x && gameState.current.ball.x < gameState.current.paddle.x + gameState.current.paddle.width) {
+      } else if (
+        gameState.current.ball.y + gameState.current.ball.dy >
+        canvas.height - gameState.current.ball.radius
+      ) {
+        if (
+          gameState.current.ball.x > gameState.current.paddle.x &&
+          gameState.current.ball.x < gameState.current.paddle.x + gameState.current.paddle.width
+        ) {
           gameState.current.ball.dy = -gameState.current.ball.dy;
         } else {
           // Game Over
           setGameOver(true);
           endGame();
-          submitScore().then(res => {
+          submitScore().then((res) => {
             if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
           });
         }
@@ -173,10 +198,10 @@ export default function BrickBreaker() {
       gameState.current.ball.y += gameState.current.ball.dy;
 
       // Win check
-      if (gameState.current.bricks.every(b => b.status === 0)) {
+      if (gameState.current.bricks.every((b) => b.status === 0)) {
         setGameOver(true);
         endGame();
-        submitScore().then(res => {
+        submitScore().then((res) => {
           if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
         });
       }
@@ -204,12 +229,12 @@ export default function BrickBreaker() {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Brick Breaker Soal</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Hancurkan brick dan jawab tantangan matematika untuk bonus poin!
         </p>
         <button
           onClick={handleStart}
-          className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors"
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
           Mulai!
         </button>
@@ -218,26 +243,28 @@ export default function BrickBreaker() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 py-6 relative">
-      <div className="flex items-center justify-between w-full max-w-md">
+    <div className="relative flex flex-col items-center gap-6 py-6">
+      <div className="flex w-full max-w-md items-center justify-between">
         <div className="text-sm font-bold text-gray-500">Brick Breaker</div>
         <ScoreBoard score={score} />
       </div>
 
-      <div className="relative rounded-xl overflow-hidden border-4 border-gray-200 dark:border-slate-700 shadow-2xl bg-white dark:bg-slate-900">
+      <div className="relative overflow-hidden rounded-xl border-4 border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         <canvas
           ref={canvasRef}
           width={600}
           height={400}
           onMouseMove={handleMouseMove}
-          className="max-w-full h-auto cursor-none"
+          className="h-auto max-w-full cursor-none"
         />
 
         {isPaused && currentQuestion && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center p-6 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center shadow-2xl max-w-xs animate-in zoom-in duration-300">
-              <span className="text-amber-500 font-black text-xs uppercase tracking-widest">Tantangan!</span>
-              <h2 className="text-3xl font-black text-gray-900 dark:text-white mt-2 mb-6">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
+            <div className="animate-in zoom-in max-w-xs rounded-3xl bg-white p-8 text-center shadow-2xl duration-300 dark:bg-slate-800">
+              <span className="text-xs font-black uppercase tracking-widest text-amber-500">
+                Tantangan!
+              </span>
+              <h2 className="mb-6 mt-2 text-3xl font-black text-gray-900 dark:text-white">
                 {currentQuestion.text}
               </h2>
               <div className="grid grid-cols-2 gap-3">
@@ -245,7 +272,7 @@ export default function BrickBreaker() {
                   <button
                     key={opt}
                     onClick={() => handleAnswer(opt)}
-                    className="py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all active:scale-95"
+                    className="rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white transition-all hover:bg-indigo-700 active:scale-95"
                   >
                     {opt}
                   </button>
@@ -257,13 +284,22 @@ export default function BrickBreaker() {
       </div>
 
       {gameOver && (
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-black text-red-500 uppercase italic tracking-tighter">Game Over!</h2>
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-xl">
-             <ScoreBoard score={score} label="Final Score" />
-             {result && <p className="mt-4 text-sm font-bold text-gray-500">+{result.xp} XP Earned</p>}
+        <div className="space-y-4 text-center">
+          <h2 className="text-2xl font-black uppercase italic tracking-tighter text-red-500">
+            Game Over!
+          </h2>
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-slate-800">
+            <ScoreBoard score={score} label="Final Score" />
+            {result && (
+              <p className="mt-4 text-sm font-bold text-gray-500">+{result.xp} XP Earned</p>
+            )}
           </div>
-          <button onClick={handleStart} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors shadow-lg">Main Lagi</button>
+          <button
+            onClick={handleStart}
+            className="rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white shadow-lg transition-colors hover:bg-indigo-700"
+          >
+            Main Lagi
+          </button>
         </div>
       )}
 

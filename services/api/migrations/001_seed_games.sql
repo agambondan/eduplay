@@ -13,5 +13,5 @@ INSERT INTO games (slug, name, description, category, is_active) VALUES
 ('word-search', 'Word Search', 'Asah ketelitianmu dengan mencari kata-kata tersembunyi', 'language', true),
 ('timeline-history', 'Timeline History', 'Tebak tahun kejadian penting di Indonesia dan Dunia', 'history', true),
 ('crossword', 'Crossword Indonesia', 'Uji wawasan kosakata dengan Teka-Teki Silang', 'language', true),
-('brick-breaker', 'Brick Breaker Soal', 'Hancurkan block dan jawab soal matematika untuk bonus skor', 'math', true)
+('bubble-shooter', 'Bubble Shooter Math', 'Tembak bubble dan jumlahkan angka dengan tepat', 'math', true)
 ON CONFLICT (slug) DO NOTHING;
