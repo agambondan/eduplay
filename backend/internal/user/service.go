@@ -3,6 +3,8 @@ package user
 type Service interface {
 	GetProfile(id string) (*User, error)
 	UpdateProfile(id string, username string) (*User, error)
+	GetStats(id string) (*Stats, error)
+	UpdateStreak(id string) error
 }
 
 type service struct {
@@ -27,4 +29,12 @@ func (s *service) UpdateProfile(id string, username string) (*User, error) {
 		return nil, err
 	}
 	return u, nil
+}
+
+func (s *service) GetStats(id string) (*Stats, error) {
+	return s.repo.GetStats(id)
+}
+
+func (s *service) UpdateStreak(id string) error {
+	return s.repo.UpdateStreak(id)
 }

@@ -100,8 +100,13 @@ export default function SpellingBee() {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Spelling Bee</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">Susun kembali huruf acak menjadi kata yang benar!</p>
-        <button onClick={handleStart} className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors">
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
+          Susun kembali huruf acak menjadi kata yang benar!
+        </p>
+        <button
+          onClick={handleStart}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+        >
           Mulai!
         </button>
       </div>
@@ -117,29 +122,31 @@ export default function SpellingBee() {
 
       {question && (
         <div className="w-full max-w-md space-y-6">
-          <div className="bg-indigo-50 dark:bg-slate-800 p-4 rounded-xl text-center">
-            <span className="text-xs uppercase font-bold text-indigo-500 tracking-widest">Definisi Clue</span>
-            <p className="text-gray-700 dark:text-slate-300 font-semibold mt-1">{question.hint}</p>
+          <div className="rounded-xl bg-indigo-50 p-4 text-center dark:bg-slate-800">
+            <span className="text-xs font-bold uppercase tracking-widest text-indigo-500">
+              Definisi Clue
+            </span>
+            <p className="mt-1 font-semibold text-gray-700 dark:text-slate-300">{question.hint}</p>
           </div>
 
-          <div className="flex flex-wrap gap-2 justify-center min-h-[48px] bg-gray-100 dark:bg-slate-700 p-3 rounded-xl">
+          <div className="flex min-h-[48px] flex-wrap justify-center gap-2 rounded-xl bg-gray-100 p-3 dark:bg-slate-700">
             {userLetters.map((l, i) => (
               <button
                 key={i}
                 onClick={() => handleRemoveLetter(i)}
-                className="w-10 h-10 bg-indigo-600 text-white font-bold text-lg rounded-lg shadow-sm"
+                className="h-10 w-10 rounded-lg bg-indigo-600 text-lg font-bold text-white shadow-sm"
               >
                 {l}
               </button>
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2 justify-center">
+          <div className="flex flex-wrap justify-center gap-2">
             {remainingLetters.map((l, i) => (
               <button
                 key={i}
                 onClick={() => handleAddLetter(l, i)}
-                className="w-10 h-10 bg-white border border-gray-300 dark:bg-slate-800 dark:border-slate-600 text-gray-900 dark:text-white font-bold text-lg rounded-lg shadow-sm active:scale-95"
+                className="h-10 w-10 rounded-lg border border-gray-300 bg-white text-lg font-bold text-gray-900 shadow-sm active:scale-95 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
               >
                 {l}
               </button>
@@ -149,7 +156,7 @@ export default function SpellingBee() {
           <button
             onClick={handleSubmit}
             disabled={userLetters.length === 0 || feedback !== null}
-            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-xl transition-colors"
+            className="w-full rounded-xl bg-emerald-500 py-3 font-bold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
           >
             Kirim
           </button>
@@ -157,21 +164,29 @@ export default function SpellingBee() {
       )}
 
       {feedback && (
-        <p className={cn('text-lg font-bold animate-pulse', feedback === 'correct' ? 'text-emerald-500' : 'text-red-500')}>
+        <p
+          className={cn(
+            'animate-pulse text-lg font-bold',
+            feedback === 'correct' ? 'text-emerald-500' : 'text-red-500'
+          )}
+        >
           {feedback === 'correct' ? 'Benar!' : 'Salah!'}
         </p>
       )}
 
       {gameOver && (
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <p className="text-lg font-bold text-emerald-600">Selesai!</p>
           {result && (
             <div className="text-sm text-gray-500">
               <p>+{result.xp} XP</p>
-              {result.highscore && <p className="text-amber-500 font-bold">New Highscore!</p>}
+              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
             </div>
           )}
-          <button onClick={handleStart} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors">
+          <button
+            onClick={handleStart}
+            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+          >
             Main Lagi
           </button>
         </div>

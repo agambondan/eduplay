@@ -8,7 +8,7 @@ import (
 )
 
 type Achievement struct {
-	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
 	Slug        string    `gorm:"uniqueIndex;size:50;not null" json:"slug"`
 	Name        string    `gorm:"size:100;not null" json:"name"`
 	Description string    `gorm:"type:text" json:"description"`

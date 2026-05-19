@@ -8,9 +8,9 @@ export interface Game {
   created_at: string;
 }
 
-export type GameCategory = "math" | "language" | "geography" | "logic";
+export type GameCategory = 'math' | 'language' | 'geography' | 'logic';
 
-export type Difficulty = "easy" | "medium" | "hard";
+export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export interface ScoreSubmitRequest {
   score: number;

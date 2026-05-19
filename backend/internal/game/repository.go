@@ -42,10 +42,19 @@ func (r *repository) GetHighscore(userID, gameID uuid.UUID) (*UserHighscore, err
 }
 
 func (r *repository) UpsertHighscore(userID, gameID uuid.UUID, score int) error {
-	return database.DB.Exec(`
-		INSERT INTO user_highscores (user_id, game_id, highscore, updated_at)
-		VALUES (?, ?, ?, NOW())
-		ON CONFLICT (user_id, game_id)
-		DO UPDATE SET highscore = GREATEST(user_highscores.highscore, EXCLUDED.highscore), updated_at = NOW()
-	`, userID, gameID, score).Error
+	var existing UserHighscore
+	err := database.DB.Where("user_id = ? AND game_id = ?", userID, gameID).First(&existing).Error
+	if err != nil {
+		hs := UserHighscore{
+			UserID:    userID,
+			GameID:    gameID,
+			Highscore: score,
+		}
+		return database.DB.Create(&hs).Error
+	}
+	if score > existing.Highscore {
+		existing.Highscore = score
+		return database.DB.Save(&existing).Error
+	}
+	return nil
 }

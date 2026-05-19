@@ -4,7 +4,7 @@ export function useAds() {
   const [isInterstitialOpen, setIsInterstitialOpen] = useState(false);
   const [isRewardedOpen, setIsRewardedOpen] = useState(false);
   const [rewardCallback, setRewardCallback] = useState<(() => void) | null>(null);
-  const [rewardText, setRewardText] = useState<string>("Reward");
+  const [rewardText, setRewardText] = useState<string>('Reward');
 
   const showInterstitial = useCallback(() => {
     setIsInterstitialOpen(true);
@@ -39,6 +39,6 @@ export function useAds() {
     showRewarded,
     closeRewarded,
     handleReward,
-    rewardText
+    rewardText,
   };
 }

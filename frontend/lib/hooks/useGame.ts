@@ -1,7 +1,7 @@
-import { useGameStore } from "@/lib/stores/gameStore";
-import { gamesApi } from "@/lib/api/games";
-import { Difficulty, ScoreSubmitResponse } from "@/types/game";
-import { useCallback } from "react";
+import { useGameStore } from '@/lib/stores/gameStore';
+import { gamesApi } from '@/lib/api/games';
+import { Difficulty, ScoreSubmitResponse } from '@/types/game';
+import { useCallback } from 'react';
 
 export function useGame(gameSlug: string) {
   const store = useGameStore();
@@ -19,11 +19,14 @@ export function useGame(gameSlug: string) {
     }
   }, [gameSlug, store.score, store.timeLeft, store.difficulty]);
 
-  const startGame = useCallback((difficulty: Difficulty = "easy") => {
-    store.resetGame();
-    store.setDifficulty(difficulty);
-    store.setPlaying(true);
-  }, [store]);
+  const startGame = useCallback(
+    (difficulty: Difficulty = 'easy') => {
+      store.resetGame();
+      store.setDifficulty(difficulty);
+      store.setPlaying(true);
+    },
+    [store]
+  );
 
   const endGame = useCallback(() => {
     store.setPlaying(false);

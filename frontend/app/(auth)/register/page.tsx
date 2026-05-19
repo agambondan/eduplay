@@ -1,36 +1,40 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { authApi } from "@/lib/api/auth";
-import { useAuthStore } from "@/lib/stores/authStore";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { authApi } from '@/lib/api/auth';
+import { useAuthStore } from '@/lib/stores/authStore';
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Username minimal 3 karakter"),
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
+  username: z.string().min(3, 'Username minimal 3 karakter'),
+  email: z.string().email('Email tidak valid'),
+  password: z.string().min(6, 'Password minimal 6 karakter'),
 });
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
     resolver: zodResolver(registerSchema),
   });
 
   const onSubmit = async (data: any) => {
     try {
-      setError("");
+      setError('');
       const res = await authApi.register(data);
       setAuth(res.user as any, res.access_token, res.refresh_token);
-      router.push("/");
+      router.push('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || "Terjadi kesalahan saat mendaftar");
+      setError(err.response?.data?.message || 'Terjadi kesalahan saat mendaftar');
     }
   };
 
@@ -45,40 +49,46 @@ export default function RegisterPage() {
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
               <input
-                {...register("username")}
+                {...register('username')}
                 type="text"
                 placeholder="Username"
                 className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
               />
-              {errors.username && <p className="mt-1 text-xs text-red-500">{errors.username.message as string}</p>}
+              {errors.username && (
+                <p className="mt-1 text-xs text-red-500">{errors.username.message as string}</p>
+              )}
             </div>
             <div>
               <input
-                {...register("email")}
+                {...register('email')}
                 type="email"
                 placeholder="Email"
                 className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
               />
-              {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message as string}</p>}
+              {errors.email && (
+                <p className="mt-1 text-xs text-red-500">{errors.email.message as string}</p>
+              )}
             </div>
             <div>
               <input
-                {...register("password")}
+                {...register('password')}
                 type="password"
                 placeholder="Password"
                 className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
               />
-              {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message as string}</p>}
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-500">{errors.password.message as string}</p>
+              )}
             </div>
           </div>
-          {error && <div className="text-sm text-red-500 text-center">{error}</div>}
+          {error && <div className="text-center text-sm text-red-500">{error}</div>}
           <div>
             <button
               type="submit"
               disabled={isSubmitting}
               className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
             >
-              {isSubmitting ? "Loading..." : "Daftar"}
+              {isSubmitting ? 'Loading...' : 'Daftar'}
             </button>
           </div>
           <div className="text-center text-sm">

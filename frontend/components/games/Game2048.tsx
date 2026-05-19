@@ -14,7 +14,11 @@ function createEmptyBoard(): Board {
 
 function addRandomTile(board: Board): Board {
   const empty: [number, number][] = [];
-  board.forEach((row, r) => row.forEach((cell, c) => { if (cell === 0) empty.push([r, c]); }));
+  board.forEach((row, r) =>
+    row.forEach((cell, c) => {
+      if (cell === 0) empty.push([r, c]);
+    })
+  );
   if (empty.length === 0) return board;
   const [r, c] = empty[Math.floor(Math.random() * empty.length)];
   const newBoard = board.map((row) => [...row]);
@@ -105,36 +109,49 @@ export default function Game2048() {
     startGame('medium');
   };
 
-  const handleMove = useCallback(async (dir: Direction) => {
-    if (!isPlaying || gameOver) return;
-    const { board: newBoard, score: gained, moved } = move(board, dir);
-    if (!moved) return;
-    const withTile = addRandomTile(newBoard);
-    setBoard(withTile);
-    if (gained > 0) addScore(gained);
-    if (isGameOver(withTile)) {
-      setGameOver(true);
-      endGame();
-      const res = await submitScore();
-      if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
-    }
-  }, [board, isPlaying, gameOver, addScore, endGame, submitScore]);
+  const handleMove = useCallback(
+    async (dir: Direction) => {
+      if (!isPlaying || gameOver) return;
+      const { board: newBoard, score: gained, moved } = move(board, dir);
+      if (!moved) return;
+      const withTile = addRandomTile(newBoard);
+      setBoard(withTile);
+      if (gained > 0) addScore(gained);
+      if (isGameOver(withTile)) {
+        setGameOver(true);
+        endGame();
+        const res = await submitScore();
+        if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
+      }
+    },
+    [board, isPlaying, gameOver, addScore, endGame, submitScore]
+  );
 
   useEffect(() => {
     const keyMap: Record<string, Direction> = {
-      ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+      ArrowUp: 'up',
+      ArrowDown: 'down',
+      ArrowLeft: 'left',
+      ArrowRight: 'right',
     };
     const handler = (e: KeyboardEvent) => {
       const dir = keyMap[e.key];
-      if (dir) { e.preventDefault(); handleMove(dir); }
+      if (dir) {
+        e.preventDefault();
+        handleMove(dir);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [handleMove]);
 
   useEffect(() => {
-    let startX = 0, startY = 0;
-    const onStart = (e: TouchEvent) => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; };
+    let startX = 0,
+      startY = 0;
+    const onStart = (e: TouchEvent) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    };
     const onEnd = (e: TouchEvent) => {
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
@@ -144,15 +161,25 @@ export default function Game2048() {
     };
     window.addEventListener('touchstart', onStart);
     window.addEventListener('touchend', onEnd);
-    return () => { window.removeEventListener('touchstart', onStart); window.removeEventListener('touchend', onEnd); };
+    return () => {
+      window.removeEventListener('touchstart', onStart);
+      window.removeEventListener('touchend', onEnd);
+    };
   }, [handleMove]);
 
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">2048</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">Geser tile, gabungkan angka yang sama!</p>
-        <button onClick={handleStart} className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors">Mulai!</button>
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
+          Geser tile, gabungkan angka yang sama!
+        </p>
+        <button
+          onClick={handleStart}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+        >
+          Mulai!
+        </button>
       </div>
     );
   }
@@ -161,13 +188,13 @@ export default function Game2048() {
     <div className="flex flex-col items-center gap-4 py-6">
       <ScoreBoard score={score} />
 
-      <div className="grid grid-cols-4 gap-2 bg-gray-300 dark:bg-slate-600 p-2 rounded-xl">
+      <div className="grid grid-cols-4 gap-2 rounded-xl bg-gray-300 p-2 dark:bg-slate-600">
         {board.flat().map((val, i) => (
           <div
             key={i}
             className={cn(
-              'w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center rounded-lg font-bold text-lg transition-all',
-              TILE_COLORS[val] || 'bg-purple-600 text-white text-lg'
+              'flex h-16 w-16 items-center justify-center rounded-lg text-lg font-bold transition-all sm:h-20 sm:w-20',
+              TILE_COLORS[val] || 'bg-purple-600 text-lg text-white'
             )}
           >
             {val > 0 ? val : ''}
@@ -176,15 +203,20 @@ export default function Game2048() {
       </div>
 
       {gameOver && (
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <p className="text-lg font-bold text-red-500">Game Over!</p>
           {result && (
             <div className="text-sm text-gray-500 dark:text-slate-400">
               <p>+{result.xp} XP</p>
-              {result.highscore && <p className="text-amber-500 font-bold">New Highscore!</p>}
+              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
             </div>
           )}
-          <button onClick={handleStart} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors">Main Lagi</button>
+          <button
+            onClick={handleStart}
+            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+          >
+            Main Lagi
+          </button>
         </div>
       )}
 

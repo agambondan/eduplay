@@ -1,10 +1,10 @@
-import axios from "axios";
-import { useAuthStore } from "@/lib/stores/authStore";
+import axios from 'axios';
+import { useAuthStore } from '@/lib/stores/authStore';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1',
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
 });
 

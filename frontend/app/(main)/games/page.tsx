@@ -1,56 +1,69 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import api from "@/lib/api/client";
-import { Game } from "@/types/game";
-import Link from "next/link";
+import { useQuery } from '@tanstack/react-query';
+import { gamesApi } from '@/lib/api/games';
+import { GameCard } from '@/components/ui/GameCard';
+import { useState } from 'react';
+import { GameCategory } from '@/types/game';
+import { cn } from '@/lib/utils/cn';
 
-export default function GameHubPage() {
-  const [games, setGames] = useState<Game[]>([]);
-  const [loading, setLoading] = useState(true);
+const CATEGORIES: { label: string; value: GameCategory | 'all' }[] = [
+  { label: 'Semua', value: 'all' },
+  { label: 'Math', value: 'math' },
+  { label: 'Language', value: 'language' },
+  { label: 'Geography', value: 'geography' },
+  { label: 'Logic', value: 'logic' },
+];
 
-  useEffect(() => {
-    api
-      .get("/games")
-      .then((res) => {
-        setGames(res.data.data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+export default function GamesPage() {
+  const [category, setCategory] = useState<GameCategory | 'all'>('all');
+  const { data: games, isLoading } = useQuery({
+    queryKey: ['games'],
+    queryFn: gamesApi.list,
+  });
 
-  if (loading) {
-    return <div className="text-center py-8">Loading games...</div>;
-  }
+  const filteredGames = games?.filter((g) => category === 'all' || g.category === category);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Pusat Game Edukasi</h1>
-        <p className="mt-2 text-sm text-gray-500">Pilih game edukatif seru untuk mulai bermain dan mengumpulkan XP!</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Game Hub</h1>
+        <p className="text-gray-500 dark:text-slate-400">Pilih game edukatif favoritmu!</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {games.map((game) => (
-          <div key={game.id} className="overflow-hidden rounded-lg bg-white shadow">
-            <div className="p-6 space-y-4">
-              <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 uppercase">
-                {game.category}
-              </span>
-              <h3 className="text-lg font-semibold leading-6 text-gray-900">{game.name}</h3>
-              <p className="text-sm text-gray-500 line-clamp-2">{game.description}</p>
-              <div className="pt-4">
-                <Link
-                  href={`/games/${game.slug}`}
-                  className="block w-full text-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
-                >
-                  Main Sekarang
-                </Link>
-              </div>
-            </div>
-          </div>
+      <div className="flex flex-wrap gap-2">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.value}
+            onClick={() => setCategory(cat.value)}
+            className={cn(
+              'px-4 py-2 rounded-full text-sm font-bold transition-all border',
+              category === cat.value
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+            )}
+          >
+            {cat.label}
+          </button>
         ))}
       </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-40 rounded-xl bg-gray-100 dark:bg-slate-800 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredGames?.map((game) => <GameCard key={game.id} game={game} />)}
+          {filteredGames?.length === 0 && (
+            <div className="col-span-full py-20 text-center">
+              <p className="text-gray-500">Tidak ada game di kategori ini.</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

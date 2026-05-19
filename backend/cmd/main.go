@@ -11,11 +11,13 @@ import (
 	"github.com/agambondan/eduplay/backend/internal/user"
 	"github.com/agambondan/eduplay/backend/pkg/database"
 	"github.com/agambondan/eduplay/backend/pkg/logger"
+	"github.com/getsentry/sentry-go"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"go.uber.org/zap"
+	"os"
 	"time"
 )
 
@@ -27,6 +29,17 @@ func main() {
 
 	logger.Init(cfg.App.Env)
 	defer logger.Log.Sync()
+
+	if dsn := os.Getenv("SENTRY_DSN"); dsn != "" {
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn:              dsn,
+			Environment:      cfg.App.Env,
+			TracesSampleRate: 0.2,
+		}); err != nil {
+			logger.Log.Warn("sentry init failed", zap.Error(err))
+		}
+		defer sentry.Flush(2 * time.Second)
+	}
 
 	database.ConnectPostgres(cfg)
 	database.ConnectRedis(cfg)
@@ -93,6 +106,7 @@ func main() {
 
 	userGroup := apiV1.Group("/user", auth.Middleware(cfg))
 	userGroup.Get("/me", userHandler.GetMe)
+	userGroup.Get("/stats", userHandler.GetStats)
 	userGroup.Patch("/profile", userHandler.UpdateProfile)
 	userGroup.Get("/achievements", achHandler.GetUserAchievements)
 
@@ -114,6 +128,9 @@ func main() {
 		Expiration: 1 * time.Minute,
 	}))
 	aiGroup.Post("/questions", aiHandler.GenerateQuestions)
+
+	// Start schedulers
+	daily.StartScheduler(gameRepo, aiSvc)
 
 	logger.Log.Info("Server starting", zap.String("port", cfg.App.Port))
 	if err := app.Listen(":" + cfg.App.Port); err != nil {

@@ -8,7 +8,7 @@ import (
 )
 
 type DailyChallenge struct {
-	ID            uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID            uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
 	GameID        uuid.UUID `gorm:"type:uuid;not null" json:"game_id"`
 	QuestionsJSON string    `gorm:"type:jsonb;not null" json:"questions"`
 	ChallengeDate time.Time `gorm:"type:date;uniqueIndex;not null" json:"challenge_date"`
@@ -23,7 +23,7 @@ func (dc *DailyChallenge) BeforeCreate(tx *gorm.DB) error {
 }
 
 type DailySubmission struct {
-	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
 	UserID      uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_user_challenge" json:"user_id"`
 	ChallengeID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_user_challenge" json:"challenge_id"`
 	Score       int       `gorm:"not null" json:"score"`

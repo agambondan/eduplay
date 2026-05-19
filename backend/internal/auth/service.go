@@ -65,6 +65,19 @@ func (s *service) Login(req LoginRequest) (*AuthResponse, error) {
 	}
 
 	now := time.Now()
+	if u.LastActive == nil {
+		u.Streak = 1
+	} else {
+		last := u.LastActive.Truncate(24 * time.Hour)
+		curr := now.Truncate(24 * time.Hour)
+		diff := curr.Sub(last).Hours() / 24
+
+		if diff == 1 {
+			u.Streak++
+		} else if diff > 1 {
+			u.Streak = 1
+		}
+	}
 	u.LastActive = &now
 	database.DB.Save(&u)
 

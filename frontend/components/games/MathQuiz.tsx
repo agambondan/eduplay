@@ -42,7 +42,9 @@ function generateQuestion(difficulty: Difficulty): Question {
       a = b * answer;
       break;
     default:
-      a = 1; b = 1; answer = 2;
+      a = 1;
+      b = 1;
+      answer = 2;
   }
 
   const options = generateOptions(answer);
@@ -61,8 +63,9 @@ function generateOptions(answer: number): number[] {
   return [...opts].sort(() => Math.random() - 0.5);
 }
 
-export default function MathQuiz() {
-  const { score, isPlaying, difficulty, addScore, startGame, endGame, submitScore } = useGame('math-quiz');
+export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
+  const { score, isPlaying, difficulty, addScore, startGame, endGame, submitScore } =
+    useGame('math-quiz');
   const [question, setQuestion] = useState<Question | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
@@ -109,7 +112,7 @@ export default function MathQuiz() {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Math Quiz Blitz</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Jawab soal matematika secepat mungkin dalam 60 detik!
         </p>
         <div className="flex gap-2">
@@ -118,7 +121,7 @@ export default function MathQuiz() {
               key={d}
               onClick={() => setSelectedDifficulty(d)}
               className={cn(
-                'px-4 py-2 rounded-lg font-medium capitalize transition-colors',
+                'rounded-lg px-4 py-2 font-medium capitalize transition-colors',
                 selectedDifficulty === d
                   ? 'bg-indigo-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
@@ -130,7 +133,7 @@ export default function MathQuiz() {
         </div>
         <button
           onClick={handleStart}
-          className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors"
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
           Mulai!
         </button>
@@ -143,16 +146,14 @@ export default function MathQuiz() {
       <div className="flex flex-col items-center gap-4 py-10">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Game Over!</h2>
         <ScoreBoard score={score} label="Final Score" />
-        <div className="text-center text-sm text-gray-500 dark:text-slate-400 space-y-1">
+        <div className="space-y-1 text-center text-sm text-gray-500 dark:text-slate-400">
           <p>{questionCount} soal dijawab</p>
           <p>+{result.xp} XP earned</p>
-          {result.highscore && (
-            <p className="text-amber-500 font-bold">New Highscore!</p>
-          )}
+          {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
         </div>
         <button
           onClick={handleStart}
-          className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors"
+          className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
         >
           Main Lagi
         </button>
@@ -170,7 +171,7 @@ export default function MathQuiz() {
       {question && (
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
-            <p className="text-3xl font-bold font-mono text-gray-900 dark:text-white">
+            <p className="font-mono text-3xl font-bold text-gray-900 dark:text-white">
               {question.text}
             </p>
           </div>
@@ -182,14 +183,14 @@ export default function MathQuiz() {
                 onClick={() => handleAnswer(opt)}
                 disabled={feedback !== null}
                 className={cn(
-                  'py-4 rounded-xl text-xl font-bold transition-all border-2',
+                  'rounded-xl border-2 py-4 text-xl font-bold transition-all',
                   feedback === null
-                    ? 'bg-white border-gray-200 text-gray-800 hover:border-indigo-400 hover:bg-indigo-50 active:scale-95 dark:bg-slate-800 dark:border-slate-600 dark:text-white dark:hover:border-indigo-500'
+                    ? 'border-gray-200 bg-white text-gray-800 hover:border-indigo-400 hover:bg-indigo-50 active:scale-95 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:hover:border-indigo-500'
                     : opt === question.answer
-                      ? 'bg-emerald-100 border-emerald-500 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      ? 'border-emerald-500 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                       : feedback === 'wrong' && opt !== question.answer
-                        ? 'bg-gray-50 border-gray-200 text-gray-400 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-500'
-                        : 'bg-gray-50 border-gray-200 text-gray-400 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-500'
+                        ? 'border-gray-200 bg-gray-50 text-gray-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
+                        : 'border-gray-200 bg-gray-50 text-gray-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
                 )}
               >
                 {opt}

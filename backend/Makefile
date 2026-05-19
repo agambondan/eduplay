@@ -1,4 +1,4 @@
-.PHONY: dev build run migrate test clean
+.PHONY: dev build run migrate test lint fmt clean
 
 dev:
 	air
@@ -12,10 +12,15 @@ run:
 test:
 	go test ./...
 
+lint:
+	golangci-lint run ./...
+
+fmt:
+	gofmt -w .
+	goimports -w .
+
 migrate:
 	@echo "Running migrations..."
-	# In a real setup, we'd use a migrator tool like golang-migrate
-	# For now, AutoMigrate is in main.go
 
 clean:
 	rm -rf tmp

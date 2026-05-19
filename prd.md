@@ -1,10 +1,11 @@
 # Product Requirements Document (PRD)
+
 ## EduPlay — Educational Mini Game Platform
 
 **Version:** 1.0.0  
 **Status:** Draft  
 **Last Updated:** 2026-05-20  
-**Author:** Product Team  
+**Author:** Product Team
 
 ---
 
@@ -35,6 +36,7 @@
 **EduPlay** adalah platform web-based educational mini game yang menggabungkan pembelajaran dengan gamifikasi. Platform ini menyediakan berbagai game edukatif ringan yang dapat diakses melalui browser (web) dan mobile (PWA) tanpa perlu instalasi dari app store.
 
 Platform dirancang untuk:
+
 - Menyediakan konten belajar yang menyenangkan untuk pelajar SD hingga SMA
 - Dapat dimonetisasi melalui iklan (Google AdSense/AdMob) dan sistem freemium
 - Scalable untuk ribuan pengguna concurrent
@@ -53,6 +55,7 @@ Platform dirancang untuk:
 ### 2.2 Solution
 
 Platform mini game edukatif berbasis web dengan:
+
 - Multi-kategori game (Math, Language, Geography, Logic)
 - Sistem gamifikasi (XP, Level, Streak, Achievement)
 - Daily challenge untuk meningkatkan retention
@@ -63,6 +66,7 @@ Platform mini game edukatif berbasis web dengan:
 ### 2.3 Product Scope
 
 **In Scope:**
+
 - Web platform (desktop & mobile browser)
 - PWA (installable dari browser)
 - User authentication (register/login)
@@ -73,6 +77,7 @@ Platform mini game edukatif berbasis web dengan:
 - Admin dashboard (basic)
 
 **Out of Scope (v1):**
+
 - Native iOS/Android app
 - Multiplayer real-time
 - Live classroom/teacher dashboard
@@ -85,22 +90,22 @@ Platform mini game edukatif berbasis web dengan:
 
 ### 3.1 Business Goals
 
-| Goal | Metric | Target (3 bulan) |
-|------|--------|-----------------|
-| User acquisition | Monthly Active Users (MAU) | 10,000 |
-| Retention | Day-7 retention rate | ≥ 25% |
-| Engagement | Avg session duration | ≥ 8 menit |
-| Monetization | Monthly ad revenue | Rp 5,000,000 |
-| Growth | Week-over-week user growth | ≥ 10% |
+| Goal             | Metric                     | Target (3 bulan) |
+| ---------------- | -------------------------- | ---------------- |
+| User acquisition | Monthly Active Users (MAU) | 10,000           |
+| Retention        | Day-7 retention rate       | ≥ 25%            |
+| Engagement       | Avg session duration       | ≥ 8 menit        |
+| Monetization     | Monthly ad revenue         | Rp 5,000,000     |
+| Growth           | Week-over-week user growth | ≥ 10%            |
 
 ### 3.2 Technical Goals
 
-| Goal | Metric | Target |
-|------|--------|--------|
-| Performance | Page load time (LCP) | < 2.5 detik |
-| Reliability | Uptime | ≥ 99.5% |
-| API Response | P95 response time | < 200ms |
-| Game responsiveness | Input lag | < 50ms |
+| Goal                | Metric               | Target      |
+| ------------------- | -------------------- | ----------- |
+| Performance         | Page load time (LCP) | < 2.5 detik |
+| Reliability         | Uptime               | ≥ 99.5%     |
+| API Response        | P95 response time    | < 200ms     |
+| Game responsiveness | Input lag            | < 50ms      |
 
 ---
 
@@ -109,18 +114,21 @@ Platform mini game edukatif berbasis web dengan:
 ### 4.1 Primary User Segments
 
 **Segment 1: Pelajar SD-SMP (7-14 tahun)**
+
 - Motivasi: Belajar dengan cara yang menyenangkan
 - Pain point: Buku dan video belajar membosankan
 - Perangkat: Smartphone (Android), tablet
 - Waktu main: Sepulang sekolah, weekend
 
 **Segment 2: Pelajar SMA (15-18 tahun)**
+
 - Motivasi: Persiapan ujian, tantangan soal
 - Pain point: Tidak ada cara menarik untuk drilling soal
 - Perangkat: Smartphone + laptop
 - Waktu main: Malam hari, sela waktu
 
 **Segment 3: Orang Tua & Guru**
+
 - Motivasi: Mencari media belajar yang aman untuk anak
 - Pain point: Konten tidak sesuai usia
 - Perangkat: Laptop/desktop
@@ -129,13 +137,17 @@ Platform mini game edukatif berbasis web dengan:
 ### 4.2 User Persona
 
 **Persona 1: Budi, 12 tahun**
+
 > "Bosen baca buku, pengen belajar tapi sambil main game"
+
 - Suka kompetisi, senang lihat skor tinggi
 - Kebutuhan: Game math dan bahasa yang seru
 - Motivasi: Leaderboard, achievement badge
 
 **Persona 2: Sari, 17 tahun**
+
 > "Perlu latihan soal yang banyak sebelum ujian"
+
 - Hasil belajar oriented, suka progress tracking
 - Kebutuhan: Quiz dengan banyak soal variatif
 - Motivasi: Level up, daily streak
@@ -146,68 +158,68 @@ Platform mini game edukatif berbasis web dengan:
 
 ### 5.1 Authentication
 
-| ID | Feature | Priority | Deskripsi |
-|----|---------|----------|-----------|
-| AUTH-01 | Register | P0 | Register dengan email + password |
-| AUTH-02 | Login | P0 | Login dengan email + password |
-| AUTH-03 | Guest Mode | P1 | Main tanpa akun, progress tidak tersimpan |
-| AUTH-04 | JWT Auth | P0 | Token-based authentication |
-| AUTH-05 | Refresh Token | P1 | Auto-renew session |
-| AUTH-06 | Logout | P0 | Clear session |
-| AUTH-07 | Google OAuth | P2 | Login dengan Google (v1.1) |
+| ID      | Feature       | Priority | Deskripsi                                 |
+| ------- | ------------- | -------- | ----------------------------------------- |
+| AUTH-01 | Register      | P0       | Register dengan email + password          |
+| AUTH-02 | Login         | P0       | Login dengan email + password             |
+| AUTH-03 | Guest Mode    | P1       | Main tanpa akun, progress tidak tersimpan |
+| AUTH-04 | JWT Auth      | P0       | Token-based authentication                |
+| AUTH-05 | Refresh Token | P1       | Auto-renew session                        |
+| AUTH-06 | Logout        | P0       | Clear session                             |
+| AUTH-07 | Google OAuth  | P2       | Login dengan Google (v1.1)                |
 
 ### 5.2 User Profile & Progress
 
-| ID | Feature | Priority | Deskripsi |
-|----|---------|----------|-----------|
-| PROF-01 | Profile Page | P0 | Username, level, XP, streak |
-| PROF-02 | XP System | P0 | Dapat XP dari setiap game yang dimainkan |
-| PROF-03 | Level System | P0 | Level naik berdasarkan total XP |
-| PROF-04 | Daily Streak | P0 | Streak bertambah jika main tiap hari |
-| PROF-05 | Achievement | P1 | Badge/achievement yang bisa di-unlock |
-| PROF-06 | Per-game stats | P1 | Highscore, total games, avg score per game |
-| PROF-07 | Progress History | P2 | Grafik progress mingguan/bulanan |
+| ID      | Feature          | Priority | Deskripsi                                  |
+| ------- | ---------------- | -------- | ------------------------------------------ |
+| PROF-01 | Profile Page     | P0       | Username, level, XP, streak                |
+| PROF-02 | XP System        | P0       | Dapat XP dari setiap game yang dimainkan   |
+| PROF-03 | Level System     | P0       | Level naik berdasarkan total XP            |
+| PROF-04 | Daily Streak     | P0       | Streak bertambah jika main tiap hari       |
+| PROF-05 | Achievement      | P1       | Badge/achievement yang bisa di-unlock      |
+| PROF-06 | Per-game stats   | P1       | Highscore, total games, avg score per game |
+| PROF-07 | Progress History | P2       | Grafik progress mingguan/bulanan           |
 
 ### 5.3 Game System
 
-| ID | Feature | Priority | Deskripsi |
-|----|---------|----------|-----------|
-| GAME-01 | Game Hub | P0 | Halaman utama dengan daftar semua game |
-| GAME-02 | Game Categories | P0 | Filter per kategori (Math, Language, etc.) |
-| GAME-03 | Score Submit | P0 | Submit skor ke server setelah game selesai |
-| GAME-04 | Highscore | P0 | Simpan dan tampilkan highscore user |
-| GAME-05 | Game Timer | P0 | Timer pada game yang berbasis waktu |
-| GAME-06 | AI Questions | P1 | Generate soal dinamis via Claude API |
-| GAME-07 | Difficulty Level | P1 | Easy / Medium / Hard |
-| GAME-08 | Sound FX | P2 | Efek suara (mute-able) |
+| ID      | Feature          | Priority | Deskripsi                                  |
+| ------- | ---------------- | -------- | ------------------------------------------ |
+| GAME-01 | Game Hub         | P0       | Halaman utama dengan daftar semua game     |
+| GAME-02 | Game Categories  | P0       | Filter per kategori (Math, Language, etc.) |
+| GAME-03 | Score Submit     | P0       | Submit skor ke server setelah game selesai |
+| GAME-04 | Highscore        | P0       | Simpan dan tampilkan highscore user        |
+| GAME-05 | Game Timer       | P0       | Timer pada game yang berbasis waktu        |
+| GAME-06 | AI Questions     | P1       | Generate soal dinamis via Claude API       |
+| GAME-07 | Difficulty Level | P1       | Easy / Medium / Hard                       |
+| GAME-08 | Sound FX         | P2       | Efek suara (mute-able)                     |
 
 ### 5.4 Leaderboard
 
-| ID | Feature | Priority | Deskripsi |
-|----|---------|----------|-----------|
-| LEAD-01 | Per-game leaderboard | P0 | Top 100 skor per game |
-| LEAD-02 | Global leaderboard | P1 | Ranking berdasarkan total XP |
-| LEAD-03 | Weekly reset | P1 | Leaderboard mingguan (reset tiap Senin) |
-| LEAD-04 | User rank display | P1 | Tampilkan posisi user saat ini |
+| ID      | Feature              | Priority | Deskripsi                               |
+| ------- | -------------------- | -------- | --------------------------------------- |
+| LEAD-01 | Per-game leaderboard | P0       | Top 100 skor per game                   |
+| LEAD-02 | Global leaderboard   | P1       | Ranking berdasarkan total XP            |
+| LEAD-03 | Weekly reset         | P1       | Leaderboard mingguan (reset tiap Senin) |
+| LEAD-04 | User rank display    | P1       | Tampilkan posisi user saat ini          |
 
 ### 5.5 Daily Challenge
 
-| ID | Feature | Priority | Deskripsi |
-|----|---------|----------|-----------|
-| DC-01 | Daily quiz | P0 | 1 set soal spesial per hari (reset 00:00 WIB) |
-| DC-02 | Bonus XP | P0 | XP 2x jika complete daily challenge |
-| DC-03 | Streak reward | P1 | Reward khusus jika streak 7/30 hari |
-| DC-04 | Countdown timer | P0 | Tampilkan sisa waktu hingga reset |
+| ID    | Feature         | Priority | Deskripsi                                     |
+| ----- | --------------- | -------- | --------------------------------------------- |
+| DC-01 | Daily quiz      | P0       | 1 set soal spesial per hari (reset 00:00 WIB) |
+| DC-02 | Bonus XP        | P0       | XP 2x jika complete daily challenge           |
+| DC-03 | Streak reward   | P1       | Reward khusus jika streak 7/30 hari           |
+| DC-04 | Countdown timer | P0       | Tampilkan sisa waktu hingga reset             |
 
 ### 5.6 Monetisasi
 
-| ID | Feature | Priority | Deskripsi |
-|----|---------|----------|-----------|
-| ADS-01 | Banner Ads | P0 | Banner di bawah layar, semua halaman |
-| ADS-02 | Interstitial Ads | P0 | Full-screen ads saat game over / antar level |
-| ADS-03 | Rewarded Ads | P1 | Nonton iklan → dapat hint / extra attempt |
-| ADS-04 | Ad frequency cap | P0 | Max 1 interstitial per 3 menit per user |
-| ADS-05 | Ad-free mode | P2 | Remove ads via one-time IAP (v1.1) |
+| ID     | Feature          | Priority | Deskripsi                                    |
+| ------ | ---------------- | -------- | -------------------------------------------- |
+| ADS-01 | Banner Ads       | P0       | Banner di bawah layar, semua halaman         |
+| ADS-02 | Interstitial Ads | P0       | Full-screen ads saat game over / antar level |
+| ADS-03 | Rewarded Ads     | P1       | Nonton iklan → dapat hint / extra attempt    |
+| ADS-04 | Ad frequency cap | P0       | Max 1 interstitial per 3 menit per user      |
+| ADS-05 | Ad-free mode     | P2       | Remove ads via one-time IAP (v1.1)           |
 
 ---
 
@@ -220,6 +232,7 @@ Semua game **tidak mengandung gambar manusia atau makhluk hidup**. Menggunakan e
 ---
 
 #### 6.1 Math Quiz Blitz
+
 - **Kategori:** Math
 - **Deskripsi:** Jawab soal matematika (penjumlahan, pengurangan, perkalian, pembagian) secepat mungkin dalam 60 detik
 - **Mechanic:** Pilihan ganda 4 opsi, timer per soal 10 detik
@@ -229,6 +242,7 @@ Semua game **tidak mengandung gambar manusia atau makhluk hidup**. Menggunakan e
 - **AI Integration:** Claude API generate soal bervariasi (cerita soal, word problem)
 
 #### 6.2 Times Table Challenge
+
 - **Kategori:** Math
 - **Deskripsi:** Drilling perkalian 1-12 secara gamified
 - **Mechanic:** Fill-in-the-blank, ada progress bar per tabel
@@ -237,6 +251,7 @@ Semua game **tidak mengandung gambar manusia atau makhluk hidup**. Menggunakan e
 - **Ad slot:** Rewarded (hint), banner
 
 #### 6.3 Wordle Bahasa Indonesia
+
 - **Kategori:** Language
 - **Deskripsi:** Tebak kata bahasa Indonesia 5 huruf dalam 6 percobaan
 - **Mechanic:** Keyboard virtual, color feedback (hijau/kuning/abu)
@@ -246,6 +261,7 @@ Semua game **tidak mengandung gambar manusia atau makhluk hidup**. Menggunakan e
 - **Data:** Database kata bahasa Indonesia KBBI (min 500 kata)
 
 #### 6.4 Spelling Bee
+
 - **Kategori:** Language
 - **Deskripsi:** Susun huruf-huruf acak menjadi kata yang benar
 - **Mechanic:** Drag & drop huruf, ada clue berupa definisi
@@ -254,6 +270,7 @@ Semua game **tidak mengandung gambar manusia atau makhluk hidup**. Menggunakan e
 - **AI Integration:** Claude API generate definisi dan hint
 
 #### 6.5 Flag Quiz
+
 - **Kategori:** Geography
 - **Deskripsi:** Tebak nama negara dari gambar benderanya
 - **Mechanic:** Pilihan ganda 4 opsi, 30 soal per ronde
@@ -263,6 +280,7 @@ Semua game **tidak mengandung gambar manusia atau makhluk hidup**. Menggunakan e
 - **Data:** 195 negara dengan bendera SVG
 
 #### 6.6 Capital City Quiz
+
 - **Kategori:** Geography
 - **Deskripsi:** Tebak ibukota dari nama negara (atau sebaliknya)
 - **Mechanic:** Pilihan ganda + mode ketik
@@ -271,6 +289,7 @@ Semua game **tidak mengandung gambar manusia atau makhluk hidup**. Menggunakan e
 - **AI Integration:** Generate konteks/fakta menarik tentang kota
 
 #### 6.7 Sudoku
+
 - **Kategori:** Logic
 - **Deskripsi:** Classic Sudoku 9x9
 - **Mechanic:** Isi grid, highlight conflict otomatis, pencil mode
@@ -280,6 +299,7 @@ Semua game **tidak mengandung gambar manusia atau makhluk hidup**. Menggunakan e
 - **Generator:** Algoritam backtracking untuk generate puzzle valid
 
 #### 6.8 2048
+
 - **Kategori:** Logic
 - **Deskripsi:** Classic 2048 — geser tile, gabungkan angka yang sama
 - **Mechanic:** Swipe/arrow keys, tile merge animation
@@ -290,16 +310,16 @@ Semua game **tidak mengandung gambar manusia atau makhluk hidup**. Menggunakan e
 
 ### Roadmap Games (v1.1 — v1.3)
 
-| Game | Kategori | Version |
-|------|----------|---------|
-| Nonogram | Logic | v1.1 |
-| Crossword Indonesia | Language | v1.1 |
-| Mental Math Speed | Math | v1.1 |
-| Element Quiz (Kimia) | Science | v1.2 |
-| Timeline History | History | v1.2 |
-| Bubble Shooter (Math) | Math | v1.2 |
-| Word Search | Language | v1.3 |
-| Brick Breaker (Soal) | Math | v1.3 |
+| Game                  | Kategori | Version |
+| --------------------- | -------- | ------- |
+| Nonogram              | Logic    | v1.1    |
+| Crossword Indonesia   | Language | v1.1    |
+| Mental Math Speed     | Math     | v1.1    |
+| Element Quiz (Kimia)  | Science  | v1.2    |
+| Timeline History      | History  | v1.2    |
+| Bubble Shooter (Math) | Math     | v1.2    |
+| Word Search           | Language | v1.3    |
+| Brick Breaker (Soal)  | Math     | v1.3    |
 
 ---
 
@@ -307,10 +327,10 @@ Semua game **tidak mengandung gambar manusia atau makhluk hidup**. Menggunakan e
 
 ### 7.1 Ad Network
 
-| Platform | Channel | Format |
-|----------|---------|--------|
-| Google AdSense | Web (desktop/mobile browser) | Banner, Interstitial |
-| Google AdMob | PWA / Mobile | Banner, Interstitial, Rewarded |
+| Platform       | Channel                      | Format                         |
+| -------------- | ---------------------------- | ------------------------------ |
+| Google AdSense | Web (desktop/mobile browser) | Banner, Interstitial           |
+| Google AdMob   | PWA / Mobile                 | Banner, Interstitial, Rewarded |
 
 ### 7.2 Ad Placement Rules
 
@@ -333,12 +353,12 @@ Rewarded Ads:
 
 ### 7.3 Revenue Projections
 
-| Metric | Estimasi |
-|--------|---------|
-| CPM Banner (Indonesia) | Rp 2,000 - 5,000 |
-| CPM Interstitial | Rp 8,000 - 15,000 |
-| CPM Rewarded | Rp 15,000 - 30,000 |
-| Avg session = 8 menit | ~3 interstitial + 1 rewarded per session |
+| Metric                 | Estimasi                                 |
+| ---------------------- | ---------------------------------------- |
+| CPM Banner (Indonesia) | Rp 2,000 - 5,000                         |
+| CPM Interstitial       | Rp 8,000 - 15,000                        |
+| CPM Rewarded           | Rp 15,000 - 30,000                       |
+| Avg session = 8 menit  | ~3 interstitial + 1 rewarded per session |
 
 ---
 
@@ -410,6 +430,7 @@ Touch target minimum: 44x44px
 Menggunakan **shadcn/ui** sebagai base component library dengan customisasi tema.
 
 Komponen utama yang dibutuhkan:
+
 - `GameCard` — card untuk setiap game di hub
 - `ScoreBoard` — tampilan skor real-time dalam game
 - `Timer` — countdown timer dengan animasi
@@ -486,41 +507,43 @@ Dashboard (Logged In)
 
 ### 9.2 Frontend Stack (Next.js)
 
-| Teknologi | Versi | Fungsi |
-|-----------|-------|--------|
-| Next.js | 14+ | Framework utama, App Router |
-| React | 18+ | UI library |
-| TypeScript | 5+ | Type safety |
-| Tailwind CSS | 3+ | Styling |
-| shadcn/ui | latest | Component library |
-| Zustand | 4+ | Client state (game state) |
-| TanStack Query | 5+ | Server state, API caching |
-| Framer Motion | 10+ | Animasi game & UI |
-| next-pwa | latest | PWA support, service worker |
-| Zod | 3+ | Form & API validation |
-| React Hook Form | 7+ | Form management |
+| Teknologi       | Versi  | Fungsi                      |
+| --------------- | ------ | --------------------------- |
+| Next.js         | 14+    | Framework utama, App Router |
+| React           | 18+    | UI library                  |
+| TypeScript      | 5+     | Type safety                 |
+| Tailwind CSS    | 3+     | Styling                     |
+| shadcn/ui       | latest | Component library           |
+| Zustand         | 4+     | Client state (game state)   |
+| TanStack Query  | 5+     | Server state, API caching   |
+| Framer Motion   | 10+    | Animasi game & UI           |
+| next-pwa        | latest | PWA support, service worker |
+| Zod             | 3+     | Form & API validation       |
+| React Hook Form | 7+     | Form management             |
 
 ### 9.3 Backend Stack (Go)
 
-| Teknologi | Versi | Fungsi |
-|-----------|-------|--------|
-| Go | 1.22+ | Bahasa utama |
-| Fiber | v2 | HTTP framework (Express-like, fast) |
-| GORM | v2 | ORM untuk PostgreSQL |
-| go-redis | v9 | Redis client |
-| golang-jwt | v5 | JWT token management |
-| Viper | latest | Configuration management |
-| Zap | latest | Structured logging |
-| Validator | v10 | Request validation |
-| godotenv | latest | .env file loading |
-| Air | latest | Hot reload (dev only) |
+| Teknologi  | Versi  | Fungsi                              |
+| ---------- | ------ | ----------------------------------- |
+| Go         | 1.22+  | Bahasa utama                        |
+| Fiber      | v2     | HTTP framework (Express-like, fast) |
+| GORM       | v2     | ORM untuk PostgreSQL                |
+| go-redis   | v9     | Redis client                        |
+| golang-jwt | v5     | JWT token management                |
+| Viper      | latest | Configuration management            |
+| Zap        | latest | Structured logging                  |
+| Validator  | v10    | Request validation                  |
+| godotenv   | latest | .env file loading                   |
+| Air        | latest | Hot reload (dev only)               |
 
 ### 9.4 Database
 
 **PostgreSQL** — Data persisten (users, scores, achievements)
+
 - Provider: Neon (free tier) atau Supabase
 
 **Redis** — Cache & real-time data
+
 - Leaderboard (Sorted Sets)
 - Session/JWT blacklist
 - Daily challenge cache
@@ -529,15 +552,15 @@ Dashboard (Logged In)
 
 ### 9.5 External Services
 
-| Service | Fungsi | Provider |
-|---------|--------|---------|
+| Service               | Fungsi                | Provider             |
+| --------------------- | --------------------- | -------------------- |
 | AI Question Generator | Generate soal dinamis | Anthropic Claude API |
-| Ads Web | Monetisasi web | Google AdSense |
-| Ads Mobile/PWA | Monetisasi mobile | Google AdMob |
-| Email | Verifikasi email | Resend (free tier) |
-| CDN | Asset delivery | Cloudflare |
-| Monitoring | Error tracking | Sentry (free tier) |
-| Analytics | User analytics | Google Analytics 4 |
+| Ads Web               | Monetisasi web        | Google AdSense       |
+| Ads Mobile/PWA        | Monetisasi mobile     | Google AdMob         |
+| Email                 | Verifikasi email      | Resend (free tier)   |
+| CDN                   | Asset delivery        | Cloudflare           |
+| Monitoring            | Error tracking        | Sentry (free tier)   |
+| Analytics             | User analytics        | Google Analytics 4   |
 
 ### 9.6 Frontend Project Structure
 
@@ -964,28 +987,29 @@ Response: { questions[] }
 
 ### 13.1 Frontend
 
-| Metric | Target |
-|--------|--------|
-| LCP (Largest Contentful Paint) | < 2.5 detik |
-| FID (First Input Delay) | < 100ms |
-| CLS (Cumulative Layout Shift) | < 0.1 |
-| Bundle size (initial JS) | < 200KB gzipped |
-| Game frame rate | 60fps |
-| Game input lag | < 50ms |
+| Metric                         | Target          |
+| ------------------------------ | --------------- |
+| LCP (Largest Contentful Paint) | < 2.5 detik     |
+| FID (First Input Delay)        | < 100ms         |
+| CLS (Cumulative Layout Shift)  | < 0.1           |
+| Bundle size (initial JS)       | < 200KB gzipped |
+| Game frame rate                | 60fps           |
+| Game input lag                 | < 50ms          |
 
 ### 13.2 Backend
 
-| Metric | Target |
-|--------|--------|
-| API response time P50 | < 50ms |
-| API response time P95 | < 200ms |
-| API response time P99 | < 500ms |
-| Concurrent users | 1,000 (v1) |
-| Uptime SLA | 99.5% |
+| Metric                | Target     |
+| --------------------- | ---------- |
+| API response time P50 | < 50ms     |
+| API response time P95 | < 200ms    |
+| API response time P99 | < 500ms    |
+| Concurrent users      | 1,000 (v1) |
+| Uptime SLA            | 99.5%      |
 
 ### 13.3 Optimization Strategies
 
 **Frontend:**
+
 - Code splitting per route dengan Next.js App Router
 - Game assets (SVG flags) di-lazy load
 - Images dioptimasi dengan `next/image`
@@ -993,6 +1017,7 @@ Response: { questions[] }
 - Prefetch leaderboard data
 
 **Backend:**
+
 - Leaderboard di Redis (O(log N) sorted set operations)
 - AI questions di-cache Redis 1 jam
 - Database connection pooling (GORM)
@@ -1004,11 +1029,11 @@ Response: { questions[] }
 
 ### 14.1 Environment
 
-| Environment | Frontend | Backend | Database |
-|-------------|---------|---------|---------|
-| Development | localhost:3000 | localhost:8080 | Docker (local) |
-| Staging | Vercel Preview | Railway | Neon (staging) |
-| Production | Vercel | Railway / Fly.io | Neon / Supabase |
+| Environment | Frontend       | Backend          | Database        |
+| ----------- | -------------- | ---------------- | --------------- |
+| Development | localhost:3000 | localhost:8080   | Docker (local)  |
+| Staging     | Vercel Preview | Railway          | Neon (staging)  |
+| Production  | Vercel         | Railway / Fly.io | Neon / Supabase |
 
 ### 14.2 Deployment Stack
 
@@ -1034,19 +1059,19 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: secret
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
 
   backend:
     build: ./backend
     ports:
-      - "8080:8080"
+      - '8080:8080'
     env_file: ./backend/.env
     depends_on:
       - postgres
@@ -1059,6 +1084,7 @@ volumes:
 ### 14.4 Environment Variables
 
 **Backend (.env)**
+
 ```env
 APP_ENV=development
 APP_PORT=8080
@@ -1083,6 +1109,7 @@ FRONTEND_URL=http://localhost:3000
 ```
 
 **Frontend (.env.local)**
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 NEXT_PUBLIC_ADSENSE_CLIENT_ID=ca-pub-xxxxxx
@@ -1096,6 +1123,7 @@ NEXT_PUBLIC_GA_ID=G-xxxxxx
 ### Phase 1 — Foundation (Week 1-3)
 
 **Backend:**
+
 - [ ] Project setup (Fiber, GORM, Redis)
 - [ ] Database migrations
 - [ ] Auth module (register, login, JWT)
@@ -1104,6 +1132,7 @@ NEXT_PUBLIC_GA_ID=G-xxxxxx
 - [ ] Unit tests untuk auth & game service
 
 **Frontend:**
+
 - [ ] Next.js project setup + Tailwind + shadcn
 - [ ] Auth pages (login, register)
 - [ ] Main layout (navbar, bottom nav mobile)
@@ -1112,12 +1141,14 @@ NEXT_PUBLIC_GA_ID=G-xxxxxx
 ### Phase 2 — Core Games (Week 4-6)
 
 **Games (Frontend):**
+
 - [ ] Math Quiz Blitz
 - [ ] Wordle Bahasa Indonesia
 - [ ] 2048
 - [ ] Sudoku
 
 **Backend:**
+
 - [ ] Leaderboard module (Redis sorted set)
 - [ ] XP & level calculation logic
 - [ ] Score validation
@@ -1125,12 +1156,14 @@ NEXT_PUBLIC_GA_ID=G-xxxxxx
 ### Phase 3 — Engagement (Week 7-9)
 
 **Games (Frontend):**
+
 - [ ] Times Table Challenge
 - [ ] Spelling Bee
 - [ ] Flag Quiz
 - [ ] Capital City Quiz
 
 **Features:**
+
 - [ ] Daily Challenge system
 - [ ] Achievement system
 - [ ] Streak system
@@ -1159,14 +1192,14 @@ NEXT_PUBLIC_GA_ID=G-xxxxxx
 
 ## 16. Risks & Mitigations
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|-----------|
-| AdSense approval ditolak | Medium | High | Pastikan konten original, no copyright issues, privacy policy ada |
-| Claude API cost tinggi | Medium | Medium | Cache hasil AI di Redis, rate limit endpoint, set budget cap |
-| Low user retention | Medium | High | Daily streak, push notification (PWA), weekly leaderboard |
-| Mobile performance lambat | Low | High | Test di low-end device, optimasi bundle, lazy load |
-| Cheat / score manipulation | Medium | Medium | Server-side validation, anomaly detection |
-| Database cost membengkak | Low | Medium | Monitor query, pagination, archive old sessions |
+| Risk                       | Probability | Impact | Mitigation                                                        |
+| -------------------------- | ----------- | ------ | ----------------------------------------------------------------- |
+| AdSense approval ditolak   | Medium      | High   | Pastikan konten original, no copyright issues, privacy policy ada |
+| Claude API cost tinggi     | Medium      | Medium | Cache hasil AI di Redis, rate limit endpoint, set budget cap      |
+| Low user retention         | Medium      | High   | Daily streak, push notification (PWA), weekly leaderboard         |
+| Mobile performance lambat  | Low         | High   | Test di low-end device, optimasi bundle, lazy load                |
+| Cheat / score manipulation | Medium      | Medium | Server-side validation, anomaly detection                         |
+| Database cost membengkak   | Low         | Medium | Monitor query, pagination, archive old sessions                   |
 
 ---
 
@@ -1205,19 +1238,19 @@ Level thresholds:
 
 ## Appendix B: Achievement List (v1)
 
-| Slug | Nama | Trigger | XP Reward |
-|------|------|---------|-----------|
-| first-game | Pemula | Main game pertama kali | 50 |
-| streak-3 | Konsisten | Streak 3 hari | 100 |
-| streak-7 | Rajin | Streak 7 hari | 300 |
-| streak-30 | Dedikasi | Streak 30 hari | 1000 |
-| math-master | Math Master | Skor 500+ di Math Quiz | 200 |
-| wordle-genius | Wordle Genius | Tebak Wordle dalam 2 percobaan | 300 |
-| daily-5 | Daily Warrior | Complete 5 daily challenge | 200 |
-| top-10 | Elite | Masuk top 10 leaderboard | 500 |
-| level-5 | Naik Kelas | Capai Level 5 | 0 (milestone) |
-| all-games | Explorer | Coba semua game | 300 |
+| Slug          | Nama          | Trigger                        | XP Reward     |
+| ------------- | ------------- | ------------------------------ | ------------- |
+| first-game    | Pemula        | Main game pertama kali         | 50            |
+| streak-3      | Konsisten     | Streak 3 hari                  | 100           |
+| streak-7      | Rajin         | Streak 7 hari                  | 300           |
+| streak-30     | Dedikasi      | Streak 30 hari                 | 1000          |
+| math-master   | Math Master   | Skor 500+ di Math Quiz         | 200           |
+| wordle-genius | Wordle Genius | Tebak Wordle dalam 2 percobaan | 300           |
+| daily-5       | Daily Warrior | Complete 5 daily challenge     | 200           |
+| top-10        | Elite         | Masuk top 10 leaderboard       | 500           |
+| level-5       | Naik Kelas    | Capai Level 5                  | 0 (milestone) |
+| all-games     | Explorer      | Coba semua game                | 300           |
 
 ---
 
-*Dokumen ini bersifat living document dan akan diupdate seiring perkembangan produk.*
+_Dokumen ini bersifat living document dan akan diupdate seiring perkembangan produk._

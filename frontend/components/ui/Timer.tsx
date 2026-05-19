@@ -21,9 +21,14 @@ export function Timer({ initialSeconds, onTimeUp, isRunning = true }: TimerProps
   }, [seconds, isRunning, onTimeUp]);
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl dark:bg-slate-700">
+    <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2 dark:bg-slate-700">
       <span className="text-sm font-medium text-gray-600 dark:text-slate-300">Time:</span>
-      <span className={cn('text-xl font-bold font-mono', seconds <= 10 ? 'text-rose-600 animate-pulse' : 'text-gray-900 dark:text-white')}>
+      <span
+        className={cn(
+          'font-mono text-xl font-bold',
+          seconds <= 10 ? 'animate-pulse text-rose-600' : 'text-gray-900 dark:text-white'
+        )}
+      >
         {seconds}s
       </span>
     </div>

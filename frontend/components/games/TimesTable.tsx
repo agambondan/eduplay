@@ -66,15 +66,19 @@ export default function TimesTable() {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Times Table Challenge</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">Latih perkalian 1-12 dengan gamified drilling!</p>
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
+          Latih perkalian 1-12 dengan gamified drilling!
+        </p>
         <div className="grid grid-cols-4 gap-2">
           {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
             <button
               key={n}
               onClick={() => setSelectedTable(n)}
               className={cn(
-                'px-4 py-2 rounded-lg font-medium text-sm border transition-colors',
-                selectedTable === n ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'
+                'rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
+                selectedTable === n
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'
               )}
             >
               Tabel {n}
@@ -83,14 +87,19 @@ export default function TimesTable() {
           <button
             onClick={() => setSelectedTable('mix')}
             className={cn(
-              'col-span-4 px-4 py-2 rounded-lg font-bold text-sm border transition-colors',
-              selectedTable === 'mix' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'
+              'col-span-4 rounded-lg border px-4 py-2 text-sm font-bold transition-colors',
+              selectedTable === 'mix'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'
             )}
           >
             Campuran (1-12)
           </button>
         </div>
-        <button onClick={handleStart} className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors">
+        <button
+          onClick={handleStart}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+        >
           Mulai!
         </button>
       </div>
@@ -104,8 +113,8 @@ export default function TimesTable() {
         <span className="text-sm text-gray-500 dark:text-slate-400">Soal {questionCount}/10</span>
       </div>
 
-      <div className="text-center space-y-6">
-        <p className="text-4xl font-bold font-mono text-gray-900 dark:text-white">
+      <div className="space-y-6 text-center">
+        <p className="font-mono text-4xl font-bold text-gray-900 dark:text-white">
           {numA} × {numB} = ?
         </p>
 
@@ -116,35 +125,43 @@ export default function TimesTable() {
             onChange={(e) => setAnswer(e.target.value)}
             disabled={feedback !== null}
             placeholder="Jawab..."
-            className="px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl text-xl font-bold font-mono w-32 text-center bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-32 rounded-xl border border-gray-300 bg-white px-4 py-3 text-center font-mono text-xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             autoFocus
           />
           <button
             type="submit"
             disabled={feedback !== null || !answer}
-            className="px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors"
+            className="rounded-xl bg-indigo-600 px-6 font-bold text-white transition-colors hover:bg-indigo-700"
           >
             Submit
           </button>
         </form>
 
         {feedback && (
-          <p className={cn('text-lg font-bold animate-pulse', feedback === 'correct' ? 'text-emerald-500' : 'text-red-500')}>
+          <p
+            className={cn(
+              'animate-pulse text-lg font-bold',
+              feedback === 'correct' ? 'text-emerald-500' : 'text-red-500'
+            )}
+          >
             {feedback === 'correct' ? 'Benar!' : 'Salah!'}
           </p>
         )}
       </div>
 
       {gameOver && (
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <p className="text-lg font-bold text-emerald-600">Selesai!</p>
           {result && (
             <div className="text-sm text-gray-500">
               <p>+{result.xp} XP</p>
-              {result.highscore && <p className="text-amber-500 font-bold">New Highscore!</p>}
+              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
             </div>
           )}
-          <button onClick={handleStart} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors">
+          <button
+            onClick={handleStart}
+            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+          >
             Main Lagi
           </button>
         </div>

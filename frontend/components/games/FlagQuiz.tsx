@@ -45,11 +45,11 @@ function generateQuestion() {
 
 export default function FlagQuiz() {
   const { score, isPlaying, addScore, startGame, endGame, submitScore } = useGame('flag-quiz');
-  const [question, setQuestion] = useState<{correct: FlagItem; options: string[]} | null>(null);
+  const [question, setQuestion] = useState<{ correct: FlagItem; options: string[] } | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [count, setCount] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [result, setResult] = useState<{xp:number; highscore:boolean}|null>(null);
+  const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
 
   const next = useCallback(() => {
     setQuestion(generateQuestion());
@@ -74,16 +74,16 @@ export default function FlagQuiz() {
       setFeedback('wrong');
       addScore(-2);
     }
-    setCount((c)=>c+1);
-    if (count+1 >= 12) {
-      setTimeout(async()=>{
+    setCount((c) => c + 1);
+    if (count + 1 >= 12) {
+      setTimeout(async () => {
         setGameOver(true);
         endGame();
         const res = await submitScore();
-        if (res) setResult({xp:res.xp_earned, highscore:res.new_highscore});
-      },600);
+        if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
+      }, 600);
     } else {
-      setTimeout(()=>next(),600);
+      setTimeout(() => next(), 600);
     }
   };
 
@@ -91,8 +91,15 @@ export default function FlagQuiz() {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Flag Quiz</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">Tebak nama negara dari bendera geometri.</p>
-        <button onClick={handleStart} className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors">Mulai!</button>
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
+          Tebak nama negara dari bendera geometri.
+        </p>
+        <button
+          onClick={handleStart}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+        >
+          Mulai!
+        </button>
       </div>
     );
   }
@@ -106,7 +113,7 @@ export default function FlagQuiz() {
 
       {question && (
         <div className="flex flex-col items-center gap-4">
-          <div className="w-32 h-32 relative">
+          <div className="relative h-32 w-32">
             <Image
               src={`/flags/${question.correct.code}.svg`}
               alt="Bendera"
@@ -114,19 +121,19 @@ export default function FlagQuiz() {
               className="object-contain"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
+          <div className="grid w-full max-w-sm grid-cols-2 gap-3">
             {question.options.map((opt) => (
               <button
                 key={opt}
                 onClick={() => handleAnswer(opt)}
                 disabled={feedback !== null}
                 className={cn(
-                  'py-2 px-3 rounded-xl font-medium border-2 transition-colors',
-                  feedback===null
-                    ? 'bg-white border-gray-200 text-gray-800 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white'
-                    : opt===question.correct.country
-                      ? 'bg-emerald-100 border-emerald-500 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      : 'bg-gray-50 border-gray-200 text-gray-400 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-500'
+                  'rounded-xl border-2 px-3 py-2 font-medium transition-colors',
+                  feedback === null
+                    ? 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white'
+                    : opt === question.correct.country
+                      ? 'border-emerald-500 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : 'border-gray-200 bg-gray-50 text-gray-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
                 )}
               >
                 {opt}
@@ -137,19 +144,32 @@ export default function FlagQuiz() {
       )}
 
       {feedback && (
-        <p className={cn('text-lg font-bold animate-pulse', feedback==='correct' ? 'text-emerald-500' : 'text-red-500')}> {feedback==='correct' ? 'Benar!' : 'Salah!'} </p>
+        <p
+          className={cn(
+            'animate-pulse text-lg font-bold',
+            feedback === 'correct' ? 'text-emerald-500' : 'text-red-500'
+          )}
+        >
+          {' '}
+          {feedback === 'correct' ? 'Benar!' : 'Salah!'}{' '}
+        </p>
       )}
 
       {gameOver && (
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <p className="text-lg font-bold text-emerald-600">Selesai!</p>
           {result && (
             <div className="text-sm text-gray-500">
               <p>+{result.xp} XP</p>
-              {result.highscore && <p className="text-amber-500 font-bold">New Highscore!</p>}
+              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
             </div>
           )}
-          <button onClick={handleStart} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors">Main Lagi</button>
+          <button
+            onClick={handleStart}
+            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+          >
+            Main Lagi
+          </button>
         </div>
       )}
     </div>

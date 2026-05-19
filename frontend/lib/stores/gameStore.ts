@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { Difficulty } from "@/types/game";
+import { create } from 'zustand';
+import { Difficulty } from '@/types/game';
 
 interface GameState {
   score: number;
@@ -18,7 +18,7 @@ export const useGameStore = create<GameState>((set) => ({
   score: 0,
   isPlaying: false,
   timeLeft: 60,
-  difficulty: "easy",
+  difficulty: 'easy',
   setScore: (score) => set({ score }),
   addScore: (points) => set((state) => ({ score: state.score + points })),
   setPlaying: (isPlaying) => set({ isPlaying }),

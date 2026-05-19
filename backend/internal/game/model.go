@@ -8,7 +8,7 @@ import (
 )
 
 type Game struct {
-    ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+    ID          uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
     Slug        string    `gorm:"uniqueIndex;size:50;not null" json:"slug"`
     Name        string    `gorm:"size:100;not null" json:"name"`
     Description string    `gorm:"type:text" json:"description"`
@@ -25,7 +25,7 @@ func (g *Game) BeforeCreate(tx *gorm.DB) error {
 }
 
 type GameSession struct {
-    ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+    ID         uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
     UserID     uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
     GameID     uuid.UUID `gorm:"type:uuid;not null" json:"game_id"`
     Score      int       `gorm:"not null;default:0" json:"score"`

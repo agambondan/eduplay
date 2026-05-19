@@ -1,35 +1,39 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { authApi } from "@/lib/api/auth";
-import { useAuthStore } from "@/lib/stores/authStore";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { authApi } from '@/lib/api/auth';
+import { useAuthStore } from '@/lib/stores/authStore';
 
 const loginSchema = z.object({
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
+  email: z.string().email('Email tidak valid'),
+  password: z.string().min(6, 'Password minimal 6 karakter'),
 });
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = async (data: any) => {
     try {
-      setError("");
+      setError('');
       const res = await authApi.login(data);
       setAuth(res.user as any, res.access_token, res.refresh_token);
-      router.push("/");
+      router.push('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || "Terjadi kesalahan saat login");
+      setError(err.response?.data?.message || 'Terjadi kesalahan saat login');
     }
   };
 
@@ -44,31 +48,35 @@ export default function LoginPage() {
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
               <input
-                {...register("email")}
+                {...register('email')}
                 type="email"
                 placeholder="Email"
                 className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
               />
-              {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message as string}</p>}
+              {errors.email && (
+                <p className="mt-1 text-xs text-red-500">{errors.email.message as string}</p>
+              )}
             </div>
             <div>
               <input
-                {...register("password")}
+                {...register('password')}
                 type="password"
                 placeholder="Password"
                 className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
               />
-              {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message as string}</p>}
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-500">{errors.password.message as string}</p>
+              )}
             </div>
           </div>
-          {error && <div className="text-sm text-red-500 text-center">{error}</div>}
+          {error && <div className="text-center text-sm text-red-500">{error}</div>}
           <div>
             <button
               type="submit"
               disabled={isSubmitting}
               className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
             >
-              {isSubmitting ? "Loading..." : "Masuk"}
+              {isSubmitting ? 'Loading...' : 'Masuk'}
             </button>
           </div>
           <div className="text-center text-sm">

@@ -13,15 +13,24 @@ interface CapitalQuestion {
 }
 
 const CAPITAL_DATA = [
-  { country: 'Indonesia', capital: 'Jakarta' }, { country: 'Malaysia', capital: 'Kuala Lumpur' },
-  { country: 'Singapore', capital: 'Singapura' }, { country: 'Japan', capital: 'Tokyo' },
-  { country: 'South Korea', capital: 'Seoul' }, { country: 'Germany', capital: 'Berlin' },
-  { country: 'France', capital: 'Paris' }, { country: 'Italy', capital: 'Roma' },
-  { country: 'United Kingdom', capital: 'London' }, { country: 'United States', capital: 'Washington DC' },
-  { country: 'Brazil', capital: 'Brasilia' }, { country: 'Argentina', capital: 'Buenos Aires' },
-  { country: 'Australia', capital: 'Canberra' }, { country: 'Canada', capital: 'Ottawa' },
-  { country: 'India', capital: 'New Delhi' }, { country: 'China', capital: 'Beijing' },
-  { country: 'Thailand', capital: 'Bangkok' }, { country: 'Vietnam', capital: 'Hanoi' },
+  { country: 'Indonesia', capital: 'Jakarta' },
+  { country: 'Malaysia', capital: 'Kuala Lumpur' },
+  { country: 'Singapore', capital: 'Singapura' },
+  { country: 'Japan', capital: 'Tokyo' },
+  { country: 'South Korea', capital: 'Seoul' },
+  { country: 'Germany', capital: 'Berlin' },
+  { country: 'France', capital: 'Paris' },
+  { country: 'Italy', capital: 'Roma' },
+  { country: 'United Kingdom', capital: 'London' },
+  { country: 'United States', capital: 'Washington DC' },
+  { country: 'Brazil', capital: 'Brasilia' },
+  { country: 'Argentina', capital: 'Buenos Aires' },
+  { country: 'Australia', capital: 'Canberra' },
+  { country: 'Canada', capital: 'Ottawa' },
+  { country: 'India', capital: 'New Delhi' },
+  { country: 'China', capital: 'Beijing' },
+  { country: 'Thailand', capital: 'Bangkok' },
+  { country: 'Vietnam', capital: 'Hanoi' },
 ];
 
 function generateQuestion(): CapitalQuestion {
@@ -29,9 +38,7 @@ function generateQuestion(): CapitalQuestion {
   const isC2Cap = Math.random() > 0.5;
 
   const answer = isC2Cap ? target.capital : target.country;
-  const pool = isC2Cap
-    ? CAPITAL_DATA.map((d) => d.capital)
-    : CAPITAL_DATA.map((d) => d.country);
+  const pool = isC2Cap ? CAPITAL_DATA.map((d) => d.capital) : CAPITAL_DATA.map((d) => d.country);
 
   const options = new Set<string>([answer]);
   while (options.size < 4) {
@@ -40,7 +47,9 @@ function generateQuestion(): CapitalQuestion {
   }
 
   return {
-    question: isC2Cap ? `Ibukota dari ${target.country}?` : `Negara yang beribukota di ${target.capital}?`,
+    question: isC2Cap
+      ? `Ibukota dari ${target.country}?`
+      : `Negara yang beribukota di ${target.capital}?`,
     answer,
     options: [...options].sort(() => Math.random() - 0.5),
     type: isC2Cap ? 'country-to-capital' : 'capital-to-country',
@@ -104,8 +113,13 @@ export default function CapitalQuiz() {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Capital City Quiz</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">Tebak ibukota negara! Streak 3x = poin 2x!</p>
-        <button onClick={handleStart} className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors">
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
+          Tebak ibukota negara! Streak 3x = poin 2x!
+        </p>
+        <button
+          onClick={handleStart}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+        >
           Mulai!
         </button>
       </div>
@@ -116,8 +130,8 @@ export default function CapitalQuiz() {
     <div className="flex flex-col items-center gap-6 py-6">
       <div className="flex items-center gap-4">
         <ScoreBoard score={score} />
-        <div className="flex flex-col items-center px-3 py-1.5 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-          <span className="text-xs text-orange-500 font-bold uppercase">Streak</span>
+        <div className="flex flex-col items-center rounded-lg bg-orange-100 px-3 py-1.5 dark:bg-orange-900/20">
+          <span className="text-xs font-bold uppercase text-orange-500">Streak</span>
           <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{streak}x</span>
         </div>
         <span className="text-sm text-gray-500 dark:text-slate-400">Soal {questionCount}/15</span>
@@ -125,7 +139,9 @@ export default function CapitalQuiz() {
 
       {question && (
         <div className="w-full max-w-md space-y-4">
-          <p className="text-xl font-bold text-center text-gray-900 dark:text-white">{question.question}</p>
+          <p className="text-center text-xl font-bold text-gray-900 dark:text-white">
+            {question.question}
+          </p>
           <div className="grid grid-cols-2 gap-3">
             {question.options.map((opt) => (
               <button
@@ -133,12 +149,12 @@ export default function CapitalQuiz() {
                 onClick={() => handleAnswer(opt)}
                 disabled={feedback !== null}
                 className={cn(
-                  'py-3 px-4 rounded-xl text-sm font-bold border-2 transition-all',
+                  'rounded-xl border-2 px-4 py-3 text-sm font-bold transition-all',
                   feedback === null
-                    ? 'bg-white border-gray-200 text-gray-800 hover:border-indigo-400 hover:bg-indigo-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white'
+                    ? 'border-gray-200 bg-white text-gray-800 hover:border-indigo-400 hover:bg-indigo-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white'
                     : opt === question.answer
-                      ? 'bg-emerald-100 border-emerald-500 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      : 'bg-gray-50 border-gray-200 text-gray-400 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-500'
+                      ? 'border-emerald-500 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : 'border-gray-200 bg-gray-50 text-gray-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
                 )}
               >
                 {opt}
@@ -149,15 +165,18 @@ export default function CapitalQuiz() {
       )}
 
       {gameOver && (
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <p className="text-lg font-bold text-emerald-600">Selesai!</p>
           {result && (
             <div className="text-sm text-gray-500">
               <p>+{result.xp} XP</p>
-              {result.highscore && <p className="text-amber-500 font-bold">New Highscore!</p>}
+              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
             </div>
           )}
-          <button onClick={handleStart} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors">
+          <button
+            onClick={handleStart}
+            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+          >
             Main Lagi
           </button>
         </div>

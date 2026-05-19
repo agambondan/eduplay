@@ -23,6 +23,15 @@ func (h *Handler) GetMe(c *fiber.Ctx) error {
 	return response.Success(c, u)
 }
 
+func (h *Handler) GetStats(c *fiber.Ctx) error {
+	userId := c.Locals("user_id").(string)
+	stats, err := h.svc.GetStats(userId)
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, "Failed to get stats")
+	}
+	return response.Success(c, stats)
+}
+
 type UpdateProfileRequest struct {
 	Username string `json:"username" validate:"required,min=3,max=30"`
 }

@@ -1,63 +1,101 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import api from "@/lib/api/client";
-import { DailyChallenge } from "@/types/game";
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { dailyApi } from '@/lib/api/daily';
+import { useState, useEffect } from 'react';
+import { Timer } from '@/components/ui/Timer';
+import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { Loader2, Calendar, Trophy } from 'lucide-react';
+import MathQuiz from '@/components/games/MathQuiz';
+import Wordle from '@/components/games/Wordle';
+import { useAuthStore } from '@/lib/stores/authStore';
+import Link from 'next/link';
 
 export default function DailyChallengePage() {
-  const [challenge, setChallenge] = useState<DailyChallenge | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [timeLeft, setTimeLeft] = useState("");
+  const { user } = useAuthStore();
+  const {
+    data: challenge,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ['daily-challenge'],
+    queryFn: dailyApi.get,
+  });
 
-  useEffect(() => {
-    api.get("/daily").then((res) => {
-      setChallenge(res.data.data);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
+        <p className="mt-4 text-gray-500">Memuat tantangan harian...</p>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    if (!challenge?.expires_at) return;
-    const interval = setInterval(() => {
-      const diff = new Date(challenge.expires_at).getTime() - Date.now();
-      if (diff <= 0) { setTimeLeft("Expired"); clearInterval(interval); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [challenge]);
+  if (!user) {
+    return (
+      <div className="container max-w-md py-20 text-center">
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <Calendar className="mx-auto mb-4 h-12 w-12 text-indigo-500" />
+          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Daily Challenge</h1>
+          <p className="mb-6 text-gray-500 dark:text-slate-400">
+            Login untuk mengikuti tantangan harian dan dapatkan 2x XP!
+          </p>
+          <Link
+            href="/login"
+            className="block w-full rounded-xl bg-indigo-600 py-3 font-bold text-white transition-colors hover:bg-indigo-700"
+          >
+            Login Sekarang
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-  if (loading) return <div className="text-center py-8">Loading...</div>;
-
-  if (!challenge) return <div className="text-center py-8 text-gray-500">Daily Challenge belum tersedia.</div>;
+  if (challenge?.user_submitted) {
+    return (
+      <div className="container max-w-md py-20 text-center">
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-8 shadow-sm dark:border-emerald-900/30 dark:bg-emerald-900/20">
+          <Trophy className="mx-auto mb-4 h-12 w-12 text-emerald-500" />
+          <h1 className="mb-2 text-2xl font-bold text-emerald-900 dark:text-emerald-400">
+            Selesai!
+          </h1>
+          <p className="mb-6 text-emerald-700 dark:text-emerald-500">
+            Kamu sudah menyelesaikan tantangan harian hari ini. Kembali lagi besok ya!
+          </p>
+          <Link
+            href="/games"
+            className="block w-full rounded-xl bg-emerald-500 py-3 font-bold text-white transition-colors hover:bg-emerald-600"
+          >
+            Main Game Lain
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900">Daily Challenge</h1>
-        <p className="mt-2 text-sm text-gray-500">Selesaikan untuk mendapat bonus 2x XP!</p>
+    <div className="container max-w-2xl py-8">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Daily Challenge</h1>
+        <p className="mt-1 font-bold text-indigo-600 dark:text-indigo-400">Reward: 2x XP</p>
       </div>
 
-      <div className="rounded-lg bg-white p-6 shadow text-center">
-        <div className="text-4xl font-mono font-bold text-indigo-600 tabular-nums">{timeLeft || "00:00:00"}</div>
-        <div className="text-sm text-gray-500 mt-1">Reset berikutnya</div>
-      </div>
-
-      <div className="rounded-lg bg-white p-6 shadow space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Game: {challenge.game?.name}</h2>
-          <span className="text-xs font-medium rounded-full bg-emerald-100 text-emerald-700 px-2 py-1">
-            2x XP
-          </span>
-        </div>
-        {challenge.user_submitted ? (
-          <div className="rounded-md bg-green-50 p-4 text-center text-green-800 font-medium">
-            ✅ Kamu sudah menyelesaikan challenge hari ini!
+      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        {challenge?.game.slug === 'math-quiz' && <MathQuiz isDaily />}
+        {challenge?.game.slug === 'wordle' && <Wordle isDaily />}
+        {/* Fallback to math quiz if logic not specific */}
+        {!['math-quiz', 'wordle'].includes(challenge?.game.slug || '') && (
+          <div className="py-10 text-center">
+            <p className="text-gray-500">
+              Tantangan harian hari ini: <span className="font-bold">{challenge?.game.name}</span>
+            </p>
+            <Link
+              href={`/games/${challenge?.game.slug}`}
+              className="mt-4 inline-block font-bold text-indigo-600 underline"
+            >
+              Main Sekarang
+            </Link>
           </div>
-        ) : (
-          <div className="text-gray-500 text-sm">Belum menyelesaikan challenge hari ini. Mainkan sekarang!</div>
         )}
       </div>
     </div>

@@ -8,7 +8,11 @@ interface BannerAdProps {
   responsive?: boolean;
 }
 
-export function BannerAd({ slotId = 'default-banner', format = 'auto', responsive = true }: BannerAdProps) {
+export function BannerAd({
+  slotId = 'default-banner',
+  format = 'auto',
+  responsive = true,
+}: BannerAdProps) {
   const adRef = useRef<HTMLModElement>(null);
 
   useEffect(() => {
@@ -18,15 +22,15 @@ export function BannerAd({ slotId = 'default-banner', format = 'auto', responsiv
 
   if (process.env.NODE_ENV === 'development') {
     return (
-      <div className="w-full bg-gray-200 dark:bg-slate-800 text-gray-500 dark:text-slate-400 flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-gray-300 dark:border-slate-700 min-h-[90px]">
-        <span className="font-bold text-sm uppercase">Ad Banner Placement</span>
+      <div className="flex min-h-[90px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-200 p-4 text-gray-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+        <span className="text-sm font-bold uppercase">Ad Banner Placement</span>
         <span className="text-xs">Slot: {slotId}</span>
       </div>
     );
   }
 
   return (
-    <div className="w-full flex justify-center my-4 overflow-hidden">
+    <div className="my-4 flex w-full justify-center overflow-hidden">
       <ins
         ref={adRef}
         className="adsbygoogle"
