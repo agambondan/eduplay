@@ -27,14 +27,16 @@ EduPlay is a web-based educational mini-game platform combining learning with ga
 
 ```
 .
-├── backend/                  # Go 1.26 REST API (Fiber v2, GORM, Postgres 18, Redis 8)
-│   ├── cmd/main.go           # Entry point & dependency wiring
-│   ├── internal/             # Domain logic (auth, user, game, leaderboard)
-│   └── pkg/                  # Shared packages (db, response, logger)
-├── frontend/                 # Next.js 16 App Router (React 19, Tailwind, Zustand)
-│   ├── app/                  # Route layouts and pages
-│   ├── components/           # Game engines & UI modules
-│   └── lib/                  # State stores, hooks, and API clients
+├── apps/
+│   └── web/                  # Next.js 16 App Router (React 19, Tailwind, Zustand)
+│       ├── app/              # Route layouts and pages
+│       ├── components/       # Game engines & UI modules
+│       └── lib/              # State stores, hooks, and API clients
+├── services/
+│   └── api/                  # Go 1.26 REST API (Fiber v2, GORM, Postgres 18, Redis 8)
+│       ├── cmd/main.go       # Entry point & dependency wiring
+│       ├── internal/         # Domain logic (auth, user, game, leaderboard)
+│       └── pkg/              # Shared packages (db, response, logger)
 ├── docker-compose.yml        # Local DB & Redis setup
 └── prd.md                    # Detailed Product Requirements Document
 ```
@@ -88,11 +90,21 @@ docker compose up -d
 ```
 
 ### Step 2: Start Backend
-
 1. Copy template and configure variables:
    ```bash
-   cd backend
+   cd services/api
    cp .env.example .env
+   ```
+2. Run development server (supports Hot Reload via `air`):
+   ```bash
+   make dev
+   ```
+
+### Step 3: Start Frontend
+1. Copy template and configure variables:
+   ```bash
+   cd apps/web
+   cp .env.example .env.local
    ```
 2. Run development server (supports Hot Reload via `air`):
    ```bash
@@ -121,14 +133,13 @@ Open [http://localhost:3000](http://localhost:3000) to view application.
 
 ## Important Commands
 
-### Backend (`backend/`)
-
+### Backend (`services/api/`)
 - `make dev`: Start dev server with hot-reload (requires `air`).
 - `make build`: Build Go binary.
 - `make run`: Run built binary.
 - `make test`: Run Go tests.
 
-### Frontend (`frontend/`)
+### Frontend (`apps/web/`)
 
 - `npm run dev`: Start dev server.
 - `npm run build`: Build for production.
@@ -138,16 +149,14 @@ Open [http://localhost:3000](http://localhost:3000) to view application.
 
 ## Environment Variables
 
-### Backend (`backend/.env`)
-
+### Backend (`services/api/.env`)
 Must set before running:
-
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: Postgres config.
 - `REDIS_URL`: Redis connection string.
 - `JWT_SECRET`: Secret key for signing tokens.
 - `ANTHROPIC_API_KEY`: API key for AI question generation.
 
-### Frontend (`frontend/.env.local`)
+### Frontend (`apps/web/.env.local`)
 
 - `NEXT_PUBLIC_API_URL`: Backend endpoint (e.g., `http://localhost:8080/api/v1`).
 - `NEXT_PUBLIC_ADSENSE_CLIENT_ID`: Google AdSense ID.
