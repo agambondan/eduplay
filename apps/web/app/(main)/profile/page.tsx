@@ -33,6 +33,20 @@ export default function ProfilePage() {
   const progress = nextLevelXP > currentLevelXP ? xp - currentLevelXP : 0;
   const needed = nextLevelXP - currentLevelXP;
 
+  if (!user) {
+    return (
+      <div className="container max-w-md py-20 text-center">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Profil Kamu</h1>
+          <p className="text-gray-500 dark:text-slate-400 mb-6">Login untuk melihat progress, level, dan achievement kamu!</p>
+          <Link href="/login" className="block w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors">
+            Login Sekarang
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Profil</h1>

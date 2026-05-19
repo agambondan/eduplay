@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface BannerAdProps {
   slotId?: string;
@@ -14,11 +15,18 @@ export function BannerAd({
   responsive = true,
 }: BannerAdProps) {
   const adRef = useRef<HTMLModElement>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
-    // In production, this would initialize Google AdSense
-    // (window.adsbygoogle = window.adsbygoogle || []).push({});
-  }, []);
+    try {
+      if (process.env.NODE_ENV !== 'development' && window) {
+        const adsbygoogle = (window as any).adsbygoogle || [];
+        adsbygoogle.push({});
+      }
+    } catch (err) {
+      console.error('AdSense error:', err);
+    }
+  }, [pathname]);
 
   if (process.env.NODE_ENV === 'development') {
     return (
