@@ -90,6 +90,7 @@ docker compose up -d
 ```
 
 ### Step 2: Start Backend
+
 1. Copy template and configure variables:
    ```bash
    cd services/api
@@ -101,6 +102,7 @@ docker compose up -d
    ```
 
 ### Step 3: Start Frontend
+
 1. Copy template and configure variables:
    ```bash
    cd apps/web
@@ -134,6 +136,7 @@ Open [http://localhost:3000](http://localhost:3000) to view application.
 ## Important Commands
 
 ### Backend (`services/api/`)
+
 - `make dev`: Start dev server with hot-reload (requires `air`).
 - `make build`: Build Go binary.
 - `make run`: Run built binary.
@@ -150,7 +153,9 @@ Open [http://localhost:3000](http://localhost:3000) to view application.
 ## Environment Variables
 
 ### Backend (`services/api/.env`)
+
 Must set before running:
+
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: Postgres config.
 - `REDIS_URL`: Redis connection string.
 - `JWT_SECRET`: Secret key for signing tokens.

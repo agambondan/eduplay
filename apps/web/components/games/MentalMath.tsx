@@ -14,7 +14,10 @@ interface Equation {
 }
 
 function generateEquation(difficulty: Difficulty): Equation {
-  let a = 0, b = 0, op = '+', answer = 0;
+  let a = 0,
+    b = 0,
+    op = '+',
+    answer = 0;
 
   if (difficulty === 'easy') {
     const ops = ['+', '-'];
@@ -73,7 +76,7 @@ function generateEquation(difficulty: Difficulty): Equation {
 
 export default function MentalMath() {
   const { score, isPlaying, startGame, endGame, addScore, submitScore } = useGame('mental-math');
-  
+
   const [eq, setEq] = useState<Equation | null>(null);
   const [input, setInput] = useState('');
   const [diff, setDiff] = useState<Difficulty>('easy');
@@ -125,18 +128,29 @@ export default function MentalMath() {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mental Math Speed</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Ketik jawabannya langsung secepat kilat! Tidak perlu pencet submit.
         </p>
         <div className="flex gap-2">
           {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-            <button key={d} onClick={() => setDiff(d)} className={cn(
-              'px-4 py-2 rounded-lg font-medium capitalize transition-colors',
-              diff === d ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'
-            )}>{d}</button>
+            <button
+              key={d}
+              onClick={() => setDiff(d)}
+              className={cn(
+                'rounded-lg px-4 py-2 font-medium capitalize transition-colors',
+                diff === d
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'
+              )}
+            >
+              {d}
+            </button>
           ))}
         </div>
-        <button onClick={handleStart} className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors">
+        <button
+          onClick={handleStart}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+        >
           Mulai!
         </button>
       </div>
@@ -145,22 +159,20 @@ export default function MentalMath() {
 
   return (
     <div className="flex flex-col items-center gap-4 py-6">
-      <div className="flex items-center justify-between w-full max-w-md">
+      <div className="flex w-full max-w-md items-center justify-between">
         <Timer initialSeconds={60} onTimeUp={handleTimeUp} isRunning={isPlaying && !gameOver} />
         <ScoreBoard score={score} />
       </div>
 
       {eq && !gameOver && (
         <div className="w-full max-w-md space-y-6 text-center">
-          <p className="text-5xl font-black font-mono text-gray-900 dark:text-white">
-            {eq.text}
-          </p>
+          <p className="font-mono text-5xl font-black text-gray-900 dark:text-white">{eq.text}</p>
           <div className="flex justify-center">
             <input
               type="number"
               value={input}
               onChange={handleInputChange}
-              className="w-48 px-4 py-3 text-center text-3xl font-bold font-mono border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+              className="w-48 rounded-xl border-2 border-gray-200 px-4 py-3 text-center font-mono text-3xl font-bold focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               placeholder="?"
               autoFocus
             />
@@ -170,16 +182,19 @@ export default function MentalMath() {
       )}
 
       {gameOver && (
-        <div className="text-center space-y-2 mt-4">
+        <div className="mt-4 space-y-2 text-center">
           <p className="text-lg font-bold text-emerald-600">Waktu Habis!</p>
           <p className="text-sm text-gray-500 dark:text-slate-400">Soal terjawab: {count}</p>
           {result && (
             <div className="text-sm text-gray-500">
               <p>+{result.xp} XP</p>
-              {result.highscore && <p className="text-amber-500 font-bold">New Highscore!</p>}
+              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
             </div>
           )}
-          <button onClick={handleStart} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors mt-2">
+          <button
+            onClick={handleStart}
+            className="mt-2 rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+          >
             Main Lagi
           </button>
         </div>

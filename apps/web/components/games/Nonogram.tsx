@@ -40,7 +40,7 @@ const PUZZLES = {
         [1, 0, 0, 0, 1],
         [1, 1, 1, 1, 1],
       ],
-    }
+    },
   ],
   medium: [
     // 7x7 Heart
@@ -53,8 +53,8 @@ const PUZZLES = {
         [0, 0, 1, 1, 1, 0, 0],
         [0, 0, 0, 1, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0],
-      ]
-    }
+      ],
+    },
   ],
   hard: [
     // 10x10 Space Invader
@@ -70,9 +70,9 @@ const PUZZLES = {
         [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
         [0, 0, 1, 0, 0, 0, 0, 1, 0, 0],
         [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
-      ]
-    }
-  ]
+      ],
+    },
+  ],
 };
 
 function generateClues(grid: number[][]) {
@@ -125,20 +125,20 @@ function selectPuzzle(diff: Difficulty): NonogramPuzzle {
     grid: puzzle.grid,
     rowClues,
     colClues,
-    size: puzzle.grid.length
+    size: puzzle.grid.length,
   };
 }
 
 export default function Nonogram() {
   const { score, isPlaying, startGame, endGame, addScore, submitScore } = useGame('nonogram');
-  
+
   const [puzzle, setPuzzle] = useState<NonogramPuzzle | null>(null);
   const [board, setBoard] = useState<CellState[][]>([]);
   const [diff, setDiff] = useState<Difficulty>('easy');
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
   const [mode, setMode] = useState<'fill' | 'cross'>('fill');
-  
+
   // Drag state for smooth painting
   const [isDragging, setIsDragging] = useState(false);
   const [dragAction, setDragAction] = useState<CellState | null>(null);
@@ -146,77 +146,85 @@ export default function Nonogram() {
   const handleStart = () => {
     const p = selectPuzzle(diff);
     setPuzzle(p);
-    
+
     // Initialize empty board
-    const emptyBoard = Array(p.size).fill(0).map(() => Array(p.size).fill('empty'));
+    const emptyBoard = Array(p.size)
+      .fill(0)
+      .map(() => Array(p.size).fill('empty'));
     setBoard(emptyBoard);
-    
+
     setGameOver(false);
     setResult(null);
     startGame(diff);
   };
 
-  const checkWin = useCallback((currentBoard: CellState[][]) => {
-    if (!puzzle) return false;
-    
-    for (let r = 0; r < puzzle.size; r++) {
-      for (let c = 0; c < puzzle.size; c++) {
-        const isFilled = currentBoard[r][c] === 'filled';
-        const shouldBeFilled = puzzle.grid[r][c] === 1;
-        
-        // If a cell is filled when it shouldn't be, or empty when it should be filled
-        if (isFilled !== shouldBeFilled) {
-          return false;
+  const checkWin = useCallback(
+    (currentBoard: CellState[][]) => {
+      if (!puzzle) return false;
+
+      for (let r = 0; r < puzzle.size; r++) {
+        for (let c = 0; c < puzzle.size; c++) {
+          const isFilled = currentBoard[r][c] === 'filled';
+          const shouldBeFilled = puzzle.grid[r][c] === 1;
+
+          // If a cell is filled when it shouldn't be, or empty when it should be filled
+          if (isFilled !== shouldBeFilled) {
+            return false;
+          }
         }
       }
-    }
-    return true;
-  }, [puzzle]);
+      return true;
+    },
+    [puzzle]
+  );
 
   const handleWin = useCallback(async () => {
     setGameOver(true);
     endGame();
-    
+
     // Calculate score based on difficulty and size
     const baseScore = diff === 'easy' ? 100 : diff === 'medium' ? 250 : 500;
     addScore(baseScore);
-    
+
     const res = await submitScore();
     if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
   }, [diff, addScore, endGame, submitScore]);
 
-  const handleCellAction = useCallback((r: number, c: number, actionMode?: CellState) => {
-    if (gameOver || !isPlaying) return;
-    
-    setBoard(prev => {
-      const newBoard = [...prev.map(row => [...row])];
-      const currentState = newBoard[r][c];
-      
-      // Determine what state to apply
-      let targetState: CellState;
-      
-      if (actionMode) {
-        // If an explicit action mode was provided (during drag)
-        targetState = actionMode;
-      } else {
-        // Toggle logic for single clicks
-        if (mode === 'fill') {
-          targetState = currentState === 'filled' ? 'empty' : 'filled';
+  const handleCellAction = useCallback(
+    (r: number, c: number, actionMode?: CellState) => {
+      if (gameOver || !isPlaying) return;
+
+      setBoard((prev) => {
+        const newBoard = [...prev.map((row) => [...row])];
+        const currentState = newBoard[r][c];
+
+        // Determine what state to apply
+        let targetState: CellState;
+
+        if (actionMode) {
+          // If an explicit action mode was provided (during drag)
+          targetState = actionMode;
         } else {
-          targetState = currentState === 'crossed' ? 'empty' : 'crossed';
+          // Toggle logic for single clicks
+          if (mode === 'fill') {
+            targetState = currentState === 'filled' ? 'empty' : 'filled';
+          } else {
+            targetState = currentState === 'crossed' ? 'empty' : 'crossed';
+          }
         }
-      }
-      
-      newBoard[r][c] = targetState;
-      
-      // Only check win if we filled something
-      if (targetState === 'filled' && checkWin(newBoard)) {
-        setTimeout(handleWin, 100);
-      }
-      
-      return newBoard;
-    });
-  }, [gameOver, isPlaying, mode, checkWin, handleWin]);
+
+        newBoard[r][c] = targetState;
+
+        // Only check win if we filled something
+        if (targetState === 'filled' && checkWin(newBoard)) {
+          setTimeout(handleWin, 100);
+        }
+
+        return newBoard;
+      });
+    },
+    [gameOver, isPlaying, mode, checkWin, handleWin]
+  );
 
   const handleTimeUp = useCallback(async () => {
     setGameOver(true);
@@ -228,19 +236,19 @@ export default function Nonogram() {
   // Pointer events for drag-to-paint
   const onPointerDown = (r: number, c: number, e: React.PointerEvent) => {
     if (gameOver || !isPlaying) return;
-    
+
     e.preventDefault();
     setIsDragging(true);
-    
+
     const currentState = board[r][c];
     let action: CellState;
-    
+
     if (mode === 'fill') {
       action = currentState === 'filled' ? 'empty' : 'filled';
     } else {
       action = currentState === 'crossed' ? 'empty' : 'crossed';
     }
-    
+
     setDragAction(action);
     handleCellAction(r, c, action);
   };
@@ -256,7 +264,7 @@ export default function Nonogram() {
       setIsDragging(false);
       setDragAction(null);
     };
-    
+
     window.addEventListener('pointerup', handlePointerUp);
     return () => window.removeEventListener('pointerup', handlePointerUp);
   }, []);
@@ -265,18 +273,29 @@ export default function Nonogram() {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Nonogram</h1>
-        <p className="text-gray-500 dark:text-slate-400 text-center max-w-md">
+        <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Isi grid berdasarkan petunjuk angka untuk mengungkapkan gambar tersembunyi!
         </p>
         <div className="flex gap-2">
           {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-            <button key={d} onClick={() => setDiff(d)} className={cn(
-              'px-4 py-2 rounded-lg font-medium capitalize transition-colors',
-              diff === d ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'
-            )}>{d}</button>
+            <button
+              key={d}
+              onClick={() => setDiff(d)}
+              className={cn(
+                'rounded-lg px-4 py-2 font-medium capitalize transition-colors',
+                diff === d
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'
+              )}
+            >
+              {d}
+            </button>
           ))}
         </div>
-        <button onClick={handleStart} className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-lg transition-colors">
+        <button
+          onClick={handleStart}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+        >
           Mulai!
         </button>
       </div>
@@ -287,25 +306,33 @@ export default function Nonogram() {
 
   return (
     <div className="flex flex-col items-center gap-4 py-6">
-      <div className="flex items-center justify-between w-full max-w-md">
-        <Timer initialSeconds={timeLimit} onTimeUp={handleTimeUp} isRunning={isPlaying && !gameOver} />
-        
+      <div className="flex w-full max-w-md items-center justify-between">
+        <Timer
+          initialSeconds={timeLimit}
+          onTimeUp={handleTimeUp}
+          isRunning={isPlaying && !gameOver}
+        />
+
         {/* Toggle Mode */}
-        <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
-          <button 
-            onClick={() => setMode('fill')} 
+        <div className="flex rounded-xl bg-gray-100 p-1 dark:bg-slate-800">
+          <button
+            onClick={() => setMode('fill')}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-bold transition-all",
-              mode === 'fill' ? "bg-indigo-600 text-white shadow-sm" : "text-gray-600 dark:text-slate-300"
+              'rounded-lg px-4 py-2 text-sm font-bold transition-all',
+              mode === 'fill'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-gray-600 dark:text-slate-300'
             )}
           >
             Isi
           </button>
-          <button 
-            onClick={() => setMode('cross')} 
+          <button
+            onClick={() => setMode('cross')}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-bold transition-all",
-              mode === 'cross' ? "bg-rose-500 text-white shadow-sm" : "text-gray-600 dark:text-slate-300"
+              'rounded-lg px-4 py-2 text-sm font-bold transition-all',
+              mode === 'cross'
+                ? 'bg-rose-500 text-white shadow-sm'
+                : 'text-gray-600 dark:text-slate-300'
             )}
           >
             Silang (X)
@@ -316,14 +343,20 @@ export default function Nonogram() {
       </div>
 
       {puzzle && (
-        <div className="overflow-auto max-w-full p-4">
+        <div className="max-w-full overflow-auto p-4">
           <div className="inline-block select-none" style={{ touchAction: 'none' }}>
             {/* Top Clues */}
-            <div className="flex ml-[60px] sm:ml-[80px]">
+            <div className="ml-[60px] flex sm:ml-[80px]">
               {puzzle.colClues.map((clueCol, c) => (
-                <div key={`col-${c}`} className="w-8 h-24 sm:w-10 sm:h-32 flex flex-col justify-end items-center pb-2 border-r border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
+                <div
+                  key={`col-${c}`}
+                  className="flex h-24 w-8 flex-col items-center justify-end border-r border-gray-200 bg-gray-50 pb-2 sm:h-32 sm:w-10 dark:border-slate-700 dark:bg-slate-800/50"
+                >
                   {clueCol.map((num, i) => (
-                    <span key={i} className="text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 leading-tight">
+                    <span
+                      key={i}
+                      className="text-xs font-bold leading-tight text-gray-700 sm:text-sm dark:text-slate-300"
+                    >
                       {num === 0 ? '' : num}
                     </span>
                   ))}
@@ -336,10 +369,13 @@ export default function Nonogram() {
               {board.map((row, r) => (
                 <div key={`row-${r}`} className="flex">
                   {/* Left Clues */}
-                  <div className="w-[60px] sm:w-[80px] h-8 sm:h-10 flex justify-end items-center pr-2 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
+                  <div className="flex h-8 w-[60px] items-center justify-end border-b border-gray-200 bg-gray-50 pr-2 sm:h-10 sm:w-[80px] dark:border-slate-700 dark:bg-slate-800/50">
                     <div className="flex gap-1.5">
                       {puzzle.rowClues[r].map((num, i) => (
-                        <span key={i} className="text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300">
+                        <span
+                          key={i}
+                          className="text-xs font-bold text-gray-700 sm:text-sm dark:text-slate-300"
+                        >
                           {num === 0 ? '' : num}
                         </span>
                       ))}
@@ -353,14 +389,22 @@ export default function Nonogram() {
                       onPointerDown={(e) => onPointerDown(r, c, e)}
                       onPointerEnter={() => onPointerEnter(r, c)}
                       className={cn(
-                        "w-8 h-8 sm:w-10 sm:h-10 border-r border-b cursor-pointer transition-colors flex items-center justify-center",
-                        (c + 1) % 5 === 0 ? "border-r-gray-400 dark:border-r-slate-500" : "border-gray-200 dark:border-slate-700",
-                        (r + 1) % 5 === 0 ? "border-b-gray-400 dark:border-b-slate-500" : "border-gray-200 dark:border-slate-700",
-                        cellState === 'filled' ? "bg-indigo-600 dark:bg-indigo-500" : "bg-white dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800"
+                        'flex h-8 w-8 cursor-pointer items-center justify-center border-b border-r transition-colors sm:h-10 sm:w-10',
+                        (c + 1) % 5 === 0
+                          ? 'border-r-gray-400 dark:border-r-slate-500'
+                          : 'border-gray-200 dark:border-slate-700',
+                        (r + 1) % 5 === 0
+                          ? 'border-b-gray-400 dark:border-b-slate-500'
+                          : 'border-gray-200 dark:border-slate-700',
+                        cellState === 'filled'
+                          ? 'bg-indigo-600 dark:bg-indigo-500'
+                          : 'bg-white hover:bg-gray-100 dark:bg-slate-900 dark:hover:bg-slate-800'
                       )}
                     >
                       {cellState === 'crossed' && (
-                        <span className="text-rose-500 font-bold select-none text-xl leading-none">×</span>
+                        <span className="select-none text-xl font-bold leading-none text-rose-500">
+                          ×
+                        </span>
                       )}
                     </div>
                   ))}
@@ -372,15 +416,18 @@ export default function Nonogram() {
       )}
 
       {gameOver && (
-        <div className="text-center space-y-2 mt-4">
+        <div className="mt-4 space-y-2 text-center">
           <p className="text-lg font-bold text-emerald-600">Selesai!</p>
           {result && (
             <div className="text-sm text-gray-500">
               <p>+{result.xp} XP</p>
-              {result.highscore && <p className="text-amber-500 font-bold">New Highscore!</p>}
+              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
             </div>
           )}
-          <button onClick={handleStart} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors mt-2">
+          <button
+            onClick={handleStart}
+            className="mt-2 rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+          >
             Main Lagi
           </button>
         </div>

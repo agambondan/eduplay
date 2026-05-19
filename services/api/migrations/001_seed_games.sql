@@ -8,5 +8,6 @@ INSERT INTO games (slug, name, description, category, is_active) VALUES
 ('sudoku', 'Sudoku', 'Classic Sudoku 9x9', 'logic', true),
 ('2048', '2048', 'Classic 2048 — geser tile, gabungkan angka yang sama', 'logic', true),
 ('nonogram', 'Nonogram', 'Asah logika dengan mengungkapkan gambar tersembunyi', 'logic', true),
-('mental-math', 'Mental Math Speed', 'Uji kecepatan berhitungmu dengan mengetik jawaban secepat mungkin', 'math', true)
+('mental-math', 'Mental Math Speed', 'Uji kecepatan berhitungmu dengan mengetik jawaban secepat mungkin', 'math', true),
+('element-quiz', 'Element Quiz', 'Tebak nama unsur kimia dari simbolnya', 'science', true)
 ON CONFLICT (slug) DO NOTHING;
