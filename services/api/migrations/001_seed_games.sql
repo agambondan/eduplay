@@ -10,5 +10,6 @@ INSERT INTO games (slug, name, description, category, is_active) VALUES
 ('nonogram', 'Nonogram', 'Asah logika dengan mengungkapkan gambar tersembunyi', 'logic', true),
 ('mental-math', 'Mental Math Speed', 'Uji kecepatan berhitungmu dengan mengetik jawaban secepat mungkin', 'math', true),
 ('element-quiz', 'Element Quiz', 'Tebak nama unsur kimia dari simbolnya', 'science', true),
-('word-search', 'Word Search', 'Asah ketelitianmu dengan mencari kata-kata tersembunyi', 'language', true)
+('word-search', 'Word Search', 'Asah ketelitianmu dengan mencari kata-kata tersembunyi', 'language', true),
+('timeline-history', 'Timeline History', 'Tebak tahun kejadian penting di Indonesia dan Dunia', 'history', true)
 ON CONFLICT (slug) DO NOTHING;
