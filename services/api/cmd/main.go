@@ -18,6 +18,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -61,7 +62,10 @@ func main() {
 		&model.Achievement{},
 		&model.UserAchievement{},
 		&model.PushSubscription{},
+		&model.SupportTicket{},
 	)
+
+	seedData()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -96,6 +100,7 @@ func main() {
 	dailySvc := service.NewDailyService(gameRepo, achSvc)
 	aiSvc := service.NewAIService(cfg)
 	pushSvc := service.NewPushService(cfg)
+	supportSvc := service.NewSupportService(emailCl)
 
 	// Controllers
 	authHandler := controller.NewAuthController(authSvc)
@@ -108,6 +113,7 @@ func main() {
 	adminSvc := service.NewAdminService()
 	adminHandler := controller.NewAdminController(adminSvc)
 	pushHandler := controller.NewPushController(pushSvc, cfg)
+	supportHandler := controller.NewSupportController(supportSvc)
 
 	// Routes
 	authGroup := apiV1.Group("/auth")
@@ -162,6 +168,8 @@ func main() {
 	pushGroup.Post("/unsubscribe", pushHandler.Unsubscribe)
 	apiV1.Get("/push/vapid-public-key", pushHandler.VapidPublicKey)
 
+	apiV1.Post("/support", supportHandler.CreateTicket)
+
 	// Start schedulers
 	service.StartDailyScheduler(gameRepo, aiSvc)
 
@@ -169,4 +177,62 @@ func main() {
 	if err := app.Listen(":" + cfg.App.Port); err != nil {
 		logger.Log.Fatal("Server failed to start", zap.Error(err))
 	}
+}
+
+func seedData() {
+	seedGames()
+	seedAchievements()
+}
+
+func seedGames() {
+	games := []model.Game{
+		{Slug: "math-quiz", Name: "Math Quiz Blitz", Description: "Jawab soal matematika secepat mungkin dalam 60 detik!", Category: "math", IsActive: true},
+		{Slug: "times-table", Name: "Times Table Challenge", Description: "Drilling tabel perkalian 1-12 secara gamified.", Category: "math", IsActive: true},
+		{Slug: "mental-math", Name: "Mental Math Speed", Description: "Hitung cepat tanpa pilihan ganda.", Category: "math", IsActive: true},
+		{Slug: "bubble-shooter", Name: "Bubble Shooter Math", Description: "Tembak gelembung dengan jawaban soal matematika.", Category: "math", IsActive: true},
+		{Slug: "wordle", Name: "Wordle Bahasa Indonesia", Description: "Tebak kata 5 huruf dalam 6 percobaan!", Category: "language", IsActive: true},
+		{Slug: "spelling-bee", Name: "Spelling Bee", Description: "Susun huruf acak menjadi kata yang benar.", Category: "language", IsActive: true},
+		{Slug: "word-search", Name: "Word Search", Description: "Cari kata tersembunyi di grid huruf.", Category: "language", IsActive: true},
+		{Slug: "crossword", Name: "Crossword Indonesia", Description: "Teka-teki silang Bahasa Indonesia.", Category: "language", IsActive: true},
+		{Slug: "flag-quiz", Name: "Flag Quiz", Description: "Tebak nama negara dari gambar benderanya!", Category: "geography", IsActive: true},
+		{Slug: "capital-quiz", Name: "Capital City Quiz", Description: "Tebak ibukota dari nama negara.", Category: "geography", IsActive: true},
+		{Slug: "sudoku", Name: "Sudoku", Description: "Classic Sudoku 9x9 — isi grid tanpa konflik.", Category: "logic", IsActive: true},
+		{Slug: "2048", Name: "2048", Description: "Geser tile, gabungkan angka, capai 2048!", Category: "logic", IsActive: true},
+		{Slug: "nonogram", Name: "Nonogram", Description: "Grid puzzle hitam-putih — isi berdasarkan angka.", Category: "logic", IsActive: true},
+		{Slug: "element-quiz", Name: "Element Quiz", Description: "Tebak simbol kimia dan nomor atom.", Category: "science", IsActive: true},
+		{Slug: "timeline-history", Name: "Timeline History", Description: "Urutkan peristiwa bersejarah.", Category: "history", IsActive: true},
+	}
+	for _, g := range games {
+		var count int64
+		database.DB.Model(&model.Game{}).Where("slug = ?", g.Slug).Count(&count)
+		if count == 0 {
+			g.ID = uuid.New()
+			database.DB.Create(&g)
+		}
+	}
+	logger.Log.Info("seeded games", zap.Int("count", len(games)))
+}
+
+func seedAchievements() {
+	achievements := []model.Achievement{
+		{Slug: "first-game", Name: "Pemula", Description: "Main game pertama kali", XPReward: 50, Icon: "play"},
+		{Slug: "streak-3", Name: "Konsisten", Description: "Streak 3 hari", XPReward: 100, Icon: "flame"},
+		{Slug: "streak-7", Name: "Rajin", Description: "Streak 7 hari", XPReward: 300, Icon: "flame"},
+		{Slug: "streak-30", Name: "Dedikasi", Description: "Streak 30 hari", XPReward: 1000, Icon: "award"},
+		{Slug: "math-master", Name: "Math Master", Description: "Skor 500+ di Math Quiz", XPReward: 200, Icon: "calculator"},
+		{Slug: "wordle-genius", Name: "Wordle Genius", Description: "Tebak Wordle dalam 2 percobaan", XPReward: 300, Icon: "brain"},
+		{Slug: "daily-5", Name: "Daily Warrior", Description: "Complete 5 daily challenge", XPReward: 200, Icon: "calendar"},
+		{Slug: "top-10", Name: "Elite", Description: "Masuk top 10 leaderboard", XPReward: 500, Icon: "trophy"},
+		{Slug: "level-5", Name: "Naik Kelas", Description: "Capai Level 5", XPReward: 0, Icon: "zap"},
+		{Slug: "all-games", Name: "Explorer", Description: "Coba semua game", XPReward: 300, Icon: "compass"},
+	}
+	for _, a := range achievements {
+		var count int64
+		database.DB.Model(&model.Achievement{}).Where("slug = ?", a.Slug).Count(&count)
+		if count == 0 {
+			a.ID = uuid.New()
+			database.DB.Create(&a)
+		}
+	}
+	logger.Log.Info("seeded achievements", zap.Int("count", len(achievements)))
 }

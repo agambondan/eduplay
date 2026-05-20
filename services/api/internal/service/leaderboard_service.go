@@ -9,8 +9,9 @@ import (
 )
 
 type LeaderboardResponse struct {
-	Entries  []repository.Entry `json:"entries"`
-	UserRank *repository.Entry  `json:"user_rank,omitempty"`
+	Entries       []repository.Entry `json:"entries"`
+	UserRank      *repository.Entry  `json:"user_rank,omitempty"`
+	NearbyEntries []repository.Entry `json:"nearby_entries,omitempty"`
 }
 
 type LeaderboardService interface {
@@ -63,11 +64,34 @@ func (s *leaderboardService) GetGameLeaderboard(slug string, period string, user
 		rank, err := s.repo.GetUserRank(key, userID)
 		if err == nil {
 			var u model.User
-			database.DB.Select("username").Where("id = ?", userID).First(&u)
+			database.DB.Select("username", "xp", "level").Where("id = ?", userID).First(&u)
+			userScore := u.XP
 			resp.UserRank = &repository.Entry{
 				Rank:     int(rank) + 1,
 				UserID:   userID,
 				Username: u.Username,
+				Score:    userScore,
+				Level:    u.Level,
+			}
+
+			startPos := maxInt(0, int(rank)-3)
+			endPos := int(rank) + 1
+			nearbyRaw, err := s.repo.GetRangeByRank(key, int64(startPos), int64(endPos))
+			if err == nil {
+				nearby := make([]repository.Entry, 0, len(nearbyRaw))
+				for i, z := range nearbyRaw {
+					uid, score := repository.ParseScore(z)
+					var nu model.User
+					database.DB.Select("username", "level").Where("id = ?", uid).First(&nu)
+					nearby = append(nearby, repository.Entry{
+						Rank:     startPos + i + 1,
+						UserID:   uid,
+						Username: nu.Username,
+						Score:    int(score),
+						Level:    nu.Level,
+					})
+				}
+				resp.NearbyEntries = nearby
 			}
 		}
 	}
@@ -112,6 +136,13 @@ func (s *leaderboardService) GetGlobalLeaderboard(userID string, limit int64) (*
 	}
 
 	return resp, nil
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 func (s *leaderboardService) AddGameScore(gameID string, userID string, score float64) error {
