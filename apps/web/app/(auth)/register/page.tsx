@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,10 +17,14 @@ const registerSchema = z.object({
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useLocale();
   const [error, setError] = useState('');
   const setAuth = useAuthStore((state) => state.setAuth);
   const user = useAuthStore((state) => state.user);
+
+  const fromGame = searchParams.get('from');
+  const redirectAfterAuth = fromGame ? `/games/${fromGame}` : '/';
 
   useEffect(() => {
     if (user) {
@@ -41,7 +45,7 @@ export default function RegisterPage() {
       setError('');
       const res = await authApi.register(data);
       setAuth(res.user as any, res.access_token, res.refresh_token);
-      router.push('/');
+      router.push(redirectAfterAuth);
     } catch (err: any) {
       setError(err.response?.data?.message || t('auth.register_error'));
     }

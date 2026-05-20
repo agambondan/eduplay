@@ -7,7 +7,6 @@ import { Pause } from 'lucide-react';
 import { AIQuestion, aiApi } from '@/lib/api/ai';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
-import { useAuthStore } from '@/lib/stores/authStore';
 import { useSoundStore } from '@/lib/stores/soundStore';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
@@ -220,7 +219,6 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
   }
 
   if (!isPlaying && result) {
-    const isGuest = useAuthStore((s) => s.isGuest);
     return (
       <div className="flex flex-col items-center gap-4 py-10">
         <ResultScreen
@@ -231,7 +229,6 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
           gameName="Math Quiz Blitz"
           onReplay={handleStart}
           description={`${questionCount} ${t('game.questions_answered')}`}
-          guestMode={isGuest}
         />
       </div>
     );

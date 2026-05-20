@@ -88,6 +88,8 @@ const id: Record<string, string> = {
   'game.questions_answered': 'soal dijawab',
   'game.xp_earned': 'XP earned',
   'game.guest_prompt': 'Login/Daftar untuk simpan progres & XP!',
+  'game.share_result': 'Bagikan Hasil',
+  'auth.register_free': 'Daftar Gratis',
   'game.new_highscore': 'Skor Tertinggi Baru!',
   'game.pause': 'Jeda',
   'game.resume': 'Lanjutkan',

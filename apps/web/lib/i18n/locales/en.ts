@@ -88,6 +88,8 @@ const en: Record<string, string> = {
   'game.questions_answered': 'questions answered',
   'game.xp_earned': 'XP earned',
   'game.guest_prompt': 'Login/Register to save progress & XP!',
+  'game.share_result': 'Share Result',
+  'auth.register_free': 'Register Free',
   'game.new_highscore': 'New High Score!',
   'game.pause': 'Pause',
   'game.resume': 'Resume',
