@@ -16,9 +16,23 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://eduplay.id'),
   title: 'EduPlay — Educational Mini Games',
   description: 'Platform mini game edukatif untuk pelajar SD hingga SMA',
   manifest: '/manifest.json',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'id_ID',
+    siteName: 'EduPlay',
+    url: '/',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@eduplay_id',
+  },
   icons: {
     icon: [
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },

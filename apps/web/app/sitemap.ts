@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 
-const BASE_URL = 'https://eduplay.id';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://eduplay.id';
 
 const games = [
   'math-quiz',

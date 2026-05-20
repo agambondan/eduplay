@@ -1004,9 +1004,9 @@ Action: Share2, Copy, RotateCcw, ChevronRight
 
 - [x] Sitemap.xml di-generate otomatis (game pages, static pages)
 - [x] robots.txt — allow all kecuali /admin/
-- [ ] Canonical URLs pada semua halaman
-- [ ] Open Graph tags untuk sharing
-- [ ] Twitter Card meta tags
+- [x] Canonical URLs pada semua halaman — `metadataBase` + `alternates.canonical` di root layout
+- [x] Open Graph tags untuk sharing — `openGraph` in root metadata + per-page generateMetadata
+- [x] Twitter Card meta tags — `twitter.card` in root metadata + per-page
 - [ ] Core Web Vitals score minimum: LCP < 2.5s, FID < 100ms, CLS < 0.1
 - [ ] Next.js SSR/SSG untuk game landing pages (bukan SPA)
 
@@ -3025,11 +3025,11 @@ messages/
 - [x] Structured data JSON-LD
 
 **Deployment:**
-- [ ] Staging deployment + testing
-- [ ] Production deployment
+- [x] Staging deployment + testing — `docker-compose.staging.yml` + Nginx, deploy via `deploy-staging.yml`
+- [ ] Production deployment — infra ready, needs DNS + SSL certs on server
 - [x] Monitoring setup (Sentry, GA4) — konfigurasi siap
-- [ ] CI/CD pipeline final
-- [ ] DNS + SSL setup
+- [x] CI/CD pipeline final — `ci.yml` (build+test Go+Next.js) + `deploy-staging.yml` + `deploy-prod.yml` (tag-triggered)
+- [ ] DNS + SSL setup — point domain to server, run certbot/acme.sh for certs
 
 **Launch:**
 - [ ] Beta testing (50-100 user)

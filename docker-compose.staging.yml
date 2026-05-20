@@ -1,15 +1,9 @@
-name: eduplay-prod
+name: eduplay-staging
 
 services:
   api:
-    image: eduplay-api:prod
-    build:
-      context: ./services/api
-      dockerfile: Dockerfile
-    ports:
-      - '8080:8080'
-    env_file:
-      - .env
+    image: ghcr.io/agambondan/eduplay/api:staging
+    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,19 +29,11 @@ services:
         max-file: '3'
 
   web:
-    image: eduplay-web:prod
-    build:
-      context: ./apps/web
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8080/api/v1}
-    ports:
-      - '3000:3000'
-    env_file:
-      - .env
+    image: ghcr.io/agambondan/eduplay/web:staging
+    env_file: .env
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
     networks:
       - eduplay-network
     restart: always
@@ -67,12 +53,31 @@ services:
         max-size: '10m'
         max-file: '3'
 
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx/staging.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    networks:
+      - eduplay-network
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: '5m'
+        max-file: '2'
+
   postgres:
     image: pgvector/pgvector:pg18
-    ports:
-      - '5435:5432'
-    env_file:
-      - .env
+    env_file: .env
     volumes:
       - postgres_data:/var/lib/postgresql
     networks:
@@ -96,10 +101,7 @@ services:
 
   redis:
     image: redis:8-alpine
-    ports:
-      - '6382:6379'
-    env_file:
-      - .env
+    env_file: .env
     volumes:
       - redis_data:/data
     networks:
@@ -108,7 +110,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 128M
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
@@ -117,30 +119,8 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: '10m'
-        max-file: '3'
-
-  nginx:
-    image: nginx:1.27-alpine
-    ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - ./nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
-    depends_on:
-      web:
-        condition: service_healthy
-      api:
-        condition: service_healthy
-    networks:
-      - eduplay-network
-    restart: always
-    logging:
-      driver: json-file
-      options:
         max-size: '5m'
-        max-file: '3'
+        max-file: '2'
 
 volumes:
   postgres_data:

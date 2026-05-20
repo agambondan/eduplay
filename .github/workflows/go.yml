@@ -1,13 +1,27 @@
-name: Go CI
-on: [push, pull_request]
+name: Go CI (legacy — superseded by ci.yml)
+# Kept for backwards-compat with branch protection rules that reference this workflow.
+# Real CI logic lives in ci.yml.
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main]
+
 jobs:
   test:
+    name: Go Build & Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
-      - name: Run tests
-        run: cd backend && go test ./... -v
+          go-version: '1.26'
+          cache-dependency-path: services/api/go.sum
+      - run: go mod download
+      - run: go build ./...
+      - run: go test ./... -timeout 120s
