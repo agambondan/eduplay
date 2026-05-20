@@ -19,16 +19,15 @@ pkill -f "go run ./cmd/main.go" 2>/dev/null || true
 pkill -f "air$" 2>/dev/null || true
 sleep 1
 
-# Free up ports (belt-and-suspenders)
+# Free up ports — xargs handles multiple PIDs on separate lines
 for port in 3000 3001 8080; do
-  while true; do
-    pid=$(lsof -ti tcp:"$port" 2>/dev/null) || true
-    [ -z "$pid" ] && break
-    echo "Freeing port $port (pid $pid)"
-    kill -9 "$pid" 2>/dev/null || true
-    sleep 0.3
-  done
+  pids=$(lsof -ti tcp:"$port" 2>/dev/null) || true
+  if [ -n "$pids" ]; then
+    echo "Freeing port $port (pids: $(echo "$pids" | tr '\n' ' '))"
+    echo "$pids" | xargs kill -9 2>/dev/null || true
+  fi
 done
+sleep 0.5
 
 # Start shared infra (postgres + redis) via docker if not running
 if ! docker compose ps postgres 2>/dev/null | grep -q "Up"; then
