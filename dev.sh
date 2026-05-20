@@ -30,7 +30,7 @@ echo $! >> "$PID_FILE"
 
 echo "🚀 Starting frontend (npm run dev)..."
 cd "$ROOT_DIR/apps/web"
-npm run dev &
+npx next dev --webpack &
 echo $! >> "$PID_FILE"
 
 echo ""
