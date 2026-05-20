@@ -1,4 +1,14 @@
-.PHONY: up down build rebuild deploy logs ps clean load-test load-test-local format format-api format-web
+.PHONY: up down build rebuild deploy logs ps clean load-test load-test-local format format-api format-web dev dev-api dev-web
+
+dev-api:
+	cd services/api && go run ./cmd/main.go
+
+dev-web:
+	cd apps/web && npm run dev
+
+dev:
+	@echo "Starting API on :8080 and Web on :3000..."
+	$(MAKE) dev-api & $(MAKE) dev-web
 
 up:
 	docker compose up -d
