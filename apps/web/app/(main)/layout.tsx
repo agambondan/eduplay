@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import Footer from '@/components/layout/Footer';
@@ -13,6 +14,11 @@ import { cn } from '@/lib/utils/cn';
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isPlaying = useGameStore((s) => s.isPlaying);
+  const resetGame = useGameStore((s) => s.resetGame);
+
+  useEffect(() => {
+    resetGame();
+  }, [pathname]);
 
   return (
     <div
