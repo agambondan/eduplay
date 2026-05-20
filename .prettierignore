@@ -1,5 +1,8 @@
 node_modules/
 .next/
-backend/tmp/
-backend/bin/
+.turbo/
+services/api/tmp/
 *.db
+dist/
+build/
+*.log

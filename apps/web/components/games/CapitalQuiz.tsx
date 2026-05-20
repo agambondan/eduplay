@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { ResultScreen } from '@/components/ui/ResultScreen';
@@ -9,36 +10,37 @@ import { Pause } from 'lucide-react';
 import { aiApi, AIQuestion } from '@/lib/api/ai';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { useLocale } from '@/lib/i18n';
+import { contentApi } from '@/lib/api/content';
 
 interface CapitalQuestion {
-  question: string;
-  answer: string;
-  options: string[];
-  type?: 'country-to-capital' | 'capital-to-country';
+    question: string;
+    answer: string;
+    options: string[];
+    type?: 'country-to-capital' | 'capital-to-country';
 }
 
-const CAPITAL_DATA = [
-  { country: 'Indonesia', capital: 'Jakarta' },
-  { country: 'Malaysia', capital: 'Kuala Lumpur' },
-  { country: 'Singapore', capital: 'Singapura' },
-  { country: 'Japan', capital: 'Tokyo' },
-  { country: 'South Korea', capital: 'Seoul' },
-  { country: 'Germany', capital: 'Berlin' },
-  { country: 'France', capital: 'Paris' },
-  { country: 'Italy', capital: 'Roma' },
-  { country: 'United Kingdom', capital: 'London' },
-  { country: 'United States', capital: 'Washington DC' },
-  { country: 'Brazil', capital: 'Brasilia' },
-  { country: 'Argentina', capital: 'Buenos Aires' },
-  { country: 'Australia', capital: 'Canberra' },
-  { country: 'Canada', capital: 'Ottawa' },
-  { country: 'India', capital: 'New Delhi' },
-  { country: 'China', capital: 'Beijing' },
-  { country: 'Thailand', capital: 'Bangkok' },
-  { country: 'Vietnam', capital: 'Hanoi' },
+const FALLBACK_CAPITAL_DATA = [
+    { country: 'Indonesia', capital: 'Jakarta' },
+    { country: 'Malaysia', capital: 'Kuala Lumpur' },
+    { country: 'Singapore', capital: 'Singapura' },
+    { country: 'Japan', capital: 'Tokyo' },
+    { country: 'South Korea', capital: 'Seoul' },
+    { country: 'Germany', capital: 'Berlin' },
+    { country: 'France', capital: 'Paris' },
+    { country: 'Italy', capital: 'Roma' },
+    { country: 'United Kingdom', capital: 'London' },
+    { country: 'United States', capital: 'Washington DC' },
+    { country: 'Brazil', capital: 'Brasilia' },
+    { country: 'Argentina', capital: 'Buenos Aires' },
+    { country: 'Australia', capital: 'Canberra' },
+    { country: 'Canada', capital: 'Ottawa' },
+    { country: 'India', capital: 'New Delhi' },
+    { country: 'China', capital: 'Beijing' },
+    { country: 'Thailand', capital: 'Bangkok' },
+    { country: 'Vietnam', capital: 'Hanoi' },
 ];
 
-function generateQuestion(): CapitalQuestion {
+function generateQuestion(CAPITAL_DATA: { country: string; capital: string }[]): CapitalQuestion {
   const target = CAPITAL_DATA[Math.floor(Math.random() * CAPITAL_DATA.length)];
   const isC2Cap = Math.random() > 0.5;
 
@@ -64,6 +66,15 @@ function generateQuestion(): CapitalQuestion {
 export default function CapitalQuiz() {
   const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('capital-quiz');
   const { t } = useLocale();
+
+  const { data: capitalsData } = useQuery({
+    queryKey: ['content', 'capitals'],
+    queryFn: contentApi.getCapitals,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+  const CAPITAL_DATA =
+    capitalsData?.map((c) => ({ country: c.name, capital: c.capital })) ?? FALLBACK_CAPITAL_DATA;
+
   const [question, setQuestion] = useState<CapitalQuestion | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [questionCount, setQuestionCount] = useState(0);
@@ -102,9 +113,9 @@ export default function CapitalQuiz() {
         return;
       }
     }
-    setQuestion(generateQuestion());
+    setQuestion(generateQuestion(CAPITAL_DATA));
     setFeedback(null);
-  }, [useAI, aiQuestions]);
+  }, [useAI, aiQuestions, CAPITAL_DATA]);
 
   const handleStart = async () => {
     setResult(null);

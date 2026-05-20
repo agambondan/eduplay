@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useGame } from '@/lib/hooks/useGame';
+import { contentApi } from '@/lib/api/content';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
 import { ResultScreen } from '@/components/ui/ResultScreen';
@@ -15,28 +17,36 @@ interface TimelineEvent {
   event: string;
 }
 
-const EVENTS: TimelineEvent[] = [
-  { year: 1945, event: 'Proklamasi Kemerdekaan Indonesia' },
-  { year: 1928, event: 'Sumpah Pemuda' },
-  { year: 1908, event: 'Kebangkitan Nasional (Budi Utomo)' },
-  { year: 1949, event: 'Pengakuan Kedaulatan oleh Belanda' },
-  { year: 1966, event: 'Supersemar' },
-  { year: 1998, event: 'Era Reformasi Dimulai' },
-  { year: 1955, event: 'Konferensi Asia Afrika (KAA)' },
-  { year: 2004, event: 'Pemilu Presiden Langsung Pertama' },
-  { year: 1942, event: 'Pendaratan Tentara Jepang di Indonesia' },
-  { year: 1917, event: 'Revolusi Rusia' },
-  { year: 1914, event: 'Awal Perang Dunia I' },
-  { year: 1939, event: 'Awal Perang Dunia II' },
-  { year: 1969, event: 'Manusia Pertama Mendarat di Bulan' },
-  { year: 1989, event: 'Runtuhnya Tembok Berlin' },
-  { year: 2020, event: 'Pandemi COVID-19 Melanda Dunia' },
+const FALLBACK_EVENTS: TimelineEvent[] = [
+    { year: 1945, event: 'Proklamasi Kemerdekaan Indonesia' },
+    { year: 1928, event: 'Sumpah Pemuda' },
+    { year: 1908, event: 'Kebangkitan Nasional (Budi Utomo)' },
+    { year: 1949, event: 'Pengakuan Kedaulatan oleh Belanda' },
+    { year: 1966, event: 'Supersemar' },
+    { year: 1998, event: 'Era Reformasi Dimulai' },
+    { year: 1955, event: 'Konferensi Asia Afrika (KAA)' },
+    { year: 2004, event: 'Pemilu Presiden Langsung Pertama' },
+    { year: 1942, event: 'Pendaratan Tentara Jepang di Indonesia' },
+    { year: 1917, event: 'Revolusi Rusia' },
+    { year: 1914, event: 'Awal Perang Dunia I' },
+    { year: 1939, event: 'Awal Perang Dunia II' },
+    { year: 1969, event: 'Manusia Pertama Mendarat di Bulan' },
+    { year: 1989, event: 'Runtuhnya Tembok Berlin' },
+    { year: 2020, event: 'Pandemi COVID-19 Melanda Dunia' },
 ];
 
 export default function TimelineHistory() {
   const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
     useGame('timeline-history');
   const { t } = useLocale();
+
+  const { data: historyData } = useQuery({
+    queryKey: ['content', 'history'],
+    queryFn: () => contentApi.getHistory(),
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+  const EVENTS =
+    historyData?.map((e) => ({ year: e.year, event: e.description })) ?? FALLBACK_EVENTS;
 
   const [currentEvent, setCurrentEvent] = useState<TimelineEvent | null>(null);
   const [options, setOptions] = useState<number[]>([]);
@@ -56,7 +66,7 @@ export default function TimelineHistory() {
     }
     setOptions([...opts].sort((a, b) => a - b));
     setFeedback(null);
-  }, []);
+  }, [EVENTS]);
 
   const handleStart = () => {
     setCount(0);

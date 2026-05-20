@@ -1,4 +1,4 @@
-.PHONY: up down build rebuild deploy logs ps clean load-test load-test-local
+.PHONY: up down build rebuild deploy logs ps clean load-test load-test-local format format-api format-web
 
 up:
 	docker compose up -d
@@ -34,6 +34,14 @@ ps:
 clean:
 	docker compose down -v --remove-orphans
 	docker compose rm -f
+
+format: format-api format-web
+
+format-api:
+	cd services/api && gofmt -w . && goimports -w .
+
+format-web:
+	cd apps/web && npx prettier --write --ignore-unknown .
 
 load-test:
 	k6 run load-test/script.js

@@ -19,6 +19,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/internal/middleware"
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/internal/repository"
+	"github.com/agambondan/eduplay/services/api/internal/seeder"
 	"github.com/agambondan/eduplay/services/api/internal/service"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/agambondan/eduplay/services/api/pkg/email"
@@ -30,6 +31,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/swagger"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"go.uber.org/zap"
 )
 
@@ -76,6 +78,10 @@ func main() {
 		&model.SupportTicket{},
 		&model.Subscription{},
 		&model.Friend{},
+		&model.Country{},
+		&model.ChemicalElement{},
+		&model.HistoryEvent{},
+		&model.WordleWord{},
 	)
 
 	seedData()
@@ -137,6 +143,7 @@ func main() {
 	supportHandler := controller.NewSupportController(supportSvc)
 	subHandler := controller.NewSubscriptionController(subSvc)
 	friendHandler := controller.NewFriendController(friendSvc)
+	contentHandler := controller.NewContentController()
 
 	// Routes
 	authGroup := apiV1.Group("/auth")
@@ -210,6 +217,13 @@ func main() {
 	friendGroup.Post("/:id/decline", friendHandler.DeclineRequest)
 	friendGroup.Delete("/:id", friendHandler.RemoveFriend)
 
+	contentGroup := apiV1.Group("/content")
+	contentGroup.Get("/flags", contentHandler.GetFlags)
+	contentGroup.Get("/capitals", contentHandler.GetCapitals)
+	contentGroup.Get("/elements", contentHandler.GetElements)
+	contentGroup.Get("/history", contentHandler.GetHistoryEvents)
+	contentGroup.Get("/words/wordle", contentHandler.GetWordleWords)
+
 	// Start schedulers
 	service.StartDailyScheduler(gameRepo, aiSvc)
 	service.StartPushScheduler(cfg)
@@ -223,6 +237,8 @@ func main() {
 func seedData() {
 	seedGames()
 	seedAchievements()
+	seedUsers()
+	seeder.SeedGameContent()
 }
 
 func seedGames() {
@@ -276,4 +292,33 @@ func seedAchievements() {
 		}
 	}
 	logger.Log.Info("seeded achievements", zap.Int("count", len(achievements)))
+}
+
+func seedUsers() {
+	users := []struct {
+		Username string
+		Email    string
+		Password string
+	}{
+		{Username: "demo", Email: "demo@demo.com", Password: "demo123"},
+	}
+	for _, u := range users {
+		var count int64
+		database.DB.Model(&model.User{}).Where("email = ?", u.Email).Count(&count)
+		if count > 0 {
+			continue
+		}
+		hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), 12)
+		if err != nil {
+			logger.Log.Warn("failed to hash password for seed user", zap.String("email", u.Email), zap.Error(err))
+			continue
+		}
+		user := model.User{
+			Username: u.Username,
+			Email:    u.Email,
+			Password: string(hash),
+		}
+		database.DB.Create(&user)
+	}
+	logger.Log.Info("seeded users")
 }

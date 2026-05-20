@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useGame } from '@/lib/hooks/useGame';
+import { contentApi } from '@/lib/api/content';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
 import { ResultScreen } from '@/components/ui/ResultScreen';
@@ -16,36 +18,36 @@ interface ElementQuestion {
   options: string[];
 }
 
-const ELEMENTS = [
-  { symbol: 'H', name: 'Hidrogen' },
-  { symbol: 'He', name: 'Helium' },
-  { symbol: 'Li', name: 'Litium' },
-  { symbol: 'Be', name: 'Berilium' },
-  { symbol: 'B', name: 'Boron' },
-  { symbol: 'C', name: 'Karbon' },
-  { symbol: 'N', name: 'Nitrogen' },
-  { symbol: 'O', name: 'Oksigen' },
-  { symbol: 'F', name: 'Fluorin' },
-  { symbol: 'Ne', name: 'Neon' },
-  { symbol: 'Na', name: 'Natrium' },
-  { symbol: 'Mg', name: 'Magnesium' },
-  { symbol: 'Al', name: 'Aluminium' },
-  { symbol: 'Si', name: 'Silikon' },
-  { symbol: 'P', name: 'Fosfor' },
-  { symbol: 'S', name: 'Belerang' },
-  { symbol: 'Cl', name: 'Klorin' },
-  { symbol: 'Ar', name: 'Argon' },
-  { symbol: 'K', name: 'Kalium' },
-  { symbol: 'Ca', name: 'Kalsium' },
-  { symbol: 'Fe', name: 'Besi' },
-  { symbol: 'Cu', name: 'Tembaga' },
-  { symbol: 'Zn', name: 'Seng' },
-  { symbol: 'Ag', name: 'Perak' },
-  { symbol: 'Au', name: 'Emas' },
-  { symbol: 'Hg', name: 'Air Raksa' },
+const FALLBACK_ELEMENTS = [
+    { symbol: 'H', name: 'Hidrogen' },
+    { symbol: 'He', name: 'Helium' },
+    { symbol: 'Li', name: 'Litium' },
+    { symbol: 'Be', name: 'Berilium' },
+    { symbol: 'B', name: 'Boron' },
+    { symbol: 'C', name: 'Karbon' },
+    { symbol: 'N', name: 'Nitrogen' },
+    { symbol: 'O', name: 'Oksigen' },
+    { symbol: 'F', name: 'Fluorin' },
+    { symbol: 'Ne', name: 'Neon' },
+    { symbol: 'Na', name: 'Natrium' },
+    { symbol: 'Mg', name: 'Magnesium' },
+    { symbol: 'Al', name: 'Aluminium' },
+    { symbol: 'Si', name: 'Silikon' },
+    { symbol: 'P', name: 'Fosfor' },
+    { symbol: 'S', name: 'Belerang' },
+    { symbol: 'Cl', name: 'Klorin' },
+    { symbol: 'Ar', name: 'Argon' },
+    { symbol: 'K', name: 'Kalium' },
+    { symbol: 'Ca', name: 'Kalsium' },
+    { symbol: 'Fe', name: 'Besi' },
+    { symbol: 'Cu', name: 'Tembaga' },
+    { symbol: 'Zn', name: 'Seng' },
+    { symbol: 'Ag', name: 'Perak' },
+    { symbol: 'Au', name: 'Emas' },
+    { symbol: 'Hg', name: 'Air Raksa' },
 ];
 
-function generateQuestion(): ElementQuestion {
+function generateQuestion(ELEMENTS: { symbol: string; name: string }[]): ElementQuestion {
   const target = ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)];
   const options = new Set<string>([target.name]);
   while (options.size < 4) {
@@ -62,6 +64,15 @@ function generateQuestion(): ElementQuestion {
 export default function ElementQuiz() {
   const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('element-quiz');
   const { t } = useLocale();
+
+  const { data: elementsData } = useQuery({
+    queryKey: ['content', 'elements'],
+    queryFn: contentApi.getElements,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+  const ELEMENTS =
+    elementsData?.map((e) => ({ symbol: e.symbol, name: e.name })) ?? FALLBACK_ELEMENTS;
+
   const [question, setQuestion] = useState<ElementQuestion | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [questionCount, setQuestionCount] = useState(0);
@@ -69,9 +80,9 @@ export default function ElementQuiz() {
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
 
   const nextQuestion = useCallback(() => {
-    setQuestion(generateQuestion());
+    setQuestion(generateQuestion(ELEMENTS));
     setFeedback(null);
-  }, []);
+  }, [ELEMENTS]);
 
   const handleStart = () => {
     setQuestionCount(0);

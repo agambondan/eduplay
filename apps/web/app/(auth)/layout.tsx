@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: 'Masuk | EduPlay — Game Edukasi Online',
@@ -6,5 +7,12 @@ export const metadata: Metadata = {
 };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-slate-900">
+      <main className="mx-auto w-full max-w-md flex-grow px-4 py-8">
+        {children}
+      </main>
+      <Footer />
+    </div>
+  );
 }

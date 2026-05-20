@@ -7,6 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
+    "format": "prettier --check --ignore-unknown .",
+    "format:fix": "prettier --write --ignore-unknown .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"

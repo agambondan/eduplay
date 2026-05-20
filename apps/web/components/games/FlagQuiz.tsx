@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { ResultScreen } from '@/components/ui/ResultScreen';
@@ -9,34 +10,35 @@ import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
 import { Pause } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
+import { contentApi } from '@/lib/api/content';
 
 interface FlagItem {
-  country: string;
-  code: string; // ISO 2-letter code for SVG filename (lowercase)
+    country: string;
+    code: string; // ISO 2-letter code for SVG filename (lowercase)
 }
 
-const FLAGS: FlagItem[] = [
-  { country: 'Indonesia', code: 'id' },
-  { country: 'Malaysia', code: 'my' },
-  { country: 'Singapore', code: 'sg' },
-  { country: 'Japan', code: 'jp' },
-  { country: 'South Korea', code: 'kr' },
-  { country: 'Germany', code: 'de' },
-  { country: 'France', code: 'fr' },
-  { country: 'Italy', code: 'it' },
-  { country: 'United Kingdom', code: 'gb' },
-  { country: 'United States', code: 'us' },
-  { country: 'Brazil', code: 'br' },
-  { country: 'Argentina', code: 'ar' },
-  { country: 'Australia', code: 'au' },
-  { country: 'Canada', code: 'ca' },
-  { country: 'India', code: 'in' },
-  { country: 'China', code: 'cn' },
-  { country: 'Thailand', code: 'th' },
-  { country: 'Vietnam', code: 'vn' },
+const FALLBACK_FLAGS: FlagItem[] = [
+    { country: 'Indonesia', code: 'id' },
+    { country: 'Malaysia', code: 'my' },
+    { country: 'Singapore', code: 'sg' },
+    { country: 'Japan', code: 'jp' },
+    { country: 'South Korea', code: 'kr' },
+    { country: 'Germany', code: 'de' },
+    { country: 'France', code: 'fr' },
+    { country: 'Italy', code: 'it' },
+    { country: 'United Kingdom', code: 'gb' },
+    { country: 'United States', code: 'us' },
+    { country: 'Brazil', code: 'br' },
+    { country: 'Argentina', code: 'ar' },
+    { country: 'Australia', code: 'au' },
+    { country: 'Canada', code: 'ca' },
+    { country: 'India', code: 'in' },
+    { country: 'China', code: 'cn' },
+    { country: 'Thailand', code: 'th' },
+    { country: 'Vietnam', code: 'vn' },
 ];
 
-function generateQuestion() {
+function generateQuestion(FLAGS: FlagItem[]) {
   const correct = FLAGS[Math.floor(Math.random() * FLAGS.length)];
   const options = new Set<string>([correct.country]);
   while (options.size < 4) {
@@ -50,6 +52,14 @@ function generateQuestion() {
 export default function FlagQuiz() {
   const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('flag-quiz');
   const { t } = useLocale();
+
+  const { data: flagsData } = useQuery({
+    queryKey: ['content', 'flags'],
+    queryFn: contentApi.getFlags,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+  const FLAGS = flagsData?.map((c) => ({ country: c.name, code: c.flag_code.toLowerCase() })) ?? FALLBACK_FLAGS;
+
   const [question, setQuestion] = useState<{ correct: FlagItem; options: string[] } | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [count, setCount] = useState(0);
@@ -57,9 +67,9 @@ export default function FlagQuiz() {
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
 
   const next = useCallback(() => {
-    setQuestion(generateQuestion());
+    setQuestion(generateQuestion(FLAGS));
     setFeedback(null);
-  }, []);
+  }, [FLAGS]);
 
   const handleStart = () => {
     setCount(0);
