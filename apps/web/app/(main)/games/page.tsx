@@ -3,24 +3,39 @@
 import { useQuery } from '@tanstack/react-query';
 import { gamesApi } from '@/lib/api/games';
 import { GameCard } from '@/components/ui/GameCard';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { GameCategory } from '@/types/game';
 import { cn } from '@/lib/utils/cn';
 
-const CATEGORIES: { label: string; value: GameCategory | 'all' }[] = [
-  { label: 'Semua', value: 'all' },
-  { label: 'Math', value: 'math' },
-  { label: 'Language', value: 'language' },
-  { label: 'Geography', value: 'geography' },
-  { label: 'Logic', value: 'logic' },
-];
+const CATEGORY_LABELS: Record<string, string> = {
+  all: 'Semua',
+  math: 'Math',
+  language: 'Language',
+  geography: 'Geography',
+  logic: 'Logic',
+  science: 'Science',
+  history: 'History',
+  card: 'Card',
+  car: 'Car',
+  edu: 'Edu',
+};
+
+function categoryLabel(cat: string): string {
+  return CATEGORY_LABELS[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+}
 
 export default function GamesPage() {
-  const [category, setCategory] = useState<GameCategory | 'all'>('all');
+  const [category, setCategory] = useState<string>('all');
   const { data: games, isLoading } = useQuery({
     queryKey: ['games'],
     queryFn: gamesApi.list,
   });
+
+  const categories = useMemo(() => {
+    if (!games) return ['all'];
+    const cats = [...new Set(games.map((g) => g.category))];
+    return ['all', ...cats.sort()];
+  }, [games]);
 
   const filteredGames = games?.filter((g) => category === 'all' || g.category === category);
 
@@ -32,18 +47,18 @@ export default function GamesPage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
-            key={cat.value}
-            onClick={() => setCategory(cat.value)}
+            key={cat}
+            onClick={() => setCategory(cat)}
             className={cn(
               'rounded-full border px-4 py-2 text-sm font-bold transition-all',
-              category === cat.value
+              category === cat
                 ? 'border-indigo-600 bg-indigo-600 text-white shadow-md'
                 : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
             )}
           >
-            {cat.label}
+            {categoryLabel(cat)}
           </button>
         ))}
       </div>
