@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Delete, Pause, RotateCcw } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
@@ -179,6 +179,37 @@ export default function Sudoku() {
     const res = await submitScore();
     if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
   }, [endGame, submitScore]);
+
+  useEffect(() => {
+    if (!isPlaying || gameOver) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        setSelected((prev) => {
+          const [r, c] = prev ?? [0, 0];
+          if (e.key === 'ArrowUp') return [Math.max(0, r - 1), c];
+          if (e.key === 'ArrowDown') return [Math.min(8, r + 1), c];
+          if (e.key === 'ArrowLeft') return [r, Math.max(0, c - 1)];
+          return [r, Math.min(8, c + 1)];
+        });
+        return;
+      }
+      const digit = parseInt(e.key, 10);
+      if (digit >= 1 && digit <= 9) {
+        e.preventDefault();
+        handleNumberInput(digit);
+        return;
+      }
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        handleNumberInput(null);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isPlaying, gameOver, handleNumberInput]);
 
   if (!isPlaying && !gameOver) {
     return (
