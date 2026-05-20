@@ -1,7 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
@@ -14,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useAuthStore } from '@/lib/stores/authStore';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -26,7 +28,17 @@ const NAV_ITEMS = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    // Only redirect when we have a confirmed non-admin user.
+    // null means not yet logged in — API calls will handle 401/403.
+    if (user !== null && user.role !== 'admin') {
+      router.replace('/');
+    }
+  }, [user, router]);
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">

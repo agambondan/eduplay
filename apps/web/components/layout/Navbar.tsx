@@ -29,6 +29,7 @@ export default function Navbar() {
     { name: t('nav.daily'), path: '/daily' },
     { name: t('nav.friends'), path: '/friends' },
     { name: t('nav.support'), path: '/support' },
+    ...(user?.role === 'admin' ? [{ name: t('nav.admin'), path: '/admin' }] : []),
   ];
 
   return (
