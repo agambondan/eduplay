@@ -1,5 +1,8 @@
+'use client';
+
 import { LeaderboardEntry } from '@/types/game';
 import { cn } from '@/lib/utils/cn';
+import { useLocale } from '@/lib/i18n';
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
@@ -10,6 +13,7 @@ interface LeaderboardTableProps {
 }
 
 export function LeaderboardTable({ entries, currentUserId, isXP = false, userRank, nearbyEntries }: LeaderboardTableProps) {
+  const { t } = useLocale();
   const displayEntries = entries.length >= 20 ? entries : nearbyEntries && nearbyEntries.length > 0 ? nearbyEntries : entries;
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -24,11 +28,11 @@ export function LeaderboardTable({ entries, currentUserId, isXP = false, userRan
             </th>
             {!isXP && (
               <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-widest text-gray-500">
-                Lvl
+                {t('profile.level')}
               </th>
             )}
             <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-widest text-gray-500">
-              {isXP ? 'Total XP' : 'Score'}
+              {isXP ? t('profile.total_xp') : t('game.score')}
             </th>
           </tr>
         </thead>
@@ -82,7 +86,7 @@ export function LeaderboardTable({ entries, currentUserId, isXP = false, userRan
                 {!isXP && (
                   <td className="whitespace-nowrap px-6 py-4 text-center">
                     <span className="rounded bg-gray-100 px-2 py-1 text-xs font-bold text-gray-600 dark:bg-slate-700 dark:text-slate-400">
-                      Lvl {entry.level || 1}
+                      {t('profile.level')} {entry.level || 1}
                     </span>
                   </td>
                 )}

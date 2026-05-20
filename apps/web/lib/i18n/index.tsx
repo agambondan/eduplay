@@ -56,4 +56,4 @@ export function useLocale() {
   return useContext(I18nContext);
 }
 
-export { type Locale };
+export { I18nContext, type Locale };

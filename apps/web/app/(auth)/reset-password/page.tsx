@@ -6,13 +6,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { authApi } from '@/lib/api/auth';
+import { useLocale } from '@/lib/i18n';
 
 const schema = z.object({
-  new_password: z.string().min(6, 'Password minimal 6 karakter'),
+  new_password: z.string().min(6),
   confirm: z.string(),
-}).refine((d) => d.new_password === d.confirm, { message: 'Password tidak cocok', path: ['confirm'] });
+}).refine((d) => d.new_password === d.confirm, { message: 'konfirmasi password tidak cocok', path: ['confirm'] });
 
 function ResetForm() {
+  const { t } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
@@ -30,15 +32,15 @@ function ResetForm() {
       setStatus('idle');
       await authApi.resetPassword(token, data.new_password);
       setStatus('success');
-      setMessage('Password berhasil direset!');
+      setMessage(t('auth.reset_success'));
     } catch {
       setStatus('error');
-      setMessage('Token tidak valid atau sudah kedaluwarsa.');
+      setMessage(t('auth.reset_error'));
     }
   };
 
   if (!token) {
-    return <div className="text-center text-red-500">Token reset tidak ditemukan.</div>;
+    return <div className="text-center text-red-500">{t('auth.reset_error')}</div>;
   }
 
   if (status === 'success') {
@@ -49,7 +51,7 @@ function ResetForm() {
           href="/login"
           className="block text-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
         >
-          Login sekarang
+{t('auth.login')}
         </a>
       </div>
     );
@@ -62,7 +64,7 @@ function ResetForm() {
           <input
             {...register('new_password')}
             type="password"
-            placeholder="Password Baru"
+            placeholder={t('auth.password')}
             className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
           />
           {errors.new_password && (
@@ -73,7 +75,7 @@ function ResetForm() {
           <input
             {...register('confirm')}
             type="password"
-            placeholder="Konfirmasi Password"
+            placeholder={t('auth.password')}
             className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
           />
           {errors.confirm && (
@@ -87,21 +89,22 @@ function ResetForm() {
         disabled={isSubmitting}
         className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
       >
-        {isSubmitting ? 'Menyimpan...' : 'Reset Password'}
+        {isSubmitting ? t('common.loading') : t('auth.reset_title')}
       </button>
     </form>
   );
 }
 
 export default function ResetPasswordPage() {
+  const { t } = useLocale();
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-md">
         <div>
-          <h2 className="text-center text-3xl font-extrabold text-gray-900">EduPlay</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">Buat Password Baru</p>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">{t('app.name')}</h2>
+          <p className="mt-2 text-center text-sm text-gray-600">{t('auth.reset_title')}</p>
         </div>
-        <Suspense fallback={<div className="text-center">Loading...</div>}>
+        <Suspense fallback={<div className="text-center">{t('common.loading')}</div>}>
           <ResetForm />
         </Suspense>
       </div>

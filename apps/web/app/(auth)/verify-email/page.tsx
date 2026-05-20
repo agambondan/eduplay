@@ -3,8 +3,10 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api/auth';
+import { useLocale } from '@/lib/i18n';
 
 function VerifyContent() {
+  const { t } = useLocale();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -13,25 +15,25 @@ function VerifyContent() {
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setMessage('Token verifikasi tidak ditemukan.');
+      setMessage(t('auth.verify_error'));
       return;
     }
     authApi.verifyEmail(token)
       .then(() => {
         setStatus('success');
-        setMessage('Email berhasil diverifikasi!');
+        setMessage(t('auth.verify_success'));
       })
       .catch(() => {
         setStatus('error');
-        setMessage('Token tidak valid atau sudah kedaluwarsa.');
+        setMessage(t('auth.verify_error'));
       });
-  }, [token]);
+  }, [token, t]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 text-center shadow-md">
-        <h2 className="text-3xl font-extrabold text-gray-900">EduPlay</h2>
-        {status === 'loading' && <p className="text-gray-600">Memverifikasi email...</p>}
+        <h2 className="text-3xl font-extrabold text-gray-900">{t('app.name')}</h2>
+        {status === 'loading' && <p className="text-gray-600">{t('auth.verify_checking')}</p>}
         {status === 'success' && (
           <div className="space-y-4">
             <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">{message}</div>
@@ -39,7 +41,7 @@ function VerifyContent() {
               href="/login"
               className="block text-sm font-medium text-indigo-600 hover:text-indigo-500"
             >
-              Login sekarang
+{t('auth.login')}
             </a>
           </div>
         )}
@@ -50,7 +52,7 @@ function VerifyContent() {
               href="/"
               className="block text-sm font-medium text-indigo-600 hover:text-indigo-500"
             >
-              Kembali ke Beranda
+{t('common.back')}
             </a>
           </div>
         )}
@@ -60,8 +62,9 @@ function VerifyContent() {
 }
 
 export default function VerifyEmailPage() {
+  const { t } = useLocale();
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><p>Loading...</p></div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><p>{t('common.loading')}</p></div>}>
       <VerifyContent />
     </Suspense>
   );

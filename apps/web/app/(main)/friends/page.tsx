@@ -6,8 +6,10 @@ import { friendsApi, FriendResponse } from '@/lib/api/friends';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { cn } from '@/lib/utils/cn';
 import { Loader2, UserPlus, UserX, Check, X, Users, Mail } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 export default function FriendsPage() {
+  const { t } = useLocale();
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
@@ -61,9 +63,9 @@ export default function FriendsPage() {
     return (
       <div className="container max-w-md py-20 text-center">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Teman</h1>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{t('friends.title')}</h1>
           <p className="text-gray-500 dark:text-slate-400">
-            Login untuk melihat daftar teman dan permintaan pertemanan.
+            {t('friends.login_prompt')}
           </p>
         </div>
       </div>
@@ -74,7 +76,7 @@ export default function FriendsPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Teman</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{t('friends.title')}</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400">Terhubung dengan teman dan sesama pemain</p>
         </div>
         <button
@@ -82,7 +84,7 @@ export default function FriendsPage() {
           className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700"
         >
           <UserPlus className="h-4 w-4" />
-          Tambah Teman
+          {t('friends.add')}
         </button>
       </div>
 
@@ -99,7 +101,7 @@ export default function FriendsPage() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Masukkan username teman..."
+              placeholder={t('friends.add_placeholder')}
               className="flex-1 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             />
             <button
@@ -107,14 +109,14 @@ export default function FriendsPage() {
               disabled={sendMutation.isPending || !username.trim()}
               className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
             >
-              {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Kirim'}
+              {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('friends.send_request')}
             </button>
           </form>
           {sendMutation.isError && (
             <p className="mt-2 text-sm text-red-500">{(sendMutation.error as Error).message}</p>
           )}
           {sendMutation.isSuccess && (
-            <p className="mt-2 text-sm text-emerald-600">Permintaan pertemanan dikirim!</p>
+            <p className="mt-2 text-sm text-emerald-600">{t('friends.request_sent')}</p>
           )}
         </div>
       )}
@@ -128,7 +130,7 @@ export default function FriendsPage() {
           )}
         >
           <Users className="h-4 w-4" />
-          Teman
+          {t('friends.tab_friends')}
           {friends && friends.length > 0 && (
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-slate-700">
               {friends.length}
@@ -146,7 +148,7 @@ export default function FriendsPage() {
           )}
         >
           <Mail className="h-4 w-4" />
-          Permintaan
+          {t('friends.tab_requests')}
           {requests && requests.length > 0 && (
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
               {requests.length}
@@ -173,7 +175,7 @@ export default function FriendsPage() {
           ) : (
             <div className="rounded-2xl border-2 border-dashed border-gray-100 bg-gray-50 py-20 text-center dark:border-slate-700 dark:bg-slate-800/50">
               <Users className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-              <p className="text-gray-500 dark:text-slate-400">Belum ada teman.</p>
+              <p className="text-gray-500 dark:text-slate-400">{t('friends.no_friends')}</p>
               <p className="text-sm text-gray-400 dark:text-slate-500">
                 Cari teman dengan username untuk memulai!
               </p>
@@ -202,7 +204,7 @@ export default function FriendsPage() {
           ) : (
             <div className="rounded-2xl border-2 border-dashed border-gray-100 bg-gray-50 py-20 text-center dark:border-slate-700 dark:bg-slate-800/50">
               <Mail className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-              <p className="text-gray-500 dark:text-slate-400">Tidak ada permintaan pertemanan.</p>
+              <p className="text-gray-500 dark:text-slate-400">{t('friends.no_requests')}</p>
             </div>
           )}
         </>
@@ -212,6 +214,7 @@ export default function FriendsPage() {
 }
 
 function FriendCard({ friend, onRemove }: { friend: FriendResponse; onRemove: () => void }) {
+  const { t } = useLocale();
   const [removing, setRemoving] = useState(false);
   return (
     <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -224,7 +227,7 @@ function FriendCard({ friend, onRemove }: { friend: FriendResponse; onRemove: ()
         </div>
         <div>
           <p className="font-bold text-gray-900 dark:text-white">{friend.username}</p>
-          <p className="text-xs text-gray-400 dark:text-slate-500">Teman</p>
+          <p className="text-xs text-gray-400 dark:text-slate-500">{t('friends.tab_friends')}</p>
         </div>
       </div>
       <button
@@ -236,7 +239,7 @@ function FriendCard({ friend, onRemove }: { friend: FriendResponse; onRemove: ()
         className="flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 dark:border-red-900/20 dark:hover:bg-red-900/10"
       >
         {removing ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserX className="h-3 w-3" />}
-        Hapus
+        {t('friends.remove')}
       </button>
     </div>
   );
@@ -251,6 +254,7 @@ function RequestCard({
   onAccept: () => void;
   onDecline: () => void;
 }) {
+  const { t } = useLocale();
   return (
     <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-center gap-3">
@@ -271,14 +275,14 @@ function RequestCard({
           className="flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-600"
         >
           <Check className="h-3 w-3" />
-          Terima
+          {t('friends.accept')}
         </button>
         <button
           onClick={onDecline}
           className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-500 transition-colors hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700"
         >
           <X className="h-3 w-3" />
-          Tolak
+          {t('friends.decline')}
         </button>
       </div>
     </div>

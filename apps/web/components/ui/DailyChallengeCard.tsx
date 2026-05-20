@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Calendar, Timer } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 export function DailyChallengeCard() {
+  const { t } = useLocale();
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
@@ -37,22 +39,22 @@ export function DailyChallengeCard() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400">
-            <Calendar className="h-3.5 w-3.5" /> Daily
+            <Calendar className="h-3.5 w-3.5" /> {t('daily.title')}
           </span>
           <span className="inline-flex items-center gap-1 font-mono text-xs font-bold text-gray-500 dark:text-slate-400">
             <Timer className="h-3.5 w-3.5" /> {timeLeft}
           </span>
         </div>
-        <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">Tantangan Harian</h3>
+        <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">{t('daily.title')}</h3>
         <p className="text-sm text-gray-500 dark:text-slate-400">
-          Selesaikan satu set soal spesial hari ini dan dapatkan bonus <strong>2x XP</strong>!
+          Selesaikan satu set soal spesial hari ini dan dapatkan bonus <strong>{t('daily.bonus')}</strong>!
         </p>
       </div>
       <Link
         href="/daily"
         className="mt-6 inline-block w-full rounded-xl bg-emerald-500 px-4 py-3 text-center font-bold text-white shadow-sm transition-colors hover:bg-emerald-600"
       >
-        Mulai Tantangan
+        {t('daily.prompt_cta')}
       </Link>
     </div>
   );

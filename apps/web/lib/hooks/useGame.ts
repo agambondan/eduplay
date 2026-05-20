@@ -24,6 +24,9 @@ export function useGame(gameSlug: string, gameName?: string, category?: string) 
         if (result.new_highscore) {
           analytics.newHighscore(gameSlug, store.score);
         }
+        if (result.level_up && result.new_level) {
+          store.setLevelUp({ newLevel: result.new_level });
+        }
       }
       return result;
     } catch {

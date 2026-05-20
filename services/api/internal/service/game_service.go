@@ -25,6 +25,8 @@ type SubmitScoreResponse struct {
 	SessionID    uuid.UUID `json:"session_id"`
 	XPEarned     int       `json:"xp_earned"`
 	NewHighscore bool      `json:"new_highscore"`
+	LevelUp      bool      `json:"level_up"`
+	NewLevel     int       `json:"new_level"`
 }
 
 type GameDetailResponse struct {
@@ -134,6 +136,16 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 		return nil, errors.New("invalid score for given duration")
 	}
 
+	// Guest mode: return response without persistence
+	var u model.User
+	if err := database.DB.Where("id = ?", userID).First(&u).Error; err != nil {
+		return &SubmitScoreResponse{
+			SessionID:    uid,
+			XPEarned:     0,
+			NewHighscore: false,
+		}, nil
+	}
+
 	multiplier := 1.0
 	switch req.Difficulty {
 	case "medium":
@@ -186,24 +198,24 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 		s.achSvc.CheckTop10(userID)
 	}
 
-	var u model.User
-	if err := database.DB.Where("id = ?", userID).First(&u).Error; err == nil {
-		u.XP += xp
-		u.Level = model.LevelFromXP(u.XP)
+	oldLevel := u.Level
+	u.XP += xp
+	u.Level = model.LevelFromXP(u.XP)
+	levelUp := u.Level > oldLevel
 
-		// Check level achievement
-		if u.Level >= 5 && s.achSvc != nil {
-			s.achSvc.CheckAndUnlock(userID, "level-5")
-		}
-
-		now := time.Now()
-		u.LastActive = &now
-		database.DB.Save(&u)
+	if u.Level >= 5 && s.achSvc != nil {
+		s.achSvc.CheckAndUnlock(userID, "level-5")
 	}
+
+	now := time.Now()
+	u.LastActive = &now
+	database.DB.Save(&u)
 
 	return &SubmitScoreResponse{
 		SessionID:    session.ID,
 		XPEarned:     xp,
 		NewHighscore: newHighscore,
+		LevelUp:      levelUp,
+		NewLevel:     u.Level,
 	}, nil
 }

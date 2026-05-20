@@ -8,9 +8,11 @@ import { LeaderboardTable } from '@/components/ui/LeaderboardTable';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { cn } from '@/lib/utils/cn';
 import { Loader2, Trophy, Globe } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 export default function LeaderboardPage() {
   const { user } = useAuthStore();
+  const { t } = useLocale();
   const [tab, setTab] = useState<'global' | 'game'>('global');
   const [period, setPeriod] = useState<'all' | 'weekly'>('all');
   const [selectedGame, setSelectedGame] = useState<string>('');
@@ -30,9 +32,9 @@ export default function LeaderboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Leaderboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('leaderboard.title')}</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400">
-            Lihat siapa yang paling pintar!
+            {t('leaderboard.global')}
           </p>
         </div>
 
@@ -57,7 +59,7 @@ export default function LeaderboardPage() {
                 : 'text-gray-500'
             )}
           >
-            Weekly
+            {t('leaderboard.weekly')}
           </button>
         </div>
       </div>
@@ -70,7 +72,7 @@ export default function LeaderboardPage() {
             tab === 'global' ? 'text-indigo-600' : 'text-gray-500'
           )}
         >
-          Global XP
+          {t('leaderboard.global')}
           {tab === 'global' && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-indigo-600" />
           )}
@@ -85,7 +87,7 @@ export default function LeaderboardPage() {
             tab === 'game' ? 'text-indigo-600' : 'text-gray-500'
           )}
         >
-          Per-Game Highscore
+          {t('leaderboard.per_game')}
           {tab === 'game' && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-indigo-600" />
           )}
@@ -125,7 +127,7 @@ export default function LeaderboardPage() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">
-                    Peringkat Kamu
+                    {t('leaderboard.your_rank')}
                   </p>
                   <p className="font-bold">{user?.username}</p>
                 </div>
@@ -133,7 +135,7 @@ export default function LeaderboardPage() {
               <div className="text-right">
                 <p className="text-2xl font-black">{leadData.user_rank.score.toLocaleString()}</p>
                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">
-                  {tab === 'global' ? 'Total XP' : 'Highscore'}
+                  {tab === 'global' ? t('profile.total_xp') : t('game.highscore')}
                 </p>
               </div>
             </div>
@@ -150,7 +152,7 @@ export default function LeaderboardPage() {
       ) : (
         <div className="rounded-2xl border-2 border-dashed border-gray-100 bg-gray-50 py-20 text-center dark:border-slate-700 dark:bg-slate-800/50">
           <Trophy className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-          <p className="text-gray-500">Belum ada data skor untuk kategori ini.</p>
+          <p className="text-gray-500">{t('leaderboard.empty')}</p>
         </div>
       )}
     </div>

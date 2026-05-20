@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Trophy, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { useLocale } from '@/lib/i18n';
 
 interface ToastData {
   id: string;
@@ -12,6 +13,7 @@ interface ToastData {
 }
 
 export function AchievementToast() {
+  const { t } = useLocale();
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
   // Simple global event listener for achievements
@@ -56,7 +58,7 @@ export function AchievementToast() {
 
             <div className="flex flex-col">
               <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500">
-                Achievement Unlocked
+                {t('achievement.unlocked')}
               </span>
               <h4 className="mt-0.5 font-bold leading-tight text-gray-900 dark:text-white">
                 {toast.name}

@@ -10,11 +10,14 @@ import { XPBadge } from '@/components/ui/XPBadge';
 import { StreakCounter } from '@/components/ui/StreakCounter';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { xpUtils } from '@/lib/utils/xp';
+import { useLocale } from '@/lib/i18n';
 import { Trophy, Gamepad2 } from 'lucide-react';
+import OnboardingFlow from '@/components/onboarding/OnboardingFlow';
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const [stats, setStats] = useState<UserStats | null>(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     api
@@ -27,11 +30,12 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <OnboardingFlow />
       {/* Hero */}
       <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 p-6 text-white shadow-lg shadow-indigo-200 dark:shadow-none">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-indigo-200">Selamat datang 👋</p>
+            <p className="text-sm font-medium text-indigo-200">{t('game.welcome')} 👋</p>
             <h1 className="text-2xl font-bold">{user?.username || 'Pelajar'}</h1>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -52,10 +56,10 @@ export default function DashboardPage() {
       {stats && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { label: 'Games', value: stats.total_games || 0, icon: '🎮' },
-            { label: 'Total XP', value: stats.total_xp || 0, icon: '⭐' },
-            { label: 'Level', value: level, icon: '🏅' },
-            { label: 'Streak', value: user?.streak || 0, icon: '🔥' },
+            { label: t('profile.games_played'), value: stats.total_games || 0, icon: '🎮' },
+            { label: t('profile.total_xp'), value: stats.total_xp || 0, icon: '⭐' },
+            { label: t('profile.level'), value: level, icon: '🏅' },
+            { label: t('profile.streak'), value: user?.streak || 0, icon: '🔥' },
           ].map((s) => (
             <div
               key={s.label}
@@ -76,7 +80,7 @@ export default function DashboardPage() {
           <div>
             <div className="mb-4 flex items-center gap-2">
               <Trophy className="h-5 w-5 text-amber-500" />
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Leaderboard</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('leaderboard.title')}</h3>
             </div>
             <p className="text-sm text-gray-500 dark:text-slate-400">
               Lihat posisi kamu di antara pemain lain dan raih podium!
@@ -95,7 +99,7 @@ export default function DashboardPage() {
       {stats && stats.recent_sessions?.length > 0 && (
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
-            <Gamepad2 className="h-5 w-5" /> Riwayat Terbaru
+            <Gamepad2 className="h-5 w-5" /> {t('game.recent_sessions')}
           </h2>
           <div className="space-y-2">
             {stats.recent_sessions.slice(0, 5).map((session) => (
@@ -106,7 +110,7 @@ export default function DashboardPage() {
                 <span className="font-medium capitalize text-gray-900 dark:text-white">
                   {session.game_slug?.replace('-', ' ')}
                 </span>
-                <span className="text-gray-500">Skor: {session.score}</span>
+                <span className="text-gray-500">{t('game.score')}: {session.score}</span>
                 <span className="font-bold text-indigo-600 dark:text-indigo-400">
                   +{session.xp_earned} XP
                 </span>
@@ -118,12 +122,12 @@ export default function DashboardPage() {
 
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Semua Game</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('game.all_games')}</h2>
           <Link
             href="/games"
             className="text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
           >
-            Lihat semua →
+            {t('common.view_all')} →
           </Link>
         </div>
       </div>

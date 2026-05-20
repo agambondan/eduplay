@@ -113,6 +113,25 @@ func (h *AuthController) Login(c *fiber.Ctx) error {
 	})
 }
 
+// GuestLogin godoc
+// @Summary Guest login
+// @Description Get a temporary token to play without an account
+// @Tags auth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /auth/guest [post]
+func (h *AuthController) GuestLogin(c *fiber.Ctx) error {
+	res, err := h.svc.GuestLogin()
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, "Failed to create guest session")
+	}
+
+	return response.Success(c, fiber.Map{
+		"user":         res.User,
+		"access_token": res.AccessToken,
+	})
+}
+
 // Refresh godoc
 // @Summary Refresh access token
 // @Description Get a new access token using refresh token

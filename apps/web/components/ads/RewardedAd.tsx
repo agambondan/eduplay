@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { PlayCircle, Gift } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 interface RewardedAdProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export function RewardedAd({
   onReward,
   rewardText = 'Mendapat Reward!',
 }: RewardedAdProps) {
+  const { t } = useLocale();
   const [isPlaying, setIsPlaying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(15);
   const [rewardGranted, setRewardGranted] = useState(false);
@@ -58,7 +60,7 @@ export function RewardedAd({
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30">
               <Gift className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Tonton Iklan</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('ads.rewarded')}</h3>
             <p className="text-gray-500 dark:text-slate-400">
               Tonton video pendek untuk mendapatkan reward:{' '}
               <strong className="text-indigo-600 dark:text-indigo-400">{rewardText}</strong>
@@ -68,13 +70,13 @@ export function RewardedAd({
                 onClick={onClose}
                 className="flex-1 rounded-xl bg-gray-100 px-4 py-3 font-bold text-gray-600 transition-colors hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
-                Batal
+                {t('common.cancel')}
               </button>
               <button
                 onClick={() => setIsPlaying(true)}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 font-bold text-white transition-colors hover:bg-emerald-600"
               >
-                <PlayCircle className="h-5 w-5" /> Tonton
+                <PlayCircle className="h-5 w-5" /> {t('ads.rewarded')}
               </button>
             </div>
           </div>
@@ -99,7 +101,7 @@ export function RewardedAd({
               onClick={onClose}
               className="mt-4 w-full rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white transition-colors hover:bg-indigo-700"
             >
-              Lanjut Main
+                {t('game.resume')}
             </button>
           </div>
         )}

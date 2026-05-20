@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supportApi } from '@/lib/api/support';
 import { cn } from '@/lib/utils/cn';
+import { useLocale } from '@/lib/i18n';
 
 const supportSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi').max(100),
@@ -17,6 +18,7 @@ const supportSchema = z.object({
 type SupportForm = z.infer<typeof supportSchema>;
 
 export default function SupportPage() {
+  const { t } = useLocale();
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
@@ -35,7 +37,7 @@ export default function SupportPage() {
       await supportApi.submit(data);
       setSubmitted(true);
     } catch {
-      setError('Gagal mengirim laporan. Silakan coba lagi.');
+      setError(t('support.error'));
     }
   };
 
@@ -43,9 +45,9 @@ export default function SupportPage() {
     return (
       <div className="mx-auto max-w-lg py-20 text-center">
         <div className="mb-4 text-5xl">✓</div>
-        <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Terima Kasih!</h1>
+        <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{t('support.title')}</h1>
         <p className="text-gray-500 dark:text-slate-400">
-          Laporan Anda telah kami terima. Tim kami akan menindaklanjuti segera.
+          {t('support.success')}
         </p>
       </div>
     );
@@ -53,7 +55,7 @@ export default function SupportPage() {
 
   return (
     <div className="mx-auto max-w-lg py-8">
-      <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Bantuan & Dukungan</h1>
+      <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{t('support.title')}</h1>
       <p className="mb-8 text-gray-500 dark:text-slate-400">
         Laporkan bug, berikan feedback, atau ajukan saran.
       </p>
@@ -61,7 +63,7 @@ export default function SupportPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
           <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
-            Nama
+            {t('support.name')}
           </label>
           <input
             id="name"
@@ -76,7 +78,7 @@ export default function SupportPage() {
 
         <div>
           <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
-            Email
+            {t('support.email')}
           </label>
           <input
             id="email"
@@ -92,22 +94,22 @@ export default function SupportPage() {
 
         <div>
           <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
-            Kategori
+            {t('support.category')}
           </label>
           <select
             id="category"
             {...register('category')}
             className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white"
           >
-            <option value="bug">Bug / Error</option>
-            <option value="feedback">Feedback</option>
-            <option value="saran">Saran</option>
+            <option value="bug">{t('support.category_bug')}</option>
+            <option value="feedback">{t('support.category_feedback')}</option>
+            <option value="saran">{t('support.category_suggestion')}</option>
           </select>
         </div>
 
         <div>
           <label htmlFor="message" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
-            Pesan
+            {t('support.message')}
           </label>
           <textarea
             id="message"
@@ -132,7 +134,7 @@ export default function SupportPage() {
           disabled={isSubmitting}
           className="touch-target w-full rounded-lg bg-indigo-600 px-6 py-2.5 font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
         >
-          {isSubmitting ? 'Mengirim...' : 'Kirim Laporan'}
+          {isSubmitting ? t('common.loading') : t('support.submit')}
         </button>
       </form>
     </div>

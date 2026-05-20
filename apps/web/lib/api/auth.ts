@@ -33,4 +33,8 @@ export const authApi = {
     const res = await api.post<ApiResponse<{ message: string }>>('/auth/request-verification');
     return res.data;
   },
+  guestLogin: async () => {
+    const res = await api.post<ApiResponse<AuthResponse>>('/auth/guest');
+    return res.data.data;
+  },
 };

@@ -1,6 +1,7 @@
 'use client';
 
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { I18nContext } from '@/lib/i18n';
 
 interface Props {
   children: ReactNode;
@@ -13,6 +14,9 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
+  static contextType = I18nContext;
+  declare context: React.ContextType<typeof I18nContext>;
+
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false };
@@ -41,7 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
         >
           <div className="text-4xl">!</div>
           <h2 className="text-xl font-bold text-red-700 dark:text-red-400">
-            Terjadi Kesalahan
+            {this.context.t('common.error')}
           </h2>
           <p className="max-w-md text-sm text-red-600 dark:text-red-300">
             Maaf, terjadi kesalahan yang tidak terduga. Silakan coba lagi.
@@ -50,7 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
             onClick={this.handleRetry}
             className="rounded-lg bg-red-600 px-6 py-2 font-bold text-white transition-colors hover:bg-red-700"
           >
-            Coba Lagi
+            {this.context.t('common.retry')}
           </button>
         </div>
       );

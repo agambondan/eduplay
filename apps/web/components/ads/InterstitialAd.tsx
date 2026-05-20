@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { Loader2 } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 interface InterstitialAdProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface InterstitialAdProps {
 }
 
 export function InterstitialAd({ isOpen, onClose }: InterstitialAdProps) {
+  const { t } = useLocale();
   const [canSkip, setCanSkip] = useState(false);
   const [timeLeft, setTimeLeft] = useState(5);
 
@@ -55,7 +57,7 @@ export function InterstitialAd({ isOpen, onClose }: InterstitialAdProps) {
 
       <div className="flex flex-col items-center gap-4 text-white">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        <p className="font-medium text-gray-400">Advertisement</p>
+        <p className="font-medium text-gray-400">{t('ads.interstitial')}</p>
 
         {/* Placeholder for actual AdSense interstitial code */}
         <div className="mt-4 flex h-[250px] w-[300px] items-center justify-center rounded-xl border border-slate-700 bg-slate-800">

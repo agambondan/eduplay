@@ -22,6 +22,8 @@ export interface ScoreSubmitResponse {
   session_id: string;
   xp_earned: number;
   new_highscore: boolean;
+  level_up?: boolean;
+  new_level?: number;
 }
 
 export interface Achievement {

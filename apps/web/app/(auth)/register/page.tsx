@@ -7,15 +7,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { useLocale } from '@/lib/i18n';
 
 const registerSchema = z.object({
-  username: z.string().min(3, 'Username minimal 3 karakter'),
-  email: z.string().email('Email tidak valid'),
-  password: z.string().min(6, 'Password minimal 6 karakter'),
+  username: z.string().min(3),
+  email: z.string().email(),
+  password: z.string().min(6),
 });
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const [error, setError] = useState('');
   const setAuth = useAuthStore((state) => state.setAuth);
 
@@ -34,7 +36,7 @@ export default function RegisterPage() {
       setAuth(res.user as any, res.access_token, res.refresh_token);
       router.push('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Terjadi kesalahan saat mendaftar');
+      setError(err.response?.data?.message || t('auth.register_error'));
     }
   };
 
@@ -42,8 +44,8 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-md">
         <div>
-          <h2 className="text-center text-3xl font-extrabold text-gray-900">EduPlay</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">Daftar akun baru</p>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">{t('app.name')}</h2>
+          <p className="mt-2 text-center text-sm text-gray-600">{t('auth.register_title')}</p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4 rounded-md shadow-sm">
@@ -88,12 +90,12 @@ export default function RegisterPage() {
               disabled={isSubmitting}
               className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
             >
-              {isSubmitting ? 'Loading...' : 'Daftar'}
+              {isSubmitting ? t('common.loading') : t('auth.register')}
             </button>
           </div>
           <div className="text-center text-sm">
             <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Sudah punya akun? Masuk
+{t('auth.have_account')}
             </a>
           </div>
         </form>

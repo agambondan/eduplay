@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api/client';
 import { Settings, Users, Gamepad2, BarChart3, Flag } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 interface DashboardStats {
   total_users: number;
@@ -16,6 +17,8 @@ export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState('');
 
+  const { t } = useLocale();
+
   useEffect(() => {
     api.get('/user/me').then((r) => setUser(r.data.data)).catch(() => {});
     api.get('/admin/dashboard')
@@ -27,8 +30,8 @@ export default function AdminPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-bold text-red-500">Access Denied</p>
-          <p className="text-sm text-gray-500">Admin access required</p>
+          <p className="text-lg font-bold text-red-500">{t('admin.access_denied')}</p>
+          <p className="text-sm text-gray-500">{t('admin.access_required')}</p>
         </div>
       </div>
     );
@@ -37,22 +40,22 @@ export default function AdminPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin.title')}</h1>
         {user && <p className="text-sm text-gray-500">{user.username} ({user.role})</p>}
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard icon={<Users />} label="Total Users" value={stats?.total_users ?? '-'} />
-        <StatCard icon={<Gamepad2 />} label="Total Games" value={stats?.total_games ?? '-'} />
-        <StatCard icon={<BarChart3 />} label="Game Sessions" value={stats?.total_sessions ?? '-'} />
-        <StatCard icon={<Flag />} label="Active Today" value={stats?.active_today ?? '-'} />
+        <StatCard icon={<Users />} label={t('admin.users_total')} value={stats?.total_users ?? '-'} />
+        <StatCard icon={<Gamepad2 />} label={t('admin.games_total')} value={stats?.total_games ?? '-'} />
+        <StatCard icon={<BarChart3 />} label={t('admin.sessions_total')} value={stats?.total_sessions ?? '-'} />
+        <StatCard icon={<Flag />} label={t('admin.active_today')} value={stats?.active_today ?? '-'} />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <AdminSection title="User Management" href="/admin/users" icon={<Users />} />
-        <AdminSection title="Game Management" href="/admin/games" icon={<Gamepad2 />} />
-        <AdminSection title="Feature Flags" href="/admin/features" icon={<Settings />} />
-        <AdminSection title="Leaderboard" href="/admin/leaderboard" icon={<BarChart3 />} />
+        <AdminSection title={t('admin.users')} href="/admin/users" icon={<Users />} />
+        <AdminSection title={t('admin.game_mgmt')} href="/admin/games" icon={<Gamepad2 />} />
+        <AdminSection title={t('admin.feature_flags')} href="/admin/features" icon={<Settings />} />
+        <AdminSection title={t('admin.leaderboard_mgmt')} href="/admin/leaderboard" icon={<BarChart3 />} />
       </div>
     </div>
   );
@@ -69,6 +72,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 function AdminSection({ title, href, icon }: { title: string; href: string; icon: React.ReactNode }) {
+  const { t } = useLocale();
   return (
     <a
       href={href}
@@ -77,7 +81,7 @@ function AdminSection({ title, href, icon }: { title: string; href: string; icon
       <div className="text-indigo-500">{icon}</div>
       <div>
         <div className="font-semibold text-gray-900 dark:text-white">{title}</div>
-        <div className="text-sm text-gray-500 dark:text-slate-400">Manage {title.toLowerCase()}</div>
+        <div className="text-sm text-gray-500 dark:text-slate-400">{t('admin.manage')}</div>
       </div>
     </a>
   );

@@ -76,6 +76,7 @@ type AuthService interface {
 	Register(req RegisterRequest) (*AuthResponse, error)
 	Login(req LoginRequest) (*AuthResponse, error)
 	GoogleLogin(req GoogleLoginRequest) (*AuthResponse, error)
+	GuestLogin() (*AuthResponse, error)
 	RefreshToken(tokenString string) (*RefreshResponse, error)
 	Logout(jti string, expiry time.Duration) error
 	RequestVerificationEmail(userID string) error
@@ -227,6 +228,33 @@ func (s *authService) generateAuthResponse(u *model.User) (*AuthResponse, error)
 	resp.User.Streak = u.Streak
 	resp.User.AvatarColor = u.AvatarColor
 	resp.User.EmailVerified = u.EmailVerifiedAt != nil
+
+	return resp, nil
+}
+
+func (s *authService) GuestLogin() (*AuthResponse, error) {
+	guestID := uuid.New().String()
+	accessExpiry, _ := time.ParseDuration(s.cfg.JWT.AccessExpiry)
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":   guestID,
+		"jti":   uuid.New().String(),
+		"exp":   time.Now().Add(accessExpiry).Unix(),
+		"typ":   "access",
+		"guest": true,
+	})
+	accessTokenString, err := accessToken.SignedString([]byte(s.cfg.JWT.Secret))
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &AuthResponse{
+		AccessToken:  accessTokenString,
+		RefreshToken: "",
+	}
+	resp.User.ID = uuid.MustParse(guestID)
+	resp.User.Username = "Tamu"
+	resp.User.AvatarColor = "#6B7280"
 
 	return resp, nil
 }

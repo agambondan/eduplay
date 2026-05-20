@@ -148,6 +148,7 @@ func main() {
 	authGroup.Post("/forgot-password", authHandler.ForgotPassword)
 	authGroup.Post("/reset-password", authHandler.ResetPassword)
 	authGroup.Get("/verify-email", authHandler.VerifyEmail)
+	authGroup.Post("/guest", authHandler.GuestLogin)
 	authGroup.Post("/request-verification", middleware.AuthMiddleware(cfg), authHandler.RequestVerification)
 
 	userGroup := apiV1.Group("/user", middleware.AuthMiddleware(cfg))
@@ -211,6 +212,7 @@ func main() {
 
 	// Start schedulers
 	service.StartDailyScheduler(gameRepo, aiSvc)
+	service.StartPushScheduler(cfg)
 
 	logger.Log.Info("Server starting", zap.String("port", cfg.App.Port))
 	if err := app.Listen(":" + cfg.App.Port); err != nil {

@@ -6,11 +6,13 @@ import { useAuthStore } from '@/lib/stores/authStore';
 import { authApi } from '@/lib/api/auth';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useLocale } from '@/lib/i18n';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const { t } = useLocale();
 
   const handleLogout = async () => {
     try {
@@ -21,11 +23,11 @@ export default function Navbar() {
   };
 
   const navItems = [
-    { name: 'Home', path: '/' },
-    { name: 'Games', path: '/games' },
-    { name: 'Leaderboard', path: '/leaderboard' },
-    { name: 'Daily Challenge', path: '/daily' },
-    { name: 'Bantuan', path: '/support' },
+    { name: t('nav.home'), path: '/' },
+    { name: t('nav.games'), path: '/games' },
+    { name: t('nav.leaderboard'), path: '/leaderboard' },
+    { name: t('nav.daily'), path: '/daily' },
+    { name: t('nav.support'), path: '/support' },
   ];
 
   return (
@@ -76,19 +78,19 @@ export default function Navbar() {
                   onClick={handleLogout}
                   className="rounded-md bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
                 >
-                  Logout
+                  {t('auth.logout')}
                 </button>
               </>
             ) : (
               <>
                 <Link href="/login" className="text-sm font-semibold leading-6 text-gray-900">
-                  Log in
+                  {t('auth.login')}
                 </Link>
                 <Link
                   href="/register"
                   className="rounded-md bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
                 >
-                  Daftar
+                  {t('auth.register')}
                 </Link>
               </>
             )}

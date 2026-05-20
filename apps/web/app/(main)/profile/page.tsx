@@ -10,10 +10,12 @@ import { Achievement } from '@/types/game';
 import { XPBadge } from '@/components/ui/XPBadge';
 import { StreakCounter } from '@/components/ui/StreakCounter';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Trophy, Gamepad2, TrendingUp, ShieldCheck, Crown, Loader2, Upload } from 'lucide-react';
+import { Trophy, Gamepad2, TrendingUp, ShieldCheck, Crown, Loader2, Upload, Settings } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
+  const { t } = useLocale();
   const [stats, setStats] = useState<Stats | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [subscription, setSubscription] = useState<{ id: string; plan: string; status: string; started_at: string; expires_at: string } | null>(null);
@@ -90,7 +92,7 @@ export default function ProfilePage() {
     return (
       <div className="container max-w-md py-20 text-center">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Profil Kamu</h1>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{t('profile.title')}</h1>
           <p className="mb-6 text-gray-500 dark:text-slate-400">
             Login untuk melihat progress, level, dan achievement kamu!
           </p>
@@ -107,7 +109,16 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Profil</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{t('profile.title')}</h1>
+        <Link
+          href="/profile/settings"
+          className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
+        >
+          <Settings className="h-4 w-4" />
+          {t('profile.settings')}
+        </Link>
+      </div>
 
       <div className="space-y-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div className="flex items-center gap-4">
@@ -137,7 +148,7 @@ export default function ProfilePage() {
         />
 
         <div className="border-t border-gray-100 pt-4 dark:border-slate-700">
-          <h3 className="mb-3 text-sm font-bold text-gray-700 dark:text-slate-300">Ganti Foto Profil</h3>
+          <h3 className="mb-3 text-sm font-bold text-gray-700 dark:text-slate-300">{t('profile.change_avatar')}</h3>
           <div className="flex items-center gap-4">
             {avatarPreview ? (
               <img src={avatarPreview} alt="preview" className="h-14 w-14 rounded-full object-cover shadow-inner" />
@@ -180,20 +191,20 @@ export default function ProfilePage() {
       {stats && (
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
-            <Gamepad2 className="h-5 w-5" /> Statistik
+            <Gamepad2 className="h-5 w-5" /> {t('profile.stats')}
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-xl bg-gray-50 p-4 text-center dark:bg-slate-700">
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {stats.total_games || 0}
               </div>
-              <div className="text-sm text-gray-500 dark:text-slate-400">Total Games</div>
+              <div className="text-sm text-gray-500 dark:text-slate-400">{t('profile.games_played')}</div>
             </div>
             <div className="rounded-xl bg-gray-50 p-4 text-center dark:bg-slate-700">
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {stats.total_xp || 0}
               </div>
-              <div className="text-sm text-gray-500 dark:text-slate-400">Total XP</div>
+              <div className="text-sm text-gray-500 dark:text-slate-400">{t('profile.total_xp')}</div>
             </div>
           </div>
         </div>
@@ -203,7 +214,7 @@ export default function ProfilePage() {
       {stats && stats.history && stats.history.length > 0 && (
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
-            <TrendingUp className="h-5 w-5 text-indigo-500" /> Progress XP 7 Hari Terakhir
+            <TrendingUp className="h-5 w-5 text-indigo-500" /> {t('profile.7day_xp')}
           </h2>
           <div className="flex h-40 items-end justify-between gap-3 px-2 pt-6">
             {stats.history.map((pt, i) => {
@@ -230,11 +241,11 @@ export default function ProfilePage() {
 
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
-          <Trophy className="h-5 w-5" /> Achievements
+          <Trophy className="h-5 w-5" /> {t('achievement.title')}
         </h2>
         {achievements.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-slate-400">
-            Belum ada achievement. Main game untuk membuka badge!
+            {t('achievement.empty')}
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -265,7 +276,7 @@ export default function ProfilePage() {
 
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
-          <ShieldCheck className="h-5 w-5" /> Subscription
+          <ShieldCheck className="h-5 w-5" /> {t('profile.subscription')}
         </h2>
         {subscription ? (
           <div className="space-y-3">
@@ -303,7 +314,7 @@ export default function ProfilePage() {
               ) : (
                 <Crown className="h-5 w-5" />
               )}
-              {subscribing ? 'Memproses...' : 'Langganan Premium — Rp 0 (Masa Trial)'}
+              {subscribing ? 'Memproses...' : t('profile.subscribe_trial')}
             </button>
           </div>
         )}

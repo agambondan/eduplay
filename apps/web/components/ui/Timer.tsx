@@ -1,6 +1,9 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '@/lib/stores/gameStore';
 import { cn } from '@/lib/utils/cn';
+import { useLocale } from '@/lib/i18n';
 
 interface TimerProps {
   initialSeconds: number;
@@ -9,6 +12,7 @@ interface TimerProps {
 }
 
 export function Timer({ initialSeconds, onTimeUp, isRunning = true }: TimerProps) {
+  const { t } = useLocale();
   const [seconds, setSeconds] = useState(initialSeconds);
   const onTimeUpRef = useRef(onTimeUp);
   const firedRef = useRef(false);
@@ -42,7 +46,7 @@ export function Timer({ initialSeconds, onTimeUp, isRunning = true }: TimerProps
       )}
     >
       <span className="text-sm font-medium text-gray-600 dark:text-slate-300">
-        {isPaused ? 'Paused' : 'Time:'}
+        {isPaused ? t('game.pause') : t('game.timer')}
       </span>
       <span
         className={cn(

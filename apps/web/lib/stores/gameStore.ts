@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { Difficulty } from '@/types/game';
 
+interface LevelUpData {
+  newLevel: number;
+}
+
 interface GameState {
   score: number;
   isPlaying: boolean;
@@ -8,6 +12,7 @@ interface GameState {
   timeLeft: number;
   difficulty: Difficulty;
   noTimer: boolean;
+  levelUp: LevelUpData | null;
   setScore: (score: number) => void;
   addScore: (points: number) => void;
   setPlaying: (playing: boolean) => void;
@@ -16,6 +21,7 @@ interface GameState {
   setTimeLeft: (time: number) => void;
   setDifficulty: (difficulty: Difficulty) => void;
   setNoTimer: (noTimer: boolean) => void;
+  setLevelUp: (data: LevelUpData | null) => void;
   resetGame: () => void;
 }
 
@@ -26,6 +32,7 @@ export const useGameStore = create<GameState>((set) => ({
   timeLeft: 60,
   difficulty: 'easy',
   noTimer: false,
+  levelUp: null,
   setScore: (score) => set({ score }),
   addScore: (points) => set((state) => ({ score: state.score + points })),
   setPlaying: (isPlaying) => set({ isPlaying }),
@@ -34,5 +41,6 @@ export const useGameStore = create<GameState>((set) => ({
   setTimeLeft: (timeLeft) => set({ timeLeft }),
   setDifficulty: (difficulty) => set({ difficulty }),
   setNoTimer: (noTimer) => set({ noTimer }),
-  resetGame: () => set({ score: 0, isPlaying: false, isPaused: false, timeLeft: 60, noTimer: false }),
+  setLevelUp: (levelUp) => set({ levelUp }),
+  resetGame: () => set({ score: 0, isPlaying: false, isPaused: false, timeLeft: 60, noTimer: false, levelUp: null }),
 }));

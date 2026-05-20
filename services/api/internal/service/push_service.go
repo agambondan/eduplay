@@ -119,3 +119,24 @@ func SendStreakAlertPush(cfg *config.Config) {
 		pushSvc.SendToUser(u.ID, "Streak mau putus!", msg, "/")
 	}
 }
+
+func StartPushScheduler(cfg *config.Config) {
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+
+	runAt := func(hour, min int, fn func(*config.Config)) {
+		for {
+			now := time.Now().In(loc)
+			next := time.Date(now.Year(), now.Month(), now.Day(), hour, min, 0, 0, loc)
+			if now.After(next) {
+				next = next.Add(24 * time.Hour)
+			}
+			time.Sleep(time.Until(next))
+			fn(cfg)
+		}
+	}
+
+	go runAt(7, 0, SendDailyPushReminders)
+	go runAt(20, 0, SendStreakAlertPush)
+
+	logger.Log.Info("push notification scheduler started (07:00 daily reminder, 20:00 streak alert)")
+}

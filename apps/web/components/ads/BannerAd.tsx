@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { useLocale } from '@/lib/i18n';
 
 interface BannerAdProps {
   slotId?: string;
@@ -14,6 +15,7 @@ export function BannerAd({
   format = 'auto',
   responsive = true,
 }: BannerAdProps) {
+  const { t } = useLocale();
   const adRef = useRef<HTMLModElement>(null);
   const pathname = usePathname();
 
@@ -31,7 +33,7 @@ export function BannerAd({
   if (process.env.NODE_ENV === 'development') {
     return (
       <div className="flex min-h-[90px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-200 p-4 text-gray-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-        <span className="text-sm font-bold uppercase">Ad Banner Placement</span>
+        <span className="text-sm font-bold uppercase">{t('ads.banner')}</span>
         <span className="text-xs">Slot: {slotId}</span>
       </div>
     );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api/client';
+import { useLocale } from '@/lib/i18n';
 
 interface AdminUser {
   id: string;
@@ -20,6 +21,8 @@ export default function AdminUsersPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
 
+  const { t } = useLocale();
+
   useEffect(() => {
     api.get(`/admin/users?page=${page}&limit=20`).then((r) => {
       setUsers(r.data.data.users);
@@ -35,12 +38,12 @@ export default function AdminUsersPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">User Management ({total})</h1>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">{t('admin.users')} ({total})</h1>
       <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
           <thead className="bg-gray-50 dark:bg-slate-800">
             <tr>
-              {['Username', 'Email', 'Level', 'XP', 'Streak', 'Role', 'Status', 'Actions'].map((h) => (
+              {['Username', t('auth.email'), t('profile.level'), t('profile.xp'), t('profile.streak'), 'Role', 'Status', 'Actions'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-slate-400">{h}</th>
               ))}
             </tr>
@@ -79,7 +82,7 @@ export default function AdminUsersPage() {
       <div className="mt-4 flex justify-center gap-2">
         <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded bg-gray-200 px-3 py-1 text-sm disabled:opacity-50">Prev</button>
         <span className="px-3 py-1 text-sm">{page}</span>
-        <button disabled={page * 20 >= total} onClick={() => setPage(page + 1)} className="rounded bg-gray-200 px-3 py-1 text-sm disabled:opacity-50">Next</button>
+        <button disabled={page * 20 >= total} onClick={() => setPage(page + 1)} className="rounded bg-gray-200 px-3 py-1 text-sm disabled:opacity-50">{t('common.next')}</button>
       </div>
     </div>
   );

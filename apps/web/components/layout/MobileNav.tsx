@@ -4,17 +4,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Trophy, Gamepad2, User as UserIcon, CalendarCheck } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-
-const navItems = [
-  { name: 'Home', path: '/', icon: Home },
-  { name: 'Games', path: '/games', icon: Gamepad2 },
-  { name: 'Daily', path: '/daily', icon: CalendarCheck },
-  { name: 'Rank', path: '/leaderboard', icon: Trophy },
-  { name: 'Profil', path: '/profile', icon: UserIcon },
-];
+import { useLocale } from '@/lib/i18n';
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const { t } = useLocale();
+
+  const navItems = [
+    { name: t('nav.home'), path: '/', icon: Home },
+    { name: t('nav.games'), path: '/games', icon: Gamepad2 },
+    { name: t('nav.daily'), path: '/daily', icon: CalendarCheck },
+    { name: t('nav.leaderboard'), path: '/leaderboard', icon: Trophy },
+    { name: t('nav.profile'), path: '/profile', icon: UserIcon },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/80 backdrop-blur-lg md:hidden dark:border-slate-700 dark:bg-slate-900/80">
