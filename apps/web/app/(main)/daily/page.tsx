@@ -101,7 +101,8 @@ export default function DailyChallengePage() {
       );
     }
 
-    if (!history || history.history.length === 0) return null;
+    const historyItems = history?.history ?? [];
+    if (!history || historyItems.length === 0) return null;
 
     const today = new Date().toISOString().slice(0, 10);
     const last7 = Array.from({ length: 7 }, (_, i) => {
@@ -109,7 +110,7 @@ export default function DailyChallengePage() {
       d.setDate(d.getDate() - (6 - i));
       return d.toISOString().slice(0, 10);
     });
-    const completedDates = new Set(history.history.map((h) => h.date));
+    const completedDates = new Set(historyItems.map((h) => h.date));
 
     return (
       <div className="space-y-4">
@@ -166,7 +167,7 @@ export default function DailyChallengePage() {
         {showHistory && (
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
             <div className="space-y-2">
-              {history.history.map((item, i) => (
+              {historyItems.map((item, i) => (
                 <div
                   key={i}
                   className="flex items-center justify-between rounded-xl bg-gray-50 p-3 dark:bg-slate-700/50"
