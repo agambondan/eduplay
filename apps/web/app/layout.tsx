@@ -5,6 +5,8 @@ import './globals.css';
 import { Providers } from '@/components/layout/Providers';
 import { AchievementToast } from '@/components/ui/AchievementToast';
 import { WebAppJsonLd } from '@/components/seo/JsonLd';
+import { SkipLink } from '@/components/layout/SkipLink';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -45,8 +47,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
       </head>
         <body className={inter.className}>
+          <SkipLink />
           <Providers>
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
             <AchievementToast />
           </Providers>
           <WebAppJsonLd />

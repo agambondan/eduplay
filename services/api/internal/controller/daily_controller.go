@@ -51,3 +51,17 @@ func (h *DailyController) SubmitDailyChallenge(c *fiber.Ctx) error {
 
 	return response.Success(c, res)
 }
+
+func (h *DailyController) GetHistory(c *fiber.Ctx) error {
+	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
+
+	history, err := h.svc.GetHistory(userID)
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return response.Success(c, history)
+}

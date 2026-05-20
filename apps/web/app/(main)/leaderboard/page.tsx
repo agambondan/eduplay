@@ -143,6 +143,8 @@ export default function LeaderboardPage() {
             entries={leadData.entries}
             currentUserId={user?.id}
             isXP={tab === 'global'}
+            userRank={leadData.user_rank}
+            nearbyEntries={leadData.nearby_entries}
           />
         </div>
       ) : (

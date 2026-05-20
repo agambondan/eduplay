@@ -24,6 +24,7 @@ export default function Navbar() {
     { name: 'Games', path: '/games' },
     { name: 'Leaderboard', path: '/leaderboard' },
     { name: 'Daily Challenge', path: '/daily' },
+    { name: 'Bantuan', path: '/support' },
   ];
 
   return (

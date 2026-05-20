@@ -63,6 +63,7 @@ func main() {
 		&model.UserAchievement{},
 		&model.PushSubscription{},
 		&model.SupportTicket{},
+		&model.Subscription{},
 	)
 
 	seedData()
@@ -101,6 +102,7 @@ func main() {
 	aiSvc := service.NewAIService(cfg)
 	pushSvc := service.NewPushService(cfg)
 	supportSvc := service.NewSupportService(emailCl)
+	subSvc := service.NewSubscriptionService()
 
 	// Controllers
 	authHandler := controller.NewAuthController(authSvc)
@@ -114,6 +116,7 @@ func main() {
 	adminHandler := controller.NewAdminController(adminSvc)
 	pushHandler := controller.NewPushController(pushSvc, cfg)
 	supportHandler := controller.NewSupportController(supportSvc)
+	subHandler := controller.NewSubscriptionController(subSvc)
 
 	// Routes
 	authGroup := apiV1.Group("/auth")
@@ -145,6 +148,7 @@ func main() {
 	dailyGroup := apiV1.Group("/daily")
 	dailyGroup.Get("/", dailyHandler.GetDailyChallenge)
 	dailyGroup.Post("/submit", middleware.AuthMiddleware(cfg), dailyHandler.SubmitDailyChallenge)
+	dailyGroup.Get("/history", middleware.AuthMiddleware(cfg), dailyHandler.GetHistory)
 
 	aiGroup := apiV1.Group("/ai", middleware.AuthMiddleware(cfg), limiter.New(limiter.Config{
 		Max:        10,
@@ -162,6 +166,7 @@ func main() {
 	adminGroup.Post("/leaderboard/reset", adminHandler.ResetLeaderboard)
 	adminGroup.Get("/feature-flags", adminHandler.GetFeatureFlags)
 	adminGroup.Post("/feature-flags/:key", adminHandler.SetFeatureFlag)
+	adminGroup.Get("/reported-usernames", adminHandler.ListReportedUsernames)
 
 	pushGroup := apiV1.Group("/push", middleware.AuthMiddleware(cfg))
 	pushGroup.Post("/subscribe", pushHandler.Subscribe)
@@ -169,6 +174,11 @@ func main() {
 	apiV1.Get("/push/vapid-public-key", pushHandler.VapidPublicKey)
 
 	apiV1.Post("/support", supportHandler.CreateTicket)
+
+	subGroup := apiV1.Group("/subscribe", middleware.AuthMiddleware(cfg))
+	subGroup.Post("/", subHandler.Subscribe)
+	subGroup.Get("/status", subHandler.Status)
+	subGroup.Post("/cancel", subHandler.Cancel)
 
 	// Start schedulers
 	service.StartDailyScheduler(gameRepo, aiSvc)

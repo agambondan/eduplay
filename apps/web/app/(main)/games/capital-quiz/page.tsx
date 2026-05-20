@@ -1,14 +1,31 @@
+import { Metadata } from 'next';
 import CapitalQuiz from '@/components/games/CapitalQuiz';
+import { GameJsonLd } from '@/components/seo/JsonLd';
 
-export const metadata = {
-  title: 'Capital City Quiz | EduPlay',
-  description: 'Tebak ibukota negara-negara di dunia!',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Capital City Quiz | EduPlay',
+    description: 'Tebak ibukota negara-negara di dunia!',
+    openGraph: {
+      title: 'Capital City Quiz | EduPlay',
+      description: 'Tebak ibukota negara-negara di dunia!',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Capital City Quiz | EduPlay',
+      description: 'Tebak ibukota negara-negara di dunia!',
+    },
+  };
+}
 
 export default function CapitalQuizPage() {
   return (
-    <div className="container max-w-2xl py-8">
-      <CapitalQuiz />
-    </div>
+    <>
+      <GameJsonLd name="Capital City Quiz" description="Tebak ibukota negara-negara di dunia!" gameSlug="capital-quiz" />
+      <div className="container max-w-2xl py-8">
+        <CapitalQuiz />
+      </div>
+    </>
   );
 }

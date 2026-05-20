@@ -4,25 +4,35 @@ import { Difficulty } from '@/types/game';
 interface GameState {
   score: number;
   isPlaying: boolean;
+  isPaused: boolean;
   timeLeft: number;
   difficulty: Difficulty;
+  noTimer: boolean;
   setScore: (score: number) => void;
   addScore: (points: number) => void;
   setPlaying: (playing: boolean) => void;
+  setPaused: (paused: boolean) => void;
+  togglePause: () => void;
   setTimeLeft: (time: number) => void;
   setDifficulty: (difficulty: Difficulty) => void;
+  setNoTimer: (noTimer: boolean) => void;
   resetGame: () => void;
 }
 
 export const useGameStore = create<GameState>((set) => ({
   score: 0,
   isPlaying: false,
+  isPaused: false,
   timeLeft: 60,
   difficulty: 'easy',
+  noTimer: false,
   setScore: (score) => set({ score }),
   addScore: (points) => set((state) => ({ score: state.score + points })),
   setPlaying: (isPlaying) => set({ isPlaying }),
+  setPaused: (isPaused) => set({ isPaused }),
+  togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
   setTimeLeft: (timeLeft) => set({ timeLeft }),
   setDifficulty: (difficulty) => set({ difficulty }),
-  resetGame: () => set({ score: 0, isPlaying: false, timeLeft: 60 }),
+  setNoTimer: (noTimer) => set({ noTimer }),
+  resetGame: () => set({ score: 0, isPlaying: false, isPaused: false, timeLeft: 60, noTimer: false }),
 }));

@@ -10,8 +10,10 @@ describe('gameStore', () => {
     const state = useGameStore.getState();
     expect(state.score).toBe(0);
     expect(state.isPlaying).toBe(false);
+    expect(state.isPaused).toBe(false);
     expect(state.timeLeft).toBe(60);
     expect(state.difficulty).toBe('easy');
+    expect(state.noTimer).toBe(false);
   });
 
   it('setScore updates score', () => {
@@ -40,14 +42,37 @@ describe('gameStore', () => {
     expect(useGameStore.getState().difficulty).toBe('hard');
   });
 
+  it('setPaused toggles pause state', () => {
+    useGameStore.getState().setPaused(true);
+    expect(useGameStore.getState().isPaused).toBe(true);
+    useGameStore.getState().setPaused(false);
+    expect(useGameStore.getState().isPaused).toBe(false);
+  });
+
+  it('togglePause flips pause state', () => {
+    useGameStore.getState().togglePause();
+    expect(useGameStore.getState().isPaused).toBe(true);
+    useGameStore.getState().togglePause();
+    expect(useGameStore.getState().isPaused).toBe(false);
+  });
+
+  it('setNoTimer toggles no-timer mode', () => {
+    useGameStore.getState().setNoTimer(true);
+    expect(useGameStore.getState().noTimer).toBe(true);
+  });
+
   it('resetGame resets all values', () => {
     useGameStore.getState().setScore(999);
     useGameStore.getState().setPlaying(true);
+    useGameStore.getState().setPaused(true);
+    useGameStore.getState().setNoTimer(true);
     useGameStore.getState().setTimeLeft(10);
     useGameStore.getState().resetGame();
     const state = useGameStore.getState();
     expect(state.score).toBe(0);
     expect(state.isPlaying).toBe(false);
+    expect(state.isPaused).toBe(false);
+    expect(state.noTimer).toBe(false);
     expect(state.timeLeft).toBe(60);
   });
 });

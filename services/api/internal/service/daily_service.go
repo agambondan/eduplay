@@ -26,9 +26,23 @@ type DailySubmitResponse struct {
 	AchievementsUnlocked bool `json:"achievements_unlocked"`
 }
 
+type DailyHistoryItem struct {
+	Date      string `json:"date"`
+	GameName  string `json:"game_name"`
+	Score     int    `json:"score"`
+	Completed bool   `json:"completed"`
+}
+
+type DailyHistoryResponse struct {
+	History []DailyHistoryItem `json:"history"`
+	Streak  int                `json:"streak"`
+	Total   int                `json:"total"`
+}
+
 type DailyService interface {
 	GetTodayChallenge(userID string) (*DailyChallengeResponse, error)
 	SubmitChallenge(userID string, challengeID string, score int) (*DailySubmitResponse, error)
+	GetHistory(userID string) (*DailyHistoryResponse, error)
 }
 
 type dailyService struct {
@@ -160,5 +174,44 @@ func (s *dailyService) SubmitChallenge(userID string, challengeID string, score 
 		XPEarned:            xp,
 		StreakUpdated:       streakUpdated,
 		AchievementsUnlocked: achievementsUnlocked,
+	}, nil
+}
+
+func (s *dailyService) GetHistory(userID string) (*DailyHistoryResponse, error) {
+	uid, _ := uuid.Parse(userID)
+
+	var subs []model.DailySubmission
+	if err := database.DB.Where("user_id = ?", uid).Order("completed_at desc").Find(&subs).Error; err != nil {
+		return nil, err
+	}
+
+	var items []DailyHistoryItem
+	for _, sub := range subs {
+		var dc model.DailyChallenge
+		if err := database.DB.Where("id = ?", sub.ChallengeID).First(&dc).Error; err != nil {
+			continue
+		}
+		var game model.Game
+		if err := database.DB.Where("id = ?", dc.GameID).First(&game).Error; err != nil {
+			continue
+		}
+		items = append(items, DailyHistoryItem{
+			Date:      dc.ChallengeDate.Format("2006-01-02"),
+			GameName:  game.Name,
+			Score:     sub.Score,
+			Completed: true,
+		})
+	}
+
+	var u model.User
+	streak := 0
+	if err := database.DB.Where("id = ?", userID).First(&u).Error; err == nil {
+		streak = u.Streak
+	}
+
+	return &DailyHistoryResponse{
+		History: items,
+		Streak:  streak,
+		Total:   len(items),
 	}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/internal/service"
+	"github.com/agambondan/eduplay/services/api/pkg/profanity"
 	"github.com/agambondan/eduplay/services/api/pkg/response"
 	"github.com/agambondan/eduplay/services/api/pkg/validator"
 
@@ -51,6 +52,11 @@ func (h *AuthController) Register(c *fiber.Ctx) error {
 
 	if err := validator.Validate.Struct(&req); err != nil {
 		return response.ValidationError(c, err.Error())
+	}
+
+	filter := profanity.NewFilter()
+	if !filter.IsClean(req.Username) {
+		return response.Error(c, fiber.StatusBadRequest, "Username mengandung kata yang tidak pantas")
 	}
 
 	res, err := h.svc.Register(req)

@@ -223,7 +223,8 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
         </p>
         <button
           onClick={handleStart}
-          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+          className="touch-target rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+          aria-label="Mulai permainan Wordle"
         >
           Mulai!
         </button>
@@ -238,9 +239,13 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
         <span className="text-sm text-gray-500 dark:text-slate-400">Percobaan {attempt}/6</span>
       </div>
 
-      <div className="grid gap-1.5">
+      <div
+        className="grid gap-1.5"
+        role="grid"
+        aria-label="Grid tebakan Wordle, 6 baris 5 kolom"
+      >
         {Array.from({ length: 6 }).map((_, row) => (
-          <div key={row} className="flex gap-1.5">
+          <div key={row} className="flex gap-1.5" role="row">
             {Array.from({ length: 5 }).map((_, col) => {
               const guessRow = guesses[row];
               const isCurrentRow = row === attempt && !gameOver;
@@ -251,13 +256,19 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
               return (
                 <div
                   key={col}
+                  role="gridcell"
+                  aria-label={`Baris ${row + 1}, kolom ${col + 1}${cell ? `: ${cell.letter}, ${cell.status === 'correct' ? 'benar' : cell.status === 'present' ? 'ada di kata' : cell.status === 'absent' ? 'tidak ada' : 'kosong'}` : ''}`}
                   className={cn(
                     'flex h-14 w-14 items-center justify-center rounded-lg border-2 text-2xl font-bold transition-all',
                     guessRow ? statusColor[status] : 'border-gray-300 dark:border-slate-600',
                     isCurrentRow && currentGuess[col] && 'border-gray-500 dark:border-slate-400'
                   )}
                 >
-                  {letter}
+                  {status === 'correct' && <span aria-hidden="true">{letter}</span>}
+                  {status === 'present' && <span aria-hidden="true">{letter}</span>}
+                  {status === 'absent' && <span aria-hidden="true">{letter}</span>}
+                  {status === 'empty' && letter}
+                  {!letter && <span aria-hidden="true">&nbsp;</span>}
                 </div>
               );
             })}
@@ -266,7 +277,7 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
       </div>
 
       {gameOver && (
-        <div className="space-y-2 text-center">
+        <div className="space-y-2 text-center" role="alert">
           <p className={cn('text-lg font-bold', won ? 'text-emerald-600' : 'text-red-500')}>
             {won ? 'Selamat! Kata benar!' : `Game Over! Kata: ${targetWord}`}
           </p>
@@ -278,24 +289,27 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
           )}
           <button
             onClick={handleStart}
-            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+            className="touch-target rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+            aria-label="Main lagi Wordle"
           >
             Main Lagi
           </button>
         </div>
       )}
 
-      <div className="mt-2 flex flex-col gap-1.5">
+      <div className="mt-2 flex flex-col gap-1.5" role="group" aria-label="Papan ketik virtual">
         {KEYBOARD_ROWS.map((row, i) => (
-          <div key={i} className="flex justify-center gap-1">
+          <div key={i} className="flex justify-center gap-1" role="row">
             {row.map((key) => {
               const keyStatus = usedLetters[key];
+              const ariaLabel = key === 'ENTER' ? 'Enter' : key === '⌫' ? 'Hapus' : `Huruf ${key}`;
               return (
                 <button
                   key={key}
                   onClick={() => handleKey(key)}
+                  aria-label={ariaLabel}
                   className={cn(
-                    'min-w-[32px] rounded-md px-2.5 py-3 text-sm font-bold transition-colors',
+                    'touch-target flex items-center justify-center rounded-md px-2.5 py-3 text-sm font-bold transition-colors',
                     key.length > 1 ? 'px-3 text-xs' : '',
                     keyStatus
                       ? statusColor[keyStatus]

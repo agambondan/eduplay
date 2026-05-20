@@ -43,6 +43,15 @@ export function useGame(gameSlug: string, gameName?: string, category?: string) 
 
   const endGame = useCallback(() => {
     store.setPlaying(false);
+    store.setPaused(false);
+  }, [store]);
+
+  const pauseGame = useCallback(() => {
+    store.setPaused(true);
+  }, [store]);
+
+  const resumeGame = useCallback(() => {
+    store.setPaused(false);
   }, [store]);
 
   return {
@@ -50,5 +59,7 @@ export function useGame(gameSlug: string, gameName?: string, category?: string) 
     submitScore,
     startGame,
     endGame,
+    pauseGame,
+    resumeGame,
   };
 }

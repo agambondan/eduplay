@@ -5,6 +5,7 @@ import { LeaderboardEntry } from '@/types/game';
 interface LeaderboardResponse {
   entries: LeaderboardEntry[];
   user_rank?: LeaderboardEntry;
+  nearby_entries?: LeaderboardEntry[];
 }
 
 export const leaderboardApi = {

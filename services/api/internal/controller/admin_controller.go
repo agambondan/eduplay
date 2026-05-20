@@ -79,6 +79,14 @@ func (h *AdminController) ResetLeaderboard(c *fiber.Ctx) error {
 	return response.Success(c, fiber.Map{"message": "Leaderboard reset"})
 }
 
+func (h *AdminController) ListReportedUsernames(c *fiber.Ctx) error {
+	reported, err := h.svc.ListReportedUsernames()
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, "Failed to fetch reported usernames")
+	}
+	return response.Success(c, fiber.Map{"reported_usernames": reported})
+}
+
 func (h *AdminController) GetFeatureFlags(c *fiber.Ctx) error {
 	flags, err := h.svc.ListFeatureFlags()
 	if err != nil {

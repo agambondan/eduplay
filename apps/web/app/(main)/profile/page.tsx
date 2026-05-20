@@ -9,12 +9,15 @@ import { Achievement } from '@/types/game';
 import { XPBadge } from '@/components/ui/XPBadge';
 import { StreakCounter } from '@/components/ui/StreakCounter';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Trophy, Gamepad2, TrendingUp } from 'lucide-react';
+import { Trophy, Gamepad2, TrendingUp, ShieldCheck, Crown, Loader2 } from 'lucide-react';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
   const [stats, setStats] = useState<Stats | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [subscription, setSubscription] = useState<{ id: string; plan: string; status: string; started_at: string; expires_at: string } | null>(null);
+  const [subLoading, setSubLoading] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
 
   useEffect(() => {
     api
@@ -25,7 +28,23 @@ export default function ProfilePage() {
       .get('/user/achievements')
       .then((res) => setAchievements(res.data.data || []))
       .catch(() => {});
+    api
+      .get('/subscribe/status')
+      .then((res) => setSubscription(res.data.data))
+      .catch(() => {});
   }, []);
+
+  const handleSubscribe = async () => {
+    setSubscribing(true);
+    try {
+      const res = await api.post('/subscribe/');
+      setSubscription(res.data.data);
+    } catch {
+      // ignore
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   const level = user?.level || 1;
   const xp = user?.xp || 0;
@@ -163,6 +182,52 @@ export default function ProfilePage() {
                 </span>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+          <ShieldCheck className="h-5 w-5" /> Subscription
+        </h2>
+        {subscription ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 rounded-xl bg-indigo-50 p-4 dark:bg-indigo-900/10">
+              <Crown className="h-8 w-8 text-indigo-600" />
+              <div>
+                <div className="font-bold text-gray-900 dark:text-white capitalize">{subscription.plan}</div>
+                <div className="text-sm text-gray-500 dark:text-slate-400">
+                  {subscription.status === 'active' ? (
+                    <span className="text-emerald-600 font-bold">Aktif</span>
+                  ) : (
+                    <span className="text-gray-400">{subscription.status}</span>
+                  )}
+                  {' — '}Bebas Iklan
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400">
+              Langganan dimulai {new Date(subscription.started_at).toLocaleDateString('id-ID')}
+              {subscription.expires_at && `, berakhir ${new Date(subscription.expires_at).toLocaleDateString('id-ID')}`}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              Langganan premium untuk nikmati game tanpa iklan dan fitur eksklusif lainnya!
+            </p>
+            <button
+              onClick={handleSubscribe}
+              disabled={subscribing}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 font-bold text-white shadow-md transition-all hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60"
+            >
+              {subscribing ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Crown className="h-5 w-5" />
+              )}
+              {subscribing ? 'Memproses...' : 'Langganan Premium — Rp 0 (Masa Trial)'}
+            </button>
           </div>
         )}
       </div>

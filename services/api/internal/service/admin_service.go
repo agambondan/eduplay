@@ -7,6 +7,7 @@ import (
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
+	"github.com/agambondan/eduplay/services/api/pkg/profanity"
 	"github.com/google/uuid"
 )
 
@@ -176,6 +177,30 @@ func (s *AdminService) GetFeatureFlag(key string) (string, error) {
 func (s *AdminService) SetFeatureFlag(key, value string) error {
 	ctx := context.Background()
 	return database.RDB.Set(ctx, "feature:"+key, value, 0).Err()
+}
+
+type ReportedUsername struct {
+	ID       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+}
+
+func (s *AdminService) ListReportedUsernames() ([]ReportedUsername, error) {
+	var users []model.User
+	if err := database.DB.Select("id, username").Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	filter := profanity.NewFilter()
+	var reported []ReportedUsername
+	for _, u := range users {
+		if !filter.IsClean(u.Username) {
+			reported = append(reported, ReportedUsername{
+				ID:       u.ID,
+				Username: u.Username,
+			})
+		}
+	}
+	return reported, nil
 }
 
 func (s *AdminService) ListFeatureFlags() (map[string]string, error) {

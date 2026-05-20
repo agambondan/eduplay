@@ -2,6 +2,19 @@ import api from './client';
 import { ApiResponse } from '@/types/api';
 import { DailyChallenge } from '@/types/game';
 
+export interface DailyHistoryItem {
+  date: string;
+  game_name: string;
+  score: number;
+  completed: boolean;
+}
+
+export interface DailyHistory {
+  history: DailyHistoryItem[];
+  streak: number;
+  total: number;
+}
+
 export const dailyApi = {
   get: async () => {
     const res = await api.get<ApiResponse<DailyChallenge>>('/daily');
@@ -12,6 +25,10 @@ export const dailyApi = {
       challenge_id: challengeId,
       score,
     });
+    return res.data.data;
+  },
+  history: async () => {
+    const res = await api.get<ApiResponse<DailyHistory>>('/daily/history');
     return res.data.data;
   },
 };

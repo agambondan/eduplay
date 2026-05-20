@@ -1,14 +1,31 @@
+import { Metadata } from 'next';
 import Sudoku from '@/components/games/Sudoku';
+import { GameJsonLd } from '@/components/seo/JsonLd';
 
-export const metadata = {
-  title: 'Sudoku | EduPlay',
-  description: 'Asah logika dengan teka-teki Sudoku!',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Sudoku | EduPlay',
+    description: 'Asah logika dengan teka-teki Sudoku!',
+    openGraph: {
+      title: 'Sudoku | EduPlay',
+      description: 'Asah logika dengan teka-teki Sudoku!',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Sudoku | EduPlay',
+      description: 'Asah logika dengan teka-teki Sudoku!',
+    },
+  };
+}
 
 export default function SudokuPage() {
   return (
-    <div className="container max-w-2xl py-8">
-      <Sudoku />
-    </div>
+    <>
+      <GameJsonLd name="Sudoku" description="Asah logika dengan teka-teki Sudoku!" gameSlug="sudoku" />
+      <div className="container max-w-2xl py-8">
+        <Sudoku />
+      </div>
+    </>
   );
 }

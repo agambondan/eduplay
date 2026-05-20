@@ -22,6 +22,7 @@ type LeaderboardRepository interface {
 	AddScore(key string, userID string, score float64) error
 	GetTopN(key string, n int64) ([]redis.Z, error)
 	GetUserRank(key string, userID string) (int64, error)
+	GetRangeByRank(key string, start, stop int64) ([]redis.Z, error)
 }
 
 type leaderboardRepository struct{}
@@ -65,6 +66,11 @@ func (r *leaderboardRepository) GetUserRank(key string, userID string) (int64, e
 		return -1, err
 	}
 	return rank + 1, nil
+}
+
+func (r *leaderboardRepository) GetRangeByRank(key string, start, stop int64) ([]redis.Z, error) {
+	ctx := context.Background()
+	return database.RDB.ZRevRangeWithScores(ctx, key, start, stop).Result()
 }
 
 func ParseScore(z redis.Z) (string, int) {

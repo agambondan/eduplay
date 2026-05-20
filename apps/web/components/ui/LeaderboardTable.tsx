@@ -5,9 +5,12 @@ interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
   currentUserId?: string;
   isXP?: boolean;
+  userRank?: LeaderboardEntry | null;
+  nearbyEntries?: LeaderboardEntry[];
 }
 
-export function LeaderboardTable({ entries, currentUserId, isXP = false }: LeaderboardTableProps) {
+export function LeaderboardTable({ entries, currentUserId, isXP = false, userRank, nearbyEntries }: LeaderboardTableProps) {
+  const displayEntries = entries.length >= 20 ? entries : nearbyEntries && nearbyEntries.length > 0 ? nearbyEntries : entries;
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
@@ -30,7 +33,7 @@ export function LeaderboardTable({ entries, currentUserId, isXP = false }: Leade
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-          {entries.map((entry) => {
+          {displayEntries.map((entry) => {
             const isMe = entry.user_id === currentUserId;
             return (
               <tr

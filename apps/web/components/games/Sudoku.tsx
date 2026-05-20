@@ -158,13 +158,15 @@ export default function Sudoku() {
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Isi grid 9x9 dengan angka 1-9!
         </p>
-        <div className="flex gap-2">
+        <div className="flex gap-2" role="radiogroup" aria-label="Level kesulitan">
           {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
             <button
               key={d}
               onClick={() => setDiff(d)}
+              role="radio"
+              aria-checked={diff === d}
               className={cn(
-                'rounded-lg px-4 py-2 font-medium capitalize transition-colors',
+                'touch-target rounded-lg px-4 py-2 font-medium capitalize transition-colors',
                 diff === d
                   ? 'bg-indigo-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'
@@ -176,7 +178,8 @@ export default function Sudoku() {
         </div>
         <button
           onClick={handleStart}
-          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+          className="touch-target rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+          aria-label="Mulai permainan Sudoku"
         >
           Mulai!
         </button>
@@ -195,18 +198,26 @@ export default function Sudoku() {
         <ScoreBoard score={score} />
       </div>
 
-      <div className="grid grid-cols-9 border-2 border-gray-800 dark:border-slate-300">
+      <div
+        className="grid grid-cols-9 border-2 border-gray-800 dark:border-slate-300"
+        role="grid"
+        aria-label="Papan Sudoku 9x9"
+      >
         {current.map((row, r) =>
           row.map((cell, c) => {
             const isOriginal = puzzle[r]?.[c] !== null;
             const isSelected = selected?.[0] === r && selected?.[1] === c;
             const hasError = errors.has(`${r}-${c}`);
+            const boxRow = Math.floor(r / 3);
+            const boxCol = Math.floor(c / 3);
             return (
               <button
                 key={`${r}-${c}`}
                 onClick={() => handleCellClick(r, c)}
+                role="gridcell"
+                aria-label={`Baris ${r + 1}, kolom ${c + 1}${cell ? `, angka ${cell}` : ', kosong'}${isOriginal ? ', diberikan' : ''}`}
                 className={cn(
-                  'flex h-9 w-9 items-center justify-center border border-gray-300 text-sm font-bold transition-colors sm:h-10 sm:w-10 dark:border-slate-600',
+                  'touch-target flex h-9 w-9 items-center justify-center border border-gray-300 text-sm font-bold transition-colors sm:h-10 sm:w-10 dark:border-slate-600',
                   c % 3 === 2 && c < 8 && 'border-r-2 border-r-gray-800 dark:border-r-slate-300',
                   r % 3 === 2 && r < 8 && 'border-b-2 border-b-gray-800 dark:border-b-slate-300',
                   isOriginal
@@ -224,12 +235,13 @@ export default function Sudoku() {
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2" role="group" aria-label="Input angka">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
           <button
             key={n}
             onClick={() => handleNumberInput(n)}
-            className="h-10 w-10 rounded-lg bg-indigo-600 font-bold text-white transition-colors hover:bg-indigo-700"
+            aria-label={`Isi angka ${n}`}
+            className="touch-target flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white transition-colors hover:bg-indigo-700"
           >
             {n}
           </button>
@@ -237,7 +249,7 @@ export default function Sudoku() {
       </div>
 
       {gameOver && (
-        <div className="space-y-2 text-center">
+        <div className="space-y-2 text-center" role="alert">
           <p
             className={cn(
               'text-lg font-bold',
@@ -256,7 +268,8 @@ export default function Sudoku() {
           )}
           <button
             onClick={handleStart}
-            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+            className="touch-target rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
+            aria-label="Main lagi Sudoku"
           >
             Main Lagi
           </button>

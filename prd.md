@@ -2,9 +2,9 @@
 
 ## EduPlay — Educational Mini Game Platform
 
-**Version:** 1.0.0  
-**Status:** Draft  
-**Last Updated:** 2026-05-20  
+**Version:** 1.0.0
+**Status:** Draft
+**Last Updated:** 2026-05-20
 **Author:** Product Team
 
 ---

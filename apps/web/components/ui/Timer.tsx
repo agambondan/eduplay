@@ -17,6 +17,8 @@ export function Timer({ initialSeconds, onTimeUp, isRunning = true }: TimerProps
   useEffect(() => {
     if (!isRunning || seconds <= 0) return;
     const id = setInterval(() => {
+      const isPaused = useGameStore.getState().isPaused;
+      if (isPaused) return;
       setSeconds((prev) => {
         const next = prev - 1;
         useGameStore.getState().setTimeLeft(next);
@@ -30,16 +32,25 @@ export function Timer({ initialSeconds, onTimeUp, isRunning = true }: TimerProps
     return () => clearInterval(id);
   }, [isRunning, seconds]);
 
+  const isPaused = useGameStore((s) => s.isPaused);
+
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2 dark:bg-slate-700">
-      <span className="text-sm font-medium text-gray-600 dark:text-slate-300">Time:</span>
+    <div
+      className={cn(
+        'flex items-center gap-2 rounded-xl px-4 py-2',
+        isPaused ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-gray-100 dark:bg-slate-700'
+      )}
+    >
+      <span className="text-sm font-medium text-gray-600 dark:text-slate-300">
+        {isPaused ? 'Paused' : 'Time:'}
+      </span>
       <span
         className={cn(
           'font-mono text-xl font-bold',
-          seconds <= 10 ? 'animate-pulse text-rose-600' : 'text-gray-900 dark:text-white'
+          seconds <= 10 && !isPaused ? 'animate-pulse text-rose-600' : 'text-gray-900 dark:text-white'
         )}
       >
-        {seconds}s
+        {isPaused ? `${seconds}s` : `${seconds}s`}
       </span>
     </div>
   );

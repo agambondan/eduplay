@@ -1,8 +1,11 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/internal/repository"
+	"github.com/agambondan/eduplay/services/api/pkg/profanity"
 )
 
 type UserService interface {
@@ -25,6 +28,11 @@ func (s *userService) GetProfile(id string) (*model.User, error) {
 }
 
 func (s *userService) UpdateProfile(id string, username string) (*model.User, error) {
+	filter := profanity.NewFilter()
+	if !filter.IsClean(username) {
+		return nil, errors.New("Username mengandung kata yang tidak pantas")
+	}
+
 	u, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
