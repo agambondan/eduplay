@@ -83,9 +83,9 @@ func main() {
 	achSvc := service.NewAchievementService(achRepo)
 	authSvc := service.NewAuthService(cfg, userRepo, achSvc)
 	userSvc := service.NewUserService(userRepo)
-	gameSvc := service.NewGameService(gameRepo, achSvc)
 	leadSvc := service.NewLeaderboardService(leadRepo, gameRepo)
-	dailySvc := service.NewDailyService(gameRepo)
+	gameSvc := service.NewGameService(gameRepo, achSvc, leadSvc)
+	dailySvc := service.NewDailyService(gameRepo, achSvc)
 	aiSvc := service.NewAIService(cfg)
 
 	// Controllers

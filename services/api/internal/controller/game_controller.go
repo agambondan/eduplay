@@ -33,7 +33,10 @@ func (h *GameController) GetGame(c *fiber.Ctx) error {
 }
 
 func (h *GameController) SubmitScore(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(string)
+	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	slug := c.Params("slug")
 
 	var req service.SubmitScoreRequest

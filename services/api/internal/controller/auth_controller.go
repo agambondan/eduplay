@@ -103,13 +103,15 @@ func (h *AuthController) Refresh(c *fiber.Ctx) error {
 		return response.Error(c, fiber.StatusUnauthorized, "No refresh token provided")
 	}
 
-	token, err := h.svc.RefreshToken(refreshToken)
+	res, err := h.svc.RefreshToken(refreshToken)
 	if err != nil {
 		h.clearRefreshCookie(c)
 		return response.Error(c, fiber.StatusUnauthorized, err.Error())
 	}
 
-	return response.Success(c, fiber.Map{"access_token": token})
+	h.setRefreshCookie(c, res.RefreshToken, 7*24*time.Hour)
+
+	return response.Success(c, fiber.Map{"access_token": res.AccessToken})
 }
 
 func (h *AuthController) Logout(c *fiber.Ctx) error {

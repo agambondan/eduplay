@@ -29,7 +29,10 @@ type SubmitChallengeRequest struct {
 }
 
 func (h *DailyController) SubmitDailyChallenge(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(string)
+	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 
 	var req SubmitChallengeRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -40,10 +43,10 @@ func (h *DailyController) SubmitDailyChallenge(c *fiber.Ctx) error {
 		return response.ValidationError(c, err.Error())
 	}
 
-	xp, err := h.svc.SubmitChallenge(userID, req.ChallengeID, req.Score)
+	res, err := h.svc.SubmitChallenge(userID, req.ChallengeID, req.Score)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	return response.Success(c, fiber.Map{"xp_earned": xp})
+	return response.Success(c, res)
 }

@@ -15,6 +15,7 @@ type Entry struct {
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 	Score    int    `json:"score"`
+	Level    int    `json:"level,omitempty"`
 }
 
 type LeaderboardRepository interface {

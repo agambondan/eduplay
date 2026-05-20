@@ -38,7 +38,7 @@ const ELEMENTS = [
   { symbol: 'Zn', name: 'Seng' },
   { symbol: 'Ag', name: 'Perak' },
   { symbol: 'Au', name: 'Emas' },
-  { symbol: 'Hg', name: 'Emas' },
+  { symbol: 'Hg', name: 'Air Raksa' },
 ];
 
 function generateQuestion(): ElementQuestion {

@@ -34,7 +34,7 @@ func LevelFromXP(xp int) int {
 	prev := 0
 	for n := 2; ; n++ {
 		if n == 2 {
-			threshold = 100
+			threshold = 200
 		} else {
 			threshold = prev + (n-1)*200
 		}

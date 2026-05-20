@@ -42,12 +42,6 @@ func getTestConfig() *config.Config {
 	return cfg
 }
 
-type mockAchievement struct{}
-
-func (m *mockAchievement) CheckAndUnlock(userID string, slug string) (bool, error) {
-	return false, nil
-}
-
 func TestAuthService_Register(t *testing.T) {
 	setupTestDB()
 	svc := NewAuthService(getTestConfig(), repository.NewUserRepository(), &mockAchievement{})

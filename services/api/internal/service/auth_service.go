@@ -46,10 +46,15 @@ type AuthResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type RefreshResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 type AuthService interface {
 	Register(req RegisterRequest) (*AuthResponse, error)
 	Login(req LoginRequest) (*AuthResponse, error)
-	RefreshToken(tokenString string) (string, error)
+	RefreshToken(tokenString string) (*RefreshResponse, error)
 	Logout(jti string, expiry time.Duration) error
 }
 
@@ -174,31 +179,37 @@ func (s *authService) generateAuthResponse(u *model.User) (*AuthResponse, error)
 	return resp, nil
 }
 
-func (s *authService) RefreshToken(tokenString string) (string, error) {
+func (s *authService) RefreshToken(tokenString string) (*RefreshResponse, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.cfg.JWT.Secret), nil
 	})
 
 	if err != nil || !token.Valid {
-		return "", errors.New("invalid refresh token")
+		return nil, errors.New("invalid refresh token")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || claims["typ"] != "refresh" {
-		return "", errors.New("invalid token type")
+		return nil, errors.New("invalid token type")
 	}
 
-	jti := claims["jti"].(string)
+	jti, _ := claims["jti"].(string)
 	ctx := context.Background()
 	val, _ := database.RDB.Get(ctx, "jwt:blacklist:"+jti).Result()
 	if val != "" {
-		return "", errors.New("token revoked")
+		return nil, errors.New("token revoked")
 	}
 
-	sub := claims["sub"].(string)
+	sub, _ := claims["sub"].(string)
 	var u model.User
 	if err := database.DB.Where("id = ?", sub).First(&u).Error; err != nil {
-		return "", errors.New("user not found")
+		return nil, errors.New("user not found")
+	}
+
+	// Blacklist old refresh token (rotation)
+	refreshExpiry, _ := time.ParseDuration(s.cfg.JWT.RefreshExpiry)
+	if jti != "" {
+		database.RDB.Set(ctx, "jwt:blacklist:"+jti, "rotated", refreshExpiry)
 	}
 
 	accessExpiry, _ := time.ParseDuration(s.cfg.JWT.AccessExpiry)
@@ -210,12 +221,28 @@ func (s *authService) RefreshToken(tokenString string) (string, error) {
 		"typ": "access",
 	})
 
-	newAccessTokenString, err := accessToken.SignedString([]byte(s.cfg.JWT.Secret))
+	accessTokenString, err := accessToken.SignedString([]byte(s.cfg.JWT.Secret))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return newAccessTokenString, nil
+	refreshJTI := uuid.New().String()
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": u.ID.String(),
+		"jti": refreshJTI,
+		"exp": time.Now().Add(refreshExpiry).Unix(),
+		"typ": "refresh",
+	})
+
+	refreshTokenString, err := refreshToken.SignedString([]byte(s.cfg.JWT.Secret))
+	if err != nil {
+		return nil, err
+	}
+
+	return &RefreshResponse{
+		AccessToken:  accessTokenString,
+		RefreshToken: refreshTokenString,
+	}, nil
 }
 
 func (s *authService) Logout(jti string, expiry time.Duration) error {

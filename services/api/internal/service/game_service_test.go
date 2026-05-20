@@ -31,14 +31,8 @@ func setupGameTestDB() {
 	database.RDB = redis.NewClient(&redis.Options{Addr: mr.Addr()})
 }
 
-type mockAchievement struct{}
-
-func (m *mockAchievement) CheckAndUnlock(userID string, slug string) (bool, error) {
-	return false, nil
-}
-
 func TestGameService_SubmitScore(t *testing.T) {
-	setupTestDB()
+	setupGameTestDB()
 
 	// Seed test data
 	testUser := &model.User{Username: "player1", Email: "p1@test.com", Password: "pwd"}
@@ -48,8 +42,8 @@ func TestGameService_SubmitScore(t *testing.T) {
 	database.DB.Create(testGame)
 
 	repo := repository.NewGameRepository()
-	// Mock achSvc
-	svc := NewGameService(repo, &mockAchievement{})
+	// Mock achSvc and leadSvc
+	svc := NewGameService(repo, &mockAchievement{}, &mockLeaderboard{})
 
 	req := SubmitScoreRequest{
 		Score:      250,
@@ -65,11 +59,11 @@ func TestGameService_SubmitScore(t *testing.T) {
 	database.RDB.Del(context.Background(), "ratelimit:submit_score:"+testUser.ID.String()+":math-quiz")
 
 	reqCheat := SubmitScoreRequest{
-		Score:      999,
-		Duration:   2,
+		Score:      1001,
+		Duration:   45,
 		Difficulty: "easy",
 	}
 	_, err = svc.SubmitScore(testUser.ID.String(), "math-quiz", reqCheat)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid score for given duration")
+	assert.Contains(t, err.Error(), "score exceeds maximum allowed")
 }

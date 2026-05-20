@@ -38,15 +38,20 @@ func AuthMiddleware(cfg *config.Config) fiber.Handler {
 			return response.Error(c, fiber.StatusUnauthorized, "Invalid token type")
 		}
 
-		jti := claims["jti"].(string)
+		jti, _ := claims["jti"].(string)
 		ctx := context.Background()
 		val, _ := database.RDB.Get(ctx, "jwt:blacklist:"+jti).Result()
 		if val != "" {
 			return response.Error(c, fiber.StatusUnauthorized, "Token revoked")
 		}
 
+		sub, _ := claims["sub"].(string)
+		if sub == "" {
+			return response.Error(c, fiber.StatusUnauthorized, "Invalid token claims")
+		}
+
 		c.Locals("user", token)
-		c.Locals("user_id", claims["sub"].(string))
+		c.Locals("user_id", sub)
 		return c.Next()
 	}
 }
@@ -74,8 +79,11 @@ func OptionalAuthMiddleware(cfg *config.Config) fiber.Handler {
 				ctx := context.Background()
 				val, _ := database.RDB.Get(ctx, "jwt:blacklist:"+jti).Result()
 				if val == "" {
-					c.Locals("user", token)
-					c.Locals("user_id", claims["sub"].(string))
+					sub, _ := claims["sub"].(string)
+					if sub != "" {
+						c.Locals("user", token)
+						c.Locals("user_id", sub)
+					}
 				}
 			}
 		}

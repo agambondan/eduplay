@@ -26,31 +26,74 @@ type SubmitScoreResponse struct {
 	NewHighscore bool      `json:"new_highscore"`
 }
 
+type GameDetailResponse struct {
+	ID          uuid.UUID `json:"id"`
+	Slug        string    `json:"slug"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Category    string    `json:"category"`
+	IsActive    bool      `json:"is_active"`
+	CreatedAt   time.Time `json:"created_at"`
+	PlayerCount int64     `json:"player_count"`
+	Highscore   int       `json:"highscore,omitempty"`
+}
+
 type GameService interface {
 	ListGames() ([]model.Game, error)
-	GetGame(slug string) (*model.Game, error)
+	GetGame(slug string) (*GameDetailResponse, error)
 	SubmitScore(userID string, slug string, req SubmitScoreRequest) (*SubmitScoreResponse, error)
 }
 
 type gameService struct {
-	repo   repository.GameRepository
-	achSvc interface {
+	repo    repository.GameRepository
+	achSvc  interface {
 		CheckAndUnlock(userID string, slug string) (bool, error)
+		CheckFirstGame(userID string) error
+		CheckAllGames(userID string) error
+		CheckTop10(userID string) error
 	}
+	leadSvc LeaderboardService
 }
 
 func NewGameService(repo repository.GameRepository, achSvc interface {
 	CheckAndUnlock(userID string, slug string) (bool, error)
-}) GameService {
-	return &gameService{repo: repo, achSvc: achSvc}
+	CheckFirstGame(userID string) error
+	CheckAllGames(userID string) error
+	CheckTop10(userID string) error
+}, leadSvc LeaderboardService) GameService {
+	return &gameService{repo: repo, achSvc: achSvc, leadSvc: leadSvc}
 }
 
 func (s *gameService) ListGames() ([]model.Game, error) {
 	return s.repo.FindAll()
 }
 
-func (s *gameService) GetGame(slug string) (*model.Game, error) {
-	return s.repo.FindBySlug(slug)
+func (s *gameService) GetGame(slug string) (*GameDetailResponse, error) {
+	g, err := s.repo.FindBySlug(slug)
+	if err != nil {
+		return nil, err
+	}
+
+	var playerCount int64
+	database.DB.Model(&model.GameSession{}).Where("game_id = ?", g.ID).Count(&playerCount)
+
+	var topScore int
+	database.DB.Model(&model.UserHighscore{}).
+		Select("COALESCE(MAX(highscore), 0)").
+		Where("game_id = ?", g.ID).
+		Scan(&topScore)
+
+	return &GameDetailResponse{
+		ID:          g.ID,
+		Slug:        g.Slug,
+		Name:        g.Name,
+		Description: g.Description,
+		Category:    g.Category,
+		IsActive:    g.IsActive,
+		CreatedAt:   g.CreatedAt,
+		PlayerCount: playerCount,
+		Highscore:   topScore,
+	}, nil
 }
 
 func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreRequest) (*SubmitScoreResponse, error) {
@@ -66,6 +109,10 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 	allowed, _ := database.RDB.SetNX(ctx, rateLimitKey, "1", 30*time.Second).Result()
 	if !allowed {
 		return nil, errors.New("please wait before submitting another score")
+	}
+
+	if req.Score > 1000 {
+		return nil, errors.New("score exceeds maximum allowed")
 	}
 
 	if req.Duration < 5 && req.Score > 50 {
@@ -103,14 +150,21 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 
 	s.repo.UpsertHighscore(uid, g.ID, req.Score)
 
+	if s.leadSvc != nil {
+		s.leadSvc.AddGameScore(g.ID.String(), userID, float64(req.Score))
+	}
+
 	// Check per-game achievements
 	if s.achSvc != nil {
 		if slug == "math-quiz" && req.Score >= 500 {
 			s.achSvc.CheckAndUnlock(userID, "math-master")
 		}
-		if slug == "wordle" && req.Duration <= 60 { // assuming fast wordle solve
+		if slug == "wordle" && req.Score >= 80 {
 			s.achSvc.CheckAndUnlock(userID, "wordle-genius")
 		}
+		s.achSvc.CheckFirstGame(userID)
+		s.achSvc.CheckAllGames(userID)
+		s.achSvc.CheckTop10(userID)
 	}
 
 	var u model.User

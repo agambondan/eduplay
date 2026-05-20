@@ -85,12 +85,13 @@ func (s *leaderboardService) GetGlobalLeaderboard(userID string, limit int64) (*
 	for i, z := range results {
 		uid, score := repository.ParseScore(z)
 		var u model.User
-		database.DB.Select("username", "level", "xp").Where("id = ?", uid).First(&u)
+		database.DB.Select("username", "level").Where("id = ?", uid).First(&u)
 		entries = append(entries, repository.Entry{
 			Rank:     i + 1,
 			UserID:   uid,
 			Username: u.Username,
 			Score:    score,
+			Level:    u.Level,
 		})
 	}
 
@@ -99,12 +100,13 @@ func (s *leaderboardService) GetGlobalLeaderboard(userID string, limit int64) (*
 		rank, err := s.repo.GetUserRank("leaderboard:global:xp", userID)
 		if err == nil {
 			var u model.User
-			database.DB.Select("username", "xp").Where("id = ?", userID).First(&u)
+			database.DB.Select("username", "xp", "level").Where("id = ?", userID).First(&u)
 			resp.UserRank = &repository.Entry{
 				Rank:     int(rank) + 1,
 				UserID:   userID,
 				Username: u.Username,
 				Score:    u.XP,
+				Level:    u.Level,
 			}
 		}
 	}

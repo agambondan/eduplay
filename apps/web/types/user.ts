@@ -11,6 +11,21 @@ export interface User {
   updated_at: string;
 }
 
+export interface HistoryPoint {
+  date: string;
+  xp: number;
+}
+
+export interface Stats {
+  total_games: number;
+  total_xp: number;
+  total_play_time: number;
+  achievements_unlocked: number;
+  level: number;
+  streak: number;
+  history: HistoryPoint[];
+}
+
 export interface UserStats {
   total_games: number;
   total_xp: number;

@@ -7,6 +7,7 @@ import { Timer } from '@/components/ui/Timer';
 import { Difficulty } from '@/types/game';
 import { cn } from '@/lib/utils/cn';
 import { aiApi, AIQuestion } from '@/lib/api/ai';
+import { useSoundStore } from '@/lib/stores/soundStore';
 
 interface Question {
   text: string;
@@ -67,6 +68,7 @@ function generateOptions(answer: number): number[] {
 export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
   const { score, isPlaying, difficulty, addScore, startGame, endGame, submitScore } =
     useGame('math-quiz');
+  const { playSound, soundEnabled, toggleSound } = useSoundStore();
   const [question, setQuestion] = useState<Question | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
@@ -122,9 +124,11 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
     if (selected === question?.answer) {
       setFeedback('correct');
       addScore(10);
+      playSound('pop');
     } else {
       setFeedback('wrong');
       addScore(-3);
+      playSound('lose');
     }
     setQuestionCount((c) => c + 1);
 

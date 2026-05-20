@@ -12,17 +12,30 @@ import (
 	"github.com/google/uuid"
 )
 
+type DailySubmitResponse struct {
+	XPEarned            int  `json:"xp_earned"`
+	StreakUpdated       bool `json:"streak_updated"`
+	AchievementsUnlocked bool `json:"achievements_unlocked"`
+}
+
 type DailyService interface {
 	GetTodayChallenge() (*model.DailyChallenge, error)
-	SubmitChallenge(userID string, challengeID string, score int) (int, error)
+	SubmitChallenge(userID string, challengeID string, score int) (*DailySubmitResponse, error)
 }
 
 type dailyService struct {
 	gameRepo repository.GameRepository
+	achSvc   interface {
+		CheckAndUnlock(userID string, slug string) (bool, error)
+		CheckDailyCount(userID string) error
+	}
 }
 
-func NewDailyService(gameRepo repository.GameRepository) DailyService {
-	return &dailyService{gameRepo: gameRepo}
+func NewDailyService(gameRepo repository.GameRepository, achSvc interface {
+	CheckAndUnlock(userID string, slug string) (bool, error)
+	CheckDailyCount(userID string) error
+}) DailyService {
+	return &dailyService{gameRepo: gameRepo, achSvc: achSvc}
 }
 
 func (s *dailyService) GetTodayChallenge() (*model.DailyChallenge, error) {
@@ -49,14 +62,14 @@ func (s *dailyService) GetTodayChallenge() (*model.DailyChallenge, error) {
 	return &dc, nil
 }
 
-func (s *dailyService) SubmitChallenge(userID string, challengeID string, score int) (int, error) {
+func (s *dailyService) SubmitChallenge(userID string, challengeID string, score int) (*DailySubmitResponse, error) {
 	uid, _ := uuid.Parse(userID)
 	cid, _ := uuid.Parse(challengeID)
 
 	var sub model.DailySubmission
 	err := database.DB.Where("user_id = ? AND challenge_id = ?", uid, cid).First(&sub).Error
 	if err == nil {
-		return 0, errors.New("already submitted today")
+		return nil, errors.New("already submitted today")
 	}
 
 	submission := model.DailySubmission{
@@ -67,17 +80,55 @@ func (s *dailyService) SubmitChallenge(userID string, challengeID string, score 
 	}
 
 	if err := database.DB.Create(&submission).Error; err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	xp := (score / 10) * 2
 
 	var u model.User
+	streakUpdated := false
 	if err := database.DB.Where("id = ?", userID).First(&u).Error; err == nil {
+		now := time.Now()
+		if u.LastActive == nil || now.Truncate(24*time.Hour).Sub(u.LastActive.Truncate(24*time.Hour)).Hours()/24 >= 1 {
+			u.Streak++
+			streakUpdated = true
+		}
 		u.XP += xp
 		u.Level = model.LevelFromXP(u.XP)
+		u.LastActive = &now
 		database.DB.Save(&u)
 	}
 
-	return xp, nil
+	achievementsUnlocked := false
+	if s.achSvc != nil {
+		if u.Streak >= 3 {
+			unlocked, _ := s.achSvc.CheckAndUnlock(userID, "streak-3")
+			if unlocked {
+				achievementsUnlocked = true
+			}
+		}
+		if u.Streak >= 7 {
+			unlocked, _ := s.achSvc.CheckAndUnlock(userID, "streak-7")
+			if unlocked {
+				achievementsUnlocked = true
+			}
+		}
+		if u.Streak >= 30 {
+			unlocked, _ := s.achSvc.CheckAndUnlock(userID, "streak-30")
+			if unlocked {
+				achievementsUnlocked = true
+			}
+		}
+		unlocked, _ := s.achSvc.CheckAndUnlock(userID, "first-game")
+		if unlocked {
+			achievementsUnlocked = true
+		}
+		s.achSvc.CheckDailyCount(userID)
+	}
+
+	return &DailySubmitResponse{
+		XPEarned:            xp,
+		StreakUpdated:       streakUpdated,
+		AchievementsUnlocked: achievementsUnlocked,
+	}, nil
 }

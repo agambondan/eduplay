@@ -2,17 +2,18 @@
 
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import api from '@/lib/api/client';
-import { UserStats } from '@/types/user';
+import { Stats } from '@/types/user';
 import { Achievement } from '@/types/game';
 import { XPBadge } from '@/components/ui/XPBadge';
 import { StreakCounter } from '@/components/ui/StreakCounter';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Trophy, Gamepad2 } from 'lucide-react';
+import { Trophy, Gamepad2, TrendingUp } from 'lucide-react';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
-  const [stats, setStats] = useState<UserStats | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
 
   useEffect(() => {
@@ -98,6 +99,35 @@ export default function ProfilePage() {
               </div>
               <div className="text-sm text-gray-500 dark:text-slate-400">Total XP</div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Progress History Graph */}
+      {stats && stats.history && stats.history.length > 0 && (
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+            <TrendingUp className="h-5 w-5 text-indigo-500" /> Progress XP 7 Hari Terakhir
+          </h2>
+          <div className="flex h-40 items-end justify-between gap-3 px-2 pt-6">
+            {stats.history.map((pt, i) => {
+              const maxXP = Math.max(...stats.history.map((p) => p.xp), 1);
+              const heightPct = (pt.xp / maxXP) * 80; // max 80% height
+              return (
+                <div key={i} className="group flex flex-1 flex-col items-center">
+                  <div className="mb-1 font-mono text-[10px] font-black text-indigo-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-indigo-400">
+                    +{pt.xp}
+                  </div>
+                  <div
+                    className="min-h-[4px] w-full rounded-t-lg bg-indigo-100 transition-all duration-500 ease-out group-hover:bg-indigo-500 dark:bg-slate-700 dark:group-hover:bg-indigo-400"
+                    style={{ height: `${heightPct}%` }}
+                  />
+                  <div className="mt-2 rotate-12 text-[9px] font-bold text-gray-400 sm:rotate-0">
+                    {pt.date.split('-').slice(1).join('/')}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
