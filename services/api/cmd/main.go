@@ -258,6 +258,10 @@ func seedGames() {
 		{Slug: "nonogram", Name: "Nonogram", Description: "Grid puzzle hitam-putih — isi berdasarkan angka.", Category: "logic", IsActive: true},
 		{Slug: "element-quiz", Name: "Element Quiz", Description: "Tebak simbol kimia dan nomor atom.", Category: "science", IsActive: true},
 		{Slug: "timeline-history", Name: "Timeline History", Description: "Urutkan peristiwa bersejarah.", Category: "history", IsActive: true},
+		{Slug: "memory-match", Name: "Memory Match", Description: "Cocokkan pasangan kartu dalam waktu tercepat.", Category: "logic", IsActive: true},
+		{Slug: "typing-speed", Name: "Typing Speed", Description: "Ketik kata Indonesia secepat mungkin dalam 60 detik.", Category: "language", IsActive: true},
+		{Slug: "simon-says", Name: "Simon Says", Description: "Ingat dan ulangi urutan warna yang menyala.", Category: "logic", IsActive: true},
+		{Slug: "snake", Name: "Snake Classic", Description: "Makan bola, panjangkan ular, jangan tabrak dirimu sendiri!", Category: "arcade", IsActive: true},
 	}
 	for _, g := range games {
 		var count int64
