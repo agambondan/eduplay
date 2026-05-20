@@ -12,7 +12,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <main className="mx-auto w-full max-w-md flex-grow px-4 py-8">
         {children}
       </main>
-      <Footer />
+      <div className='[&_footer]:block'>
+        <Footer />
+      </div>
     </div>
   );
 }
