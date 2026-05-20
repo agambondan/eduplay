@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,7 +21,14 @@ export default function LoginPage() {
   const [guestLoading, setGuestLoading] = useState(false);
   const setAuth = useAuthStore((state) => state.setAuth);
   const setGuest = useAuthStore((state) => state.setGuest);
+  const user = useAuthStore((state) => state.user);
   const { t } = useLocale();
+
+  useEffect(() => {
+    if (user) {
+      router.replace('/profile');
+    }
+  }, [user, router]);
 
   const {
     register,
