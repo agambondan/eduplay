@@ -1,11 +1,16 @@
 package service
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/internal/repository"
+	"github.com/agambondan/eduplay/services/api/pkg/cache"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
+	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
 type LeaderboardResponse struct {
@@ -30,6 +35,18 @@ func NewLeaderboardService(repo repository.LeaderboardRepository, gameRepo repos
 }
 
 func (s *leaderboardService) GetGameLeaderboard(slug string, period string, userID string, limit int64) (*LeaderboardResponse, error) {
+	ctx := context.Background()
+	cacheID := fmt.Sprintf("%s:%s:%s", slug, period, userID)
+	result, err := cache.GetOrSet(ctx, "leaderboard_game", cacheID, 30*time.Second, func() (*LeaderboardResponse, error) {
+		return s.getGameLeaderboardRaw(slug, period, userID, limit)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *leaderboardService) getGameLeaderboardRaw(slug string, period string, userID string, limit int64) (*LeaderboardResponse, error) {
 	g, err := s.gameRepo.FindBySlug(slug)
 	if err != nil {
 		return nil, err
@@ -46,15 +63,15 @@ func (s *leaderboardService) GetGameLeaderboard(slug string, period string, user
 		return nil, err
 	}
 
+	userMap := s.batchFetchUsers(results)
 	entries := make([]repository.Entry, 0, len(results))
 	for i, z := range results {
 		uid, score := repository.ParseScore(z)
-		var u model.User
-		database.DB.Select("username").Where("id = ?", uid).First(&u)
+		u := userMap[uid]
 		entries = append(entries, repository.Entry{
 			Rank:     i + 1,
 			UserID:   uid,
-			Username: u.Username,
+			Username: u,
 			Score:    score,
 		})
 	}
@@ -78,17 +95,16 @@ func (s *leaderboardService) GetGameLeaderboard(slug string, period string, user
 			endPos := int(rank) + 1
 			nearbyRaw, err := s.repo.GetRangeByRank(key, int64(startPos), int64(endPos))
 			if err == nil {
+				nearbyUserMap := s.batchFetchUsers(nearbyRaw)
 				nearby := make([]repository.Entry, 0, len(nearbyRaw))
 				for i, z := range nearbyRaw {
 					uid, score := repository.ParseScore(z)
-					var nu model.User
-					database.DB.Select("username", "level").Where("id = ?", uid).First(&nu)
+					nu := nearbyUserMap[uid]
 					nearby = append(nearby, repository.Entry{
 						Rank:     startPos + i + 1,
 						UserID:   uid,
-						Username: nu.Username,
+						Username: nu,
 						Score:    int(score),
-						Level:    nu.Level,
 					})
 				}
 				resp.NearbyEntries = nearby
@@ -99,43 +115,80 @@ func (s *leaderboardService) GetGameLeaderboard(slug string, period string, user
 	return resp, nil
 }
 
-func (s *leaderboardService) GetGlobalLeaderboard(userID string, limit int64) (*LeaderboardResponse, error) {
-	results, err := s.repo.GetTopN("leaderboard:global:xp", limit)
-	if err != nil {
-		return nil, err
+func (s *leaderboardService) batchFetchUsers(results []redis.Z) map[string]string {
+	userIDs := make([]string, 0, len(results))
+	for _, z := range results {
+		uid, _ := repository.ParseScore(z)
+		userIDs = append(userIDs, uid)
 	}
 
-	entries := make([]repository.Entry, 0, len(results))
-	for i, z := range results {
-		uid, score := repository.ParseScore(z)
-		var u model.User
-		database.DB.Select("username", "level").Where("id = ?", uid).First(&u)
-		entries = append(entries, repository.Entry{
-			Rank:     i + 1,
-			UserID:   uid,
-			Username: u.Username,
-			Score:    score,
-			Level:    u.Level,
-		})
-	}
-
-	resp := &LeaderboardResponse{Entries: entries}
-	if userID != "" {
-		rank, err := s.repo.GetUserRank("leaderboard:global:xp", userID)
+	parsed := make([]uuid.UUID, 0, len(userIDs))
+	for _, id := range userIDs {
+		uid, err := uuid.Parse(id)
 		if err == nil {
-			var u model.User
-			database.DB.Select("username", "xp", "level").Where("id = ?", userID).First(&u)
-			resp.UserRank = &repository.Entry{
-				Rank:     int(rank) + 1,
-				UserID:   userID,
-				Username: u.Username,
-				Score:    u.XP,
-				Level:    u.Level,
-			}
+			parsed = append(parsed, uid)
 		}
 	}
 
-	return resp, nil
+	var users []model.User
+	database.DB.Where("id IN ?", parsed).Select("id, username").Find(&users)
+
+	userMap := make(map[string]string, len(users))
+	for _, u := range users {
+		userMap[u.ID.String()] = u.Username
+	}
+	for _, id := range userIDs {
+		if _, ok := userMap[id]; !ok {
+			userMap[id] = "Unknown"
+		}
+	}
+	return userMap
+}
+
+func (s *leaderboardService) GetGlobalLeaderboard(userID string, limit int64) (*LeaderboardResponse, error) {
+	ctx := context.Background()
+	cacheID := fmt.Sprintf("global:%s", userID)
+	result, err := cache.GetOrSet(ctx, "leaderboard_global", cacheID, 30*time.Second, func() (*LeaderboardResponse, error) {
+		results, err := s.repo.GetTopN("leaderboard:global:xp", limit)
+		if err != nil {
+			return nil, err
+		}
+
+		userMap := s.batchFetchUsers(results)
+		entries := make([]repository.Entry, 0, len(results))
+		for i, z := range results {
+			uid, score := repository.ParseScore(z)
+			u := userMap[uid]
+			entries = append(entries, repository.Entry{
+				Rank:     i + 1,
+				UserID:   uid,
+				Username: u,
+				Score:    score,
+			})
+		}
+
+		resp := &LeaderboardResponse{Entries: entries}
+		if userID != "" {
+			rank, err := s.repo.GetUserRank("leaderboard:global:xp", userID)
+			if err == nil {
+				var u model.User
+				database.DB.Select("username", "xp", "level").Where("id = ?", userID).First(&u)
+				resp.UserRank = &repository.Entry{
+					Rank:     int(rank) + 1,
+					UserID:   userID,
+					Username: u.Username,
+					Score:    u.XP,
+					Level:    u.Level,
+				}
+			}
+		}
+
+		return resp, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func maxInt(a, b int) int {

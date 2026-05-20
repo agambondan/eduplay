@@ -1,8 +1,12 @@
 package service
 
 import (
+	"context"
+	"time"
+
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/internal/repository"
+	"github.com/agambondan/eduplay/services/api/pkg/cache"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
 )
@@ -26,11 +30,33 @@ func NewAchievementService(repo repository.AchievementRepository) AchievementSer
 }
 
 func (s *achievementService) GetAchievements() ([]model.Achievement, error) {
-	return s.repo.FindAll()
+	ctx := context.Background()
+	result, err := cache.GetOrSet(ctx, "achievements", "all", 5*time.Minute, func() (*[]model.Achievement, error) {
+		achs, err := s.repo.FindAll()
+		if err != nil {
+			return nil, err
+		}
+		return &achs, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return *result, nil
 }
 
 func (s *achievementService) GetUserAchievements(userID string) ([]repository.UserAchievementResponse, error) {
-	return s.repo.FindUserAchievements(userID)
+	ctx := context.Background()
+	result, err := cache.GetOrSet(ctx, "user_achievements", userID, 5*time.Minute, func() (*[]repository.UserAchievementResponse, error) {
+		uas, err := s.repo.FindUserAchievements(userID)
+		if err != nil {
+			return nil, err
+		}
+		return &uas, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return *result, nil
 }
 
 func (s *achievementService) CheckAndUnlock(userID string, slug string) (bool, error) {
@@ -50,6 +76,9 @@ func (s *achievementService) CheckAndUnlock(userID string, slug string) (bool, e
 	if err := s.repo.Unlock(uid, a.ID); err != nil {
 		return false, err
 	}
+
+	cache.Del(context.Background(), "user_achievements", userID)
+	cache.Del(context.Background(), "user_profile", userID)
 
 	var u model.User
 	if err := database.DB.Where("id = ?", userID).First(&u).Error; err == nil {

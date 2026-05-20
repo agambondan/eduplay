@@ -8,6 +8,7 @@ import (
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/internal/repository"
+	"github.com/agambondan/eduplay/services/api/pkg/cache"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
 )
@@ -143,6 +144,8 @@ func (s *dailyService) SubmitChallenge(userID string, challengeID string, score 
 		database.DB.Save(&u)
 	}
 
+	cache.Del(context.Background(), "daily_history", userID)
+
 	achievementsUnlocked := false
 	if s.achSvc != nil {
 		if u.Streak >= 3 {
@@ -178,40 +181,43 @@ func (s *dailyService) SubmitChallenge(userID string, challengeID string, score 
 }
 
 func (s *dailyService) GetHistory(userID string) (*DailyHistoryResponse, error) {
-	uid, _ := uuid.Parse(userID)
+	ctx := context.Background()
+	return cache.GetOrSet(ctx, "daily_history", userID, 1*time.Minute, func() (*DailyHistoryResponse, error) {
+		uid, _ := uuid.Parse(userID)
 
-	var subs []model.DailySubmission
-	if err := database.DB.Where("user_id = ?", uid).Order("completed_at desc").Find(&subs).Error; err != nil {
-		return nil, err
-	}
-
-	var items []DailyHistoryItem
-	for _, sub := range subs {
-		var dc model.DailyChallenge
-		if err := database.DB.Where("id = ?", sub.ChallengeID).First(&dc).Error; err != nil {
-			continue
+		var subs []model.DailySubmission
+		if err := database.DB.Where("user_id = ?", uid).Order("completed_at desc").Find(&subs).Error; err != nil {
+			return nil, err
 		}
-		var game model.Game
-		if err := database.DB.Where("id = ?", dc.GameID).First(&game).Error; err != nil {
-			continue
+
+		var items []DailyHistoryItem
+		for _, sub := range subs {
+			var dc model.DailyChallenge
+			if err := database.DB.Where("id = ?", sub.ChallengeID).First(&dc).Error; err != nil {
+				continue
+			}
+			var game model.Game
+			if err := database.DB.Where("id = ?", dc.GameID).First(&game).Error; err != nil {
+				continue
+			}
+			items = append(items, DailyHistoryItem{
+				Date:      dc.ChallengeDate.Format("2006-01-02"),
+				GameName:  game.Name,
+				Score:     sub.Score,
+				Completed: true,
+			})
 		}
-		items = append(items, DailyHistoryItem{
-			Date:      dc.ChallengeDate.Format("2006-01-02"),
-			GameName:  game.Name,
-			Score:     sub.Score,
-			Completed: true,
-		})
-	}
 
-	var u model.User
-	streak := 0
-	if err := database.DB.Where("id = ?", userID).First(&u).Error; err == nil {
-		streak = u.Streak
-	}
+		var u model.User
+		streak := 0
+		if err := database.DB.Where("id = ?", userID).First(&u).Error; err == nil {
+			streak = u.Streak
+		}
 
-	return &DailyHistoryResponse{
-		History: items,
-		Streak:  streak,
-		Total:   len(items),
-	}, nil
+		return &DailyHistoryResponse{
+			History: items,
+			Streak:  streak,
+			Total:   len(items),
+		}, nil
+	})
 }

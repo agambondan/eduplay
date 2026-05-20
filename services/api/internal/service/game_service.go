@@ -9,6 +9,7 @@ import (
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/internal/repository"
+	"github.com/agambondan/eduplay/services/api/pkg/cache"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -65,35 +66,49 @@ func NewGameService(repo repository.GameRepository, achSvc interface {
 }
 
 func (s *gameService) ListGames() ([]model.Game, error) {
-	return s.repo.FindAll()
-}
-
-func (s *gameService) GetGame(slug string) (*GameDetailResponse, error) {
-	g, err := s.repo.FindBySlug(slug)
+	ctx := context.Background()
+	result, err := cache.GetOrSet(ctx, "games", "all", 5*time.Minute, func() (*[]model.Game, error) {
+		games, err := s.repo.FindAll()
+		if err != nil {
+			return nil, err
+		}
+		return &games, nil
+	})
 	if err != nil {
 		return nil, err
 	}
+	return *result, nil
+}
 
-	var playerCount int64
-	database.DB.Model(&model.GameSession{}).Where("game_id = ?", g.ID).Count(&playerCount)
+func (s *gameService) GetGame(slug string) (*GameDetailResponse, error) {
+	ctx := context.Background()
+	return cache.GetOrSet(ctx, "game_detail", slug, 5*time.Minute, func() (*GameDetailResponse, error) {
+		g, err := s.repo.FindBySlug(slug)
+		if err != nil {
+			return nil, err
+		}
 
-	var topScore int
-	database.DB.Model(&model.UserHighscore{}).
-		Select("COALESCE(MAX(highscore), 0)").
-		Where("game_id = ?", g.ID).
-		Scan(&topScore)
+		var playerCount int64
+		database.DB.Model(&model.GameSession{}).Where("game_id = ?", g.ID).Count(&playerCount)
 
-	return &GameDetailResponse{
-		ID:          g.ID,
-		Slug:        g.Slug,
-		Name:        g.Name,
-		Description: g.Description,
-		Category:    g.Category,
-		IsActive:    g.IsActive,
-		CreatedAt:   g.CreatedAt,
-		PlayerCount: playerCount,
-		Highscore:   topScore,
-	}, nil
+		var topScore int
+		database.DB.Model(&model.UserHighscore{}).
+			Select("COALESCE(MAX(highscore), 0)").
+			Where("game_id = ?", g.ID).
+			Scan(&topScore)
+
+		return &GameDetailResponse{
+			ID:          g.ID,
+			Slug:        g.Slug,
+			Name:        g.Name,
+			Description: g.Description,
+			Category:    g.Category,
+			IsActive:    g.IsActive,
+			CreatedAt:   g.CreatedAt,
+			PlayerCount: playerCount,
+			Highscore:   topScore,
+		}, nil
+	})
 }
 
 func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreRequest) (*SubmitScoreResponse, error) {
@@ -154,7 +169,11 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 		s.leadSvc.AddGameScore(g.ID.String(), userID, float64(req.Score))
 	}
 
-	// Check per-game achievements
+	cache.Del(ctx, "game_detail", slug)
+	cache.Del(ctx, "games", "all")
+	cache.DelByPrefix(ctx, "leaderboard_game")
+	cache.DelByPrefix(ctx, "leaderboard_global")
+
 	if s.achSvc != nil {
 		if slug == "math-quiz" && req.Score >= 500 {
 			s.achSvc.CheckAndUnlock(userID, "math-master")
