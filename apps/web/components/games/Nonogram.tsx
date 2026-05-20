@@ -4,7 +4,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type CellState = 'empty' | 'filled' | 'crossed';
@@ -130,7 +133,7 @@ function selectPuzzle(diff: Difficulty): NonogramPuzzle {
 }
 
 export default function Nonogram() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore } = useGame('nonogram');
+  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('nonogram');
 
   const [puzzle, setPuzzle] = useState<NonogramPuzzle | null>(null);
   const [board, setBoard] = useState<CellState[][]>([]);
@@ -276,6 +279,13 @@ export default function Nonogram() {
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Isi grid berdasarkan petunjuk angka untuk mengungkapkan gambar tersembunyi!
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "🔢", text: "Angka di tepi = blok berisi berurutan (contoh: '3 2' = blok 3 lalu blok 2 terpisah)" },
+            { emoji: "👆", text: "Tap cell untuk mengisi (hitam), tap lagi untuk tandai × (kosong)" },
+            { emoji: "🎨", text: "Isi semua cell dengan benar untuk mengungkap gambar tersembunyi!" },
+          ]}
+        />
         <div className="flex gap-2">
           {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
             <button
@@ -340,6 +350,9 @@ export default function Nonogram() {
         </div>
 
         <ScoreBoard score={score} />
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       {puzzle && (
@@ -415,21 +428,17 @@ export default function Nonogram() {
         </div>
       )}
 
-      {gameOver && (
-        <div className="mt-4 space-y-2 text-center">
-          <p className="text-lg font-bold text-emerald-600">Selesai!</p>
-          {result && (
-            <div className="text-sm text-gray-500">
-              <p>+{result.xp} XP</p>
-              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
-            </div>
-          )}
-          <button
-            onClick={handleStart}
-            className="mt-2 rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            isNewHighscore={result.highscore}
+            gameSlug="nonogram"
+            gameName="Nonogram"
+            onReplay={handleStart}
+            description="Selesai!"
+          />
         </div>
       )}
     </div>

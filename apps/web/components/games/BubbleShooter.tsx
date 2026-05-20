@@ -3,8 +3,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { ResultScreen } from '@/components/ui/ResultScreen';
 import { Timer } from '@/components/ui/Timer';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { useLocale } from '@/lib/i18n';
 
 interface Bubble {
   x: number;
@@ -18,7 +22,8 @@ interface Bubble {
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function BubbleShooter() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore } = useGame('bubble-shooter');
+  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('bubble-shooter');
+  const { t } = useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [targetSum, setTargetSum] = useState(0);
   const [gameOver, setGameOver] = useState(false);
@@ -195,15 +200,22 @@ export default function BubbleShooter() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bubble Shooter Math</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.bubble_shooter.title')}</h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
-          Tembak bubble dengan angka yang jika dijumlahkan dengan bubble target hasilnya pas!
+          {t('game.bubble_shooter.desc')}
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "🎯", text: "Perhatikan angka TARGET yang ditampilkan di tengah layar" },
+            { emoji: "🔢", text: "Pilih bubble yang nilainya melengkapi target saat dijumlahkan" },
+            { emoji: "💥", text: "Tembak sebelum waktu habis — semakin cepat semakin besar skormu!" },
+          ]}
+        />
         <button
           onClick={handleStart}
           className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
-          Mulai!
+          {t('game.start')}
         </button>
       </div>
     );
@@ -217,6 +229,9 @@ export default function BubbleShooter() {
           <div className="text-2xl font-black text-amber-700 dark:text-amber-300">{targetSum}</div>
         </div>
         <ScoreBoard score={score} />
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       <div className="relative overflow-hidden rounded-2xl border-4 border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
@@ -230,21 +245,16 @@ export default function BubbleShooter() {
         />
       </div>
 
-      {gameOver && (
-        <div className="space-y-4 text-center">
-          <h2 className="text-2xl font-black text-red-500">GAME OVER</h2>
-          <div className="rounded-2xl border bg-white p-6 shadow-xl dark:bg-slate-800">
-            <ScoreBoard score={score} label="Final Score" />
-            {result && (
-              <p className="mt-2 text-sm font-bold text-gray-500">+{result.xp} XP Earned</p>
-            )}
-          </div>
-          <button
-            onClick={handleStart}
-            className="rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white transition-colors hover:bg-indigo-700"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            gameSlug="bubble-shooter"
+            gameName="Bubble Shooter Math"
+            onReplay={handleStart}
+            description={t('game.over')}
+          />
         </div>
       )}
 

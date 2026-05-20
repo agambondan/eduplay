@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
+import { useLocale } from '@/lib/i18n';
 
 type Board = number[][];
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -93,7 +98,9 @@ const TILE_COLORS: Record<number, string> = {
 };
 
 export default function Game2048() {
-  const { score, isPlaying, addScore, setScore, startGame, endGame, submitScore } = useGame('2048');
+  const { t } = useLocale();
+  const { score, isPlaying, addScore, setScore, startGame, endGame, submitScore, pauseGame } = useGame('2048');
+  const { t } = useLocale();
   const [board, setBoard] = useState<Board>(createEmptyBoard);
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
@@ -170,15 +177,22 @@ export default function Game2048() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">2048</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.2048.title')}</h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
-          Geser tile, gabungkan angka yang sama!
+          {t('game.2048.desc')}
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "👆", text: "Swipe atau gunakan tombol panah untuk menggeser semua tile" },
+            { emoji: "🔢", text: "Dua tile dengan angka sama akan bergabung menjadi 2× lipat" },
+            { emoji: "🏆", text: "Gabungkan terus hingga mencapai tile 2048!" },
+          ]}
+        />
         <button
           onClick={handleStart}
           className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
-          Mulai!
+          {t('game.start')}
         </button>
       </div>
     );
@@ -186,7 +200,12 @@ export default function Game2048() {
 
   return (
     <div className="flex flex-col items-center gap-4 py-6">
-      <ScoreBoard score={score} />
+      <div className="flex items-center gap-4">
+        <ScoreBoard score={score} />
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
+          <Pause className='h-4 w-4' />
+        </button>
+      </div>
 
       <div className="grid grid-cols-4 gap-2 rounded-xl bg-gray-300 p-2 dark:bg-slate-600">
         {board.flat().map((val, i) => (
@@ -202,25 +221,21 @@ export default function Game2048() {
         ))}
       </div>
 
-      {gameOver && (
-        <div className="space-y-2 text-center">
-          <p className="text-lg font-bold text-red-500">Game Over!</p>
-          {result && (
-            <div className="text-sm text-gray-500 dark:text-slate-400">
-              <p>+{result.xp} XP</p>
-              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
-            </div>
-          )}
-          <button
-            onClick={handleStart}
-            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            isNewHighscore={result.highscore}
+            gameSlug="2048"
+            gameName={t('game.2048.title')}
+            onReplay={handleStart}
+            description={t('game.over')}
+          />
         </div>
       )}
 
-      <p className="text-xs text-gray-400 dark:text-slate-500">Arrow keys atau swipe untuk geser</p>
+      <p className="text-xs text-gray-400 dark:text-slate-500">{t('game.keyboard_instructions')}</p>
     </div>
   );
 }

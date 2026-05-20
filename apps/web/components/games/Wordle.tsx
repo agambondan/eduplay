@@ -3,7 +3,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 const WORD_LIST = [
   'bunga',
@@ -86,7 +90,8 @@ function getRandomWord(): string {
 }
 
 export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore } = useGame('wordle');
+  const { t } = useLocale();
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('wordle');
   const [targetWord, setTargetWord] = useState('');
   const [guesses, setGuesses] = useState<LetterCell[][]>([]);
   const [currentGuess, setCurrentGuess] = useState('');
@@ -217,16 +222,23 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Wordle Indonesia</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.wordle.title')}</h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
-          Tebak kata 5 huruf Bahasa Indonesia dalam 6 percobaan!
+          {t('game.wordle.desc')}
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "🟩", text: "Hijau = huruf benar di posisi yang tepat" },
+            { emoji: "🟨", text: "Kuning = huruf ada di kata, tapi salah posisi" },
+            { emoji: "⬜", text: "Abu-abu = huruf tidak ada dalam kata" },
+          ]}
+        />
         <button
           onClick={handleStart}
           className="touch-target rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
-          aria-label="Mulai permainan Wordle"
+          aria-label={t('game.menu_play_aria')}
         >
-          Mulai!
+          {t('game.start')}
         </button>
       </div>
     );
@@ -236,13 +248,16 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
     <div className="flex flex-col items-center gap-4 py-6">
       <div className="flex items-center gap-4">
         <ScoreBoard score={score} />
-        <span className="text-sm text-gray-500 dark:text-slate-400">Percobaan {attempt}/6</span>
+        <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.attempt').replace('{n}', String(attempt))}</span>
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       <div
         className="grid gap-1.5"
         role="grid"
-        aria-label="Grid tebakan Wordle, 6 baris 5 kolom"
+        aria-label={t('game.grid_wordle')}
       >
         {Array.from({ length: 6 }).map((_, row) => (
           <div key={row} className="flex gap-1.5" role="row">
@@ -276,33 +291,26 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
         ))}
       </div>
 
-      {gameOver && (
-        <div className="space-y-2 text-center" role="alert">
-          <p className={cn('text-lg font-bold', won ? 'text-emerald-600' : 'text-red-500')}>
-            {won ? 'Selamat! Kata benar!' : `Game Over! Kata: ${targetWord}`}
-          </p>
-          {result && (
-            <div className="text-sm text-gray-500 dark:text-slate-400">
-              <p>+{result.xp} XP</p>
-              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
-            </div>
-          )}
-          <button
-            onClick={handleStart}
-            className="touch-target rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
-            aria-label="Main lagi Wordle"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            isNewHighscore={result.highscore}
+            gameSlug="wordle"
+            gameName={t('game.wordle.title')}
+            onReplay={handleStart}
+            description={won ? t('game.congrats_word') : `${t('game.over')} ${t('game.reveal_target').replace('{word}', targetWord)}`}
+          />
         </div>
       )}
 
-      <div className="mt-2 flex flex-col gap-1.5" role="group" aria-label="Papan ketik virtual">
+      <div className="mt-2 flex flex-col gap-1.5" role="group" aria-label={t('game.numpad')}>
         {KEYBOARD_ROWS.map((row, i) => (
           <div key={i} className="flex justify-center gap-1" role="row">
             {row.map((key) => {
               const keyStatus = usedLetters[key];
-              const ariaLabel = key === 'ENTER' ? 'Enter' : key === '⌫' ? 'Hapus' : `Huruf ${key}`;
+              const ariaLabel = key === 'ENTER' ? t('game.submit_answer') : key === '⌫' ? t('game.erase') : t('game.key_label').replace('{key}', key);
               return (
                 <button
                   key={key}

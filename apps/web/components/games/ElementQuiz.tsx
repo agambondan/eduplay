@@ -4,7 +4,11 @@ import { useState, useCallback } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 interface ElementQuestion {
   symbol: string;
@@ -56,7 +60,8 @@ function generateQuestion(): ElementQuestion {
 }
 
 export default function ElementQuiz() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore } = useGame('element-quiz');
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('element-quiz');
+  const { t } = useLocale();
   const [question, setQuestion] = useState<ElementQuestion | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [questionCount, setQuestionCount] = useState(0);
@@ -111,15 +116,22 @@ export default function ElementQuiz() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Element Quiz</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.element_quiz.title')}</h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
-          Tebak nama unsur kimia dari simbolnya!
+          {t('game.element_quiz.desc')}
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "⚗️", text: "Simbol unsur kimia ditampilkan (contoh: Au, Fe, O)" },
+            { emoji: "✏️", text: "Ketik nama unsur tersebut dalam Bahasa Indonesia" },
+            { emoji: "⏱️", text: "Jawab sebanyak mungkin sebelum waktu 60 detik habis!" },
+          ]}
+        />
         <button
           onClick={handleStart}
           className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
-          Mulai!
+          {t('game.start')}
         </button>
       </div>
     );
@@ -131,6 +143,9 @@ export default function ElementQuiz() {
         <Timer initialSeconds={60} onTimeUp={handleTimeUp} isRunning={isPlaying && !gameOver} />
         <ScoreBoard score={score} />
         <span className="text-sm text-gray-500 dark:text-slate-400">Soal {questionCount}/10</span>
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       {question && !gameOver && (
@@ -165,21 +180,17 @@ export default function ElementQuiz() {
         </div>
       )}
 
-      {gameOver && (
-        <div className="space-y-2 text-center">
-          <p className="text-lg font-bold text-emerald-600">Selesai!</p>
-          {result && (
-            <div className="text-sm text-gray-500">
-              <p>+{result.xp} XP</p>
-              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
-            </div>
-          )}
-          <button
-            onClick={handleStart}
-            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            isNewHighscore={result.highscore}
+            gameSlug="element-quiz"
+            gameName="Element Quiz"
+            onReplay={handleStart}
+            description={`${questionCount}/10 soal dijawab`}
+          />
         </div>
       )}
     </div>

@@ -4,7 +4,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -75,7 +78,7 @@ function generateEquation(difficulty: Difficulty): Equation {
 }
 
 export default function MentalMath() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore } = useGame('mental-math');
+  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('mental-math');
 
   const [eq, setEq] = useState<Equation | null>(null);
   const [input, setInput] = useState('');
@@ -131,6 +134,13 @@ export default function MentalMath() {
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Ketik jawabannya langsung secepat kilat! Tidak perlu pencet submit.
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "🧮", text: "Soal hitung cepat ditampilkan satu per satu" },
+            { emoji: "⌨️", text: "Ketik jawaban langsung — otomatis lanjut ke soal berikutnya setelah benar" },
+            { emoji: "📈", text: "Mode Hard = soal lebih kompleks dengan skor lebih besar" },
+          ]}
+        />
         <div className="flex gap-2">
           {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
             <button
@@ -162,6 +172,9 @@ export default function MentalMath() {
       <div className="flex w-full max-w-md items-center justify-between">
         <Timer initialSeconds={60} onTimeUp={handleTimeUp} isRunning={isPlaying && !gameOver} />
         <ScoreBoard score={score} />
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       {eq && !gameOver && (
@@ -181,22 +194,17 @@ export default function MentalMath() {
         </div>
       )}
 
-      {gameOver && (
-        <div className="mt-4 space-y-2 text-center">
-          <p className="text-lg font-bold text-emerald-600">Waktu Habis!</p>
-          <p className="text-sm text-gray-500 dark:text-slate-400">Soal terjawab: {count}</p>
-          {result && (
-            <div className="text-sm text-gray-500">
-              <p>+{result.xp} XP</p>
-              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
-            </div>
-          )}
-          <button
-            onClick={handleStart}
-            className="mt-2 rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            isNewHighscore={result.highscore}
+            gameSlug="mental-math"
+            gameName="Mental Math Speed"
+            onReplay={handleStart}
+            description={`Soal terjawab: ${count}`}
+          />
         </div>
       )}
     </div>

@@ -3,8 +3,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { ResultScreen } from '@/components/ui/ResultScreen';
 import { Timer } from '@/components/ui/Timer';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { useLocale } from '@/lib/i18n';
 
 interface Question {
   text: string;
@@ -28,7 +32,8 @@ function generateMathQuestion(): Question {
 }
 
 export default function BrickBreaker() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore } = useGame('brick-breaker');
+  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('brick-breaker');
+  const { t } = useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
@@ -228,15 +233,22 @@ export default function BrickBreaker() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Brick Breaker Soal</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.brick_breaker.title')}</h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
-          Hancurkan brick dan jawab tantangan matematika untuk bonus poin!
+          {t('game.brick_breaker.desc')}
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "🎮", text: "Tap kiri/kanan layar untuk menggerakkan paddle" },
+            { emoji: "🧱", text: "Pantulkan bola untuk menghancurkan semua brick" },
+            { emoji: "➕", text: "Brick berwarna menyimpan soal matematika — jawab untuk bonus poin!" },
+          ]}
+        />
         <button
           onClick={handleStart}
           className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
-          Mulai!
+          {t('game.start')}
         </button>
       </div>
     );
@@ -247,6 +259,9 @@ export default function BrickBreaker() {
       <div className="flex w-full max-w-md items-center justify-between">
         <div className="text-sm font-bold text-gray-500">Brick Breaker</div>
         <ScoreBoard score={score} />
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       <div className="relative overflow-hidden rounded-xl border-4 border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
@@ -283,23 +298,16 @@ export default function BrickBreaker() {
         )}
       </div>
 
-      {gameOver && (
-        <div className="space-y-4 text-center">
-          <h2 className="text-2xl font-black uppercase italic tracking-tighter text-red-500">
-            Game Over!
-          </h2>
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-slate-800">
-            <ScoreBoard score={score} label="Final Score" />
-            {result && (
-              <p className="mt-4 text-sm font-bold text-gray-500">+{result.xp} XP Earned</p>
-            )}
-          </div>
-          <button
-            onClick={handleStart}
-            className="rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white shadow-lg transition-colors hover:bg-indigo-700"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            gameSlug="brick-breaker"
+            gameName="Brick Breaker Soal"
+            onReplay={handleStart}
+            description={t('game.over')}
+          />
         </div>
       )}
 

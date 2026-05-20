@@ -1,13 +1,19 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { Pause } from 'lucide-react';
+import { HowToPlay } from '@/components/ui/HowToPlay';
 import { Difficulty } from '@/types/game';
 import { cn } from '@/lib/utils/cn';
 import { aiApi, AIQuestion } from '@/lib/api/ai';
 import { useSoundStore } from '@/lib/stores/soundStore';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { useLocale } from '@/lib/i18n';
 
 interface Question {
   text: string;
@@ -66,7 +72,8 @@ function generateOptions(answer: number): number[] {
 }
 
 export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
-  const { score, isPlaying, difficulty, addScore, startGame, endGame, submitScore } =
+  const { t } = useLocale();
+  const { score, isPlaying, difficulty, addScore, startGame, endGame, submitScore, pauseGame } =
     useGame('math-quiz');
   const { playSound, soundEnabled, toggleSound } = useSoundStore();
   const [question, setQuestion] = useState<Question | null>(null);
@@ -141,7 +148,6 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
     if (res) {
       setResult({ xp: res.xp_earned, highscore: res.new_highscore });
     } else {
-      // Guest mode or error
       setResult({ xp: 0, highscore: false });
     }
   }, [endGame, submitScore]);
@@ -162,6 +168,13 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Jawab soal matematika secepat mungkin dalam 60 detik!
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "➕", text: "Soal matematika (tambah, kurang, kali) muncul bergantian" },
+            { emoji: "⌨️", text: "Ketik jawabannya langsung — tidak perlu tekan Enter, otomatis lanjut" },
+            { emoji: "⏱️", text: "Selesaikan sebanyak mungkin soal dalam 60 detik!" },
+          ]}
+        />
 
         <div className="mb-2 flex items-center gap-2">
           <input
@@ -172,7 +185,7 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
             className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
           <label htmlFor="useAI" className="text-sm font-medium text-gray-700 dark:text-slate-300">
-            Generate soal dengan AI (Claude) ✨
+            {t('game.ai_toggle')}
           </label>
         </div>
 
@@ -188,7 +201,7 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
               )}
             >
-              {d}
+              {t('game.difficulty.' + d)}
             </button>
           ))}
         </div>
@@ -204,27 +217,19 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
   }
 
   if (!isPlaying && result) {
+    const isGuest = useAuthStore((s) => s.isGuest);
     return (
       <div className="flex flex-col items-center gap-4 py-10">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Game Over!</h2>
-        <ScoreBoard score={score} label="Final Score" />
-        <div className="space-y-1 text-center text-sm text-gray-500 dark:text-slate-400">
-          <p>{questionCount} soal dijawab</p>
-          {result.xp > 0 ? (
-            <p className="font-bold text-indigo-600 dark:text-indigo-400">+{result.xp} XP earned</p>
-          ) : (
-            <p className="font-medium italic text-amber-600">
-              Login/Daftar untuk simpan progres & XP!
-            </p>
-          )}
-          {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
-        </div>
-        <button
-          onClick={handleStart}
-          className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
-        >
-          Main Lagi
-        </button>
+        <ResultScreen
+          score={score}
+          xpEarned={result.xp}
+          isNewHighscore={result.highscore}
+          gameSlug="math-quiz"
+          gameName="Math Quiz Blitz"
+          onReplay={handleStart}
+          description={`${questionCount} ${t('game.questions_answered')}`}
+          guestMode={isGuest}
+        />
       </div>
     );
   }
@@ -234,38 +239,50 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
       <div className="flex items-center gap-4">
         <Timer initialSeconds={60} onTimeUp={handleTimeUp} isRunning={isPlaying} />
         <ScoreBoard score={score} />
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       {question && (
-        <div className="w-full max-w-md space-y-6">
-          <div className="text-center">
-            <p className="font-mono text-3xl font-bold text-gray-900 dark:text-white">
-              {question.text}
-            </p>
-          </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={question.text}
+            className="w-full max-w-md space-y-6"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="text-center">
+              <p className="font-mono text-3xl font-bold text-gray-900 dark:text-white">
+                {question.text}
+              </p>
+            </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {question.options.map((opt, i) => (
-              <button
-                key={`${opt}-${i}`}
-                onClick={() => handleAnswer(opt)}
-                disabled={feedback !== null}
-                className={cn(
-                  'rounded-xl border-2 py-4 text-xl font-bold transition-all',
-                  feedback === null
-                    ? 'border-gray-200 bg-white text-gray-800 hover:border-indigo-400 hover:bg-indigo-50 active:scale-95 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:hover:border-indigo-500'
-                    : opt === question.answer
-                      ? 'border-emerald-500 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      : feedback === 'wrong' && opt !== question.answer
-                        ? 'border-gray-200 bg-gray-50 text-gray-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
-                        : 'border-gray-200 bg-gray-50 text-gray-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
-                )}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-3">
+              {question.options.map((opt, i) => (
+                <button
+                  key={`${opt}-${i}`}
+                  onClick={() => handleAnswer(opt)}
+                  disabled={feedback !== null}
+                  className={cn(
+                    'rounded-xl border-2 py-4 text-xl font-bold transition-all',
+                    feedback === null
+                      ? 'border-gray-200 bg-white text-gray-800 hover:border-indigo-400 hover:bg-indigo-50 active:scale-95 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:hover:border-indigo-500'
+                      : opt === question.answer
+                        ? 'border-emerald-500 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        : feedback === 'wrong' && opt !== question.answer
+                          ? 'border-gray-200 bg-gray-50 text-gray-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
+                          : 'border-gray-200 bg-gray-50 text-gray-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
+                  )}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </AnimatePresence>
       )}
     </div>
   );

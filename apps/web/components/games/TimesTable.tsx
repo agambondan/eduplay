@@ -3,10 +3,13 @@
 import { useState, useCallback } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
 
 export default function TimesTable() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore } = useGame('times-table');
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('times-table');
   const [selectedTable, setSelectedTable] = useState<number | 'mix'>(1);
   const [numA, setNumA] = useState(1);
   const [numB, setNumB] = useState(1);
@@ -69,6 +72,13 @@ export default function TimesTable() {
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Latih perkalian 1-12 dengan gamified drilling!
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "🔢", text: "Pilih tabel perkalian yang ingin dilatih (1–12)" },
+            { emoji: "❓", text: "Soal perkalian muncul satu per satu" },
+            { emoji: "⚡", text: "Ketik jawaban secepat mungkin — skor dipengaruhi kecepatan dan akurasi!" },
+          ]}
+        />
         <div className="grid grid-cols-4 gap-2">
           {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
             <button
@@ -111,6 +121,9 @@ export default function TimesTable() {
       <div className="flex items-center gap-4">
         <ScoreBoard score={score} />
         <span className="text-sm text-gray-500 dark:text-slate-400">Soal {questionCount}/10</span>
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       <div className="space-y-6 text-center">
@@ -149,21 +162,17 @@ export default function TimesTable() {
         )}
       </div>
 
-      {gameOver && (
-        <div className="space-y-2 text-center">
-          <p className="text-lg font-bold text-emerald-600">Selesai!</p>
-          {result && (
-            <div className="text-sm text-gray-500">
-              <p>+{result.xp} XP</p>
-              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
-            </div>
-          )}
-          <button
-            onClick={handleStart}
-            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            isNewHighscore={result.highscore}
+            gameSlug="times-table"
+            gameName="Times Table Challenge"
+            onReplay={handleStart}
+            description={`${questionCount}/10 soal dijawab`}
+          />
         </div>
       )}
     </div>

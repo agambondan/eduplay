@@ -4,7 +4,11 @@ import Image from 'next/image';
 import { useState, useCallback } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 interface FlagItem {
   country: string;
@@ -44,7 +48,8 @@ function generateQuestion() {
 }
 
 export default function FlagQuiz() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore } = useGame('flag-quiz');
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('flag-quiz');
+  const { t } = useLocale();
   const [question, setQuestion] = useState<{ correct: FlagItem; options: string[] } | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [count, setCount] = useState(0);
@@ -90,15 +95,22 @@ export default function FlagQuiz() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Flag Quiz</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.flag_quiz.title')}</h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
-          Tebak nama negara dari bendera geometri.
+          {t('game.flag_quiz.desc')}
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "🏳️", text: "Bendera negara ditampilkan dalam bentuk visual geometri" },
+            { emoji: "🔤", text: "Pilih nama negara yang benar dari 4 pilihan yang tersedia" },
+            { emoji: "⚡", text: "Setiap jawaban benar menambah skor, jawaban salah mengurangi waktu!" },
+          ]}
+        />
         <button
           onClick={handleStart}
           className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
-          Mulai!
+          {t('game.start')}
         </button>
       </div>
     );
@@ -108,7 +120,10 @@ export default function FlagQuiz() {
     <div className="flex flex-col items-center gap-4 py-6">
       <div className="flex items-center gap-4">
         <ScoreBoard score={score} />
-        <span className="text-sm text-gray-500 dark:text-slate-400">Soal {count}/12</span>
+        <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.questions', { n: count, total: 12 })}</span>
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       {question && (
@@ -155,21 +170,17 @@ export default function FlagQuiz() {
         </p>
       )}
 
-      {gameOver && (
-        <div className="space-y-2 text-center">
-          <p className="text-lg font-bold text-emerald-600">Selesai!</p>
-          {result && (
-            <div className="text-sm text-gray-500">
-              <p>+{result.xp} XP</p>
-              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
-            </div>
-          )}
-          <button
-            onClick={handleStart}
-            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            isNewHighscore={result.highscore}
+            gameSlug="flag-quiz"
+            gameName="Flag Quiz"
+            onReplay={handleStart}
+            description={`${count}/12 soal dijawab`}
+          />
         </div>
       )}
     </div>

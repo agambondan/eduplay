@@ -4,7 +4,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
 
 interface TimelineEvent {
   year: number;
@@ -30,7 +33,7 @@ const EVENTS: TimelineEvent[] = [
 ];
 
 export default function TimelineHistory() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore } =
+  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
     useGame('timeline-history');
 
   const [currentEvent, setCurrentEvent] = useState<TimelineEvent | null>(null);
@@ -92,6 +95,13 @@ export default function TimelineHistory() {
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           Uji pengetahuan sejarahmu! Tebak tahun kejadian penting di Indonesia dan Dunia.
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "📜", text: "Sebuah peristiwa sejarah Indonesia atau dunia ditampilkan" },
+            { emoji: "📅", text: "Geser slider untuk menebak tahun kejadian peristiwa tersebut" },
+            { emoji: "🎯", text: "Semakin dekat tebakanmu dengan tahun yang benar, semakin besar skormu!" },
+          ]}
+        />
         <button
           onClick={handleStart}
           className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
@@ -115,6 +125,9 @@ export default function TimelineHistory() {
         />
         <ScoreBoard score={score} />
         <span className="text-sm font-bold text-gray-500">{count}/10</span>
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       {currentEvent && !gameOver && (
@@ -150,21 +163,16 @@ export default function TimelineHistory() {
         </div>
       )}
 
-      {gameOver && (
-        <div className="space-y-4 text-center">
-          <h2 className="text-2xl font-black text-emerald-600">Selesai!</h2>
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-            <ScoreBoard score={score} label="Final Score" />
-            {result && (
-              <p className="mt-4 text-sm font-bold text-gray-500">+{result.xp} XP Earned</p>
-            )}
-          </div>
-          <button
-            onClick={handleStart}
-            className="rounded-xl bg-indigo-600 px-8 py-3 font-bold text-white transition-colors hover:bg-indigo-700"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            gameSlug="timeline-history"
+            gameName="Timeline History"
+            onReplay={handleStart}
+            description={`${count}/10 soal dijawab`}
+          />
         </div>
       )}
     </div>

@@ -3,8 +3,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { ResultScreen } from '@/components/ui/ResultScreen';
 import { cn } from '@/lib/utils/cn';
+import { Pause } from 'lucide-react';
 import { aiApi, AIQuestion } from '@/lib/api/ai';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { useLocale } from '@/lib/i18n';
 
 interface CapitalQuestion {
   question: string;
@@ -58,7 +62,8 @@ function generateQuestion(): CapitalQuestion {
 }
 
 export default function CapitalQuiz() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore } = useGame('capital-quiz');
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('capital-quiz');
+  const { t } = useLocale();
   const [question, setQuestion] = useState<CapitalQuestion | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [questionCount, setQuestionCount] = useState(0);
@@ -144,10 +149,17 @@ export default function CapitalQuiz() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Capital City Quiz</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.capital_quiz.title')}</h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
-          Tebak ibukota negara! Streak 3x = poin 2x!
+          {t('game.capital_quiz.desc')}
         </p>
+        <HowToPlay
+          steps={[
+            { emoji: "🌍", text: "Nama sebuah negara ditampilkan di layar" },
+            { emoji: "✏️", text: "Ketik nama ibukotanya lalu tekan Enter" },
+            { emoji: "🔥", text: "Jawab 3x berturut-turut untuk mendapatkan poin 2x lipat!" },
+          ]}
+        />
         <div className="mb-2 flex items-center gap-2">
           <input
             type="checkbox"
@@ -165,7 +177,7 @@ export default function CapitalQuiz() {
           disabled={aiLoading}
           className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
         >
-          {aiLoading ? 'Menyiapkan Soal...' : 'Mulai!'}
+          {aiLoading ? 'Menyiapkan Soal...' : t('game.start')}
         </button>
       </div>
     );
@@ -179,7 +191,10 @@ export default function CapitalQuiz() {
           <span className="text-xs font-bold uppercase text-orange-500">Streak</span>
           <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{streak}x</span>
         </div>
-        <span className="text-sm text-gray-500 dark:text-slate-400">Soal {questionCount}/15</span>
+        <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.questions', { n: questionCount, total: 15 })}</span>
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+          <Pause className='h-4 w-4' />
+        </button>
       </div>
 
       {question && (
@@ -209,21 +224,17 @@ export default function CapitalQuiz() {
         </div>
       )}
 
-      {gameOver && (
-        <div className="space-y-2 text-center">
-          <p className="text-lg font-bold text-emerald-600">Selesai!</p>
-          {result && (
-            <div className="text-sm text-gray-500">
-              <p>+{result.xp} XP</p>
-              {result.highscore && <p className="font-bold text-amber-500">New Highscore!</p>}
-            </div>
-          )}
-          <button
-            onClick={handleStart}
-            className="rounded-lg bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700"
-          >
-            Main Lagi
-          </button>
+      {gameOver && result && (
+        <div className="w-full max-w-sm">
+          <ResultScreen
+            score={score}
+            xpEarned={result.xp}
+            isNewHighscore={result.highscore}
+            gameSlug="capital-quiz"
+            gameName="Capital City Quiz"
+            onReplay={handleStart}
+            description={`${questionCount}/15 soal dijawab`}
+          />
         </div>
       )}
     </div>
