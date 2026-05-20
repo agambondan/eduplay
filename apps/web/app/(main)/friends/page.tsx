@@ -1,9 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Loader2, Mail, UserPlus, UserX, Users, X } from 'lucide-react';
-import { FriendResponse, friendsApi } from '@/lib/api/friends';
+import {
+  Check,
+  Flame,
+  Loader2,
+  Mail,
+  Search,
+  Trophy,
+  UserPlus,
+  UserX,
+  Users,
+  X,
+  Zap,
+} from 'lucide-react';
+import { FriendResponse, SearchUserResult, friendsApi } from '@/lib/api/friends';
 import { useLocale } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { cn } from '@/lib/utils/cn';
@@ -12,9 +24,12 @@ export default function FriendsPage() {
   const { t } = useLocale();
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
+  const searchRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
   const [showAdd, setShowAdd] = useState(false);
   const [username, setUsername] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchUserResult[]>([]);
+  const [searching, setSearching] = useState(false);
 
   const { data: friends, isLoading: friendsLoading } = useQuery({
     queryKey: ['friends'],
@@ -32,6 +47,7 @@ export default function FriendsPage() {
     mutationFn: (u: string) => friendsApi.sendRequest(u),
     onSuccess: () => {
       setUsername('');
+      setSearchResults([]);
       setShowAdd(false);
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
     },
@@ -59,9 +75,31 @@ export default function FriendsPage() {
     },
   });
 
+  const handleSearch = async (val: string) => {
+    setUsername(val);
+    if (val.trim().length < 1) {
+      setSearchResults([]);
+      return;
+    }
+    setSearching(true);
+    try {
+      const results = await friendsApi.search(val.trim());
+      setSearchResults(results);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const selectUser = (u: SearchUserResult) => {
+    setUsername(u.username);
+    setSearchResults([]);
+  };
+
   if (!user) {
     return (
-      <div className="container max-w-md py-20 text-center">
+      <div className="mx-auto max-w-2xl py-20 text-center">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
             {t('friends.title')}
@@ -94,32 +132,66 @@ export default function FriendsPage() {
 
       {showAdd && (
         <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-4 dark:border-indigo-900/20 dark:bg-indigo-900/10">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (username.trim()) sendMutation.mutate(username.trim());
-            }}
-            className="flex gap-2"
-          >
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder={t('friends.add_placeholder')}
-              className="flex-1 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            />
-            <button
-              type="submit"
-              disabled={sendMutation.isPending || !username.trim()}
-              className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-            >
-              {sendMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                t('friends.send_request')
-              )}
-            </button>
-          </form>
+          <div className="relative" ref={searchRef}>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder={t('friends.add_placeholder')}
+                  className="w-full rounded-xl border border-indigo-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  if (username.trim()) sendMutation.mutate(username.trim());
+                }}
+                disabled={sendMutation.isPending || !username.trim()}
+                className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {sendMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  t('friends.send_request')
+                )}
+              </button>
+            </div>
+
+            {searchResults.length > 0 && (
+              <div className="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                {searchResults.map((u) => (
+                  <button
+                    key={u.id}
+                    onClick={() => selectUser(u)}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-slate-700"
+                  >
+                    <div
+                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                      style={{ backgroundColor: u.avatar_color || '#4F46E5' }}
+                    >
+                      {u.username[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">{u.username}</p>
+                      <p className="text-xs text-gray-500">
+                        Level {u.level} &middot; {u.xp} XP
+                      </p>
+                    </div>
+                    <UserPlus className="h-4 w-4 text-indigo-500" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {searching && (
+              <div className="absolute left-0 right-0 top-full z-10 mt-1 flex items-center justify-center rounded-xl border border-gray-200 bg-white py-4 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+              </div>
+            )}
+          </div>
+
           {sendMutation.isError && (
             <p className="mt-2 text-sm text-red-500">{(sendMutation.error as Error).message}</p>
           )}
@@ -224,18 +296,41 @@ export default function FriendsPage() {
 function FriendCard({ friend, onRemove }: { friend: FriendResponse; onRemove: () => void }) {
   const { t } = useLocale();
   const [removing, setRemoving] = useState(false);
+
+  const lastActive = friend.last_active
+    ? new Date(friend.last_active).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' })
+    : null;
+
   return (
     <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-center gap-3">
         <div
-          className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-white shadow-inner"
+          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-lg font-bold text-white shadow-inner"
           style={{ backgroundColor: friend.avatar_color || '#4F46E5' }}
         >
           {friend.username[0].toUpperCase()}
         </div>
         <div>
           <p className="font-bold text-gray-900 dark:text-white">{friend.username}</p>
-          <p className="text-xs text-gray-400 dark:text-slate-500">{t('friends.tab_friends')}</p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+            <span className="flex items-center gap-0.5">
+              <Zap className="h-3 w-3 text-indigo-500" />
+              Lv.{friend.level}
+            </span>
+            <span className="flex items-center gap-0.5">
+              <Trophy className="h-3 w-3 text-amber-500" />
+              {friend.xp} XP
+            </span>
+            {friend.streak > 0 && (
+              <span className="flex items-center gap-0.5">
+                <Flame className="h-3 w-3 text-red-500" />
+                {friend.streak}
+              </span>
+            )}
+            {lastActive && (
+              <span className="text-gray-400 dark:text-slate-500">Aktif: {lastActive}</span>
+            )}
+          </div>
         </div>
       </div>
       <button
@@ -267,14 +362,24 @@ function RequestCard({
     <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-center gap-3">
         <div
-          className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-white shadow-inner"
+          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-lg font-bold text-white shadow-inner"
           style={{ backgroundColor: request.avatar_color || '#4F46E5' }}
         >
           {request.username[0].toUpperCase()}
         </div>
         <div>
           <p className="font-bold text-gray-900 dark:text-white">{request.username}</p>
-          <p className="text-xs text-gray-400 dark:text-slate-500">Ingin menjadi temanmu</p>
+          <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500">
+            <span className="flex items-center gap-0.5">
+              <Zap className="h-3 w-3 text-indigo-500" />
+              Lv.{request.level}
+            </span>
+            <span className="flex items-center gap-0.5">
+              <Trophy className="h-3 w-3 text-amber-500" />
+              {request.xp} XP
+            </span>
+            <span>Ingin menjadi temanmu</span>
+          </div>
         </div>
       </div>
       <div className="flex gap-2">

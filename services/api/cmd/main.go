@@ -211,6 +211,7 @@ func main() {
 
 	friendGroup := apiV1.Group("/friends", middleware.AuthMiddleware(cfg))
 	friendGroup.Get("/", friendHandler.ListFriends)
+	friendGroup.Get("/search", friendHandler.SearchUsers)
 	friendGroup.Get("/requests", friendHandler.ListRequests)
 	friendGroup.Post("/request", friendHandler.SendRequest)
 	friendGroup.Post("/:id/accept", friendHandler.AcceptRequest)

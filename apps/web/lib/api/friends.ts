@@ -6,6 +6,18 @@ export interface FriendResponse {
   username: string;
   status: string;
   avatar_color: string;
+  level: number;
+  xp: number;
+  streak: number;
+  last_active: string | null;
+}
+
+export interface SearchUserResult {
+  id: string;
+  username: string;
+  avatar_color: string;
+  level: number;
+  xp: number;
 }
 
 export const friendsApi = {
@@ -31,6 +43,10 @@ export const friendsApi = {
   },
   removeFriend: async (id: string) => {
     const res = await api.delete<ApiResponse<{ message: string }>>(`/friends/${id}`);
+    return res.data.data;
+  },
+  search: async (query: string) => {
+    const res = await api.get<ApiResponse<SearchUserResult[]>>(`/friends/search?q=${encodeURIComponent(query)}`);
     return res.data.data;
   },
 };

@@ -91,6 +91,22 @@ func (h *FriendController) DeclineRequest(c *fiber.Ctx) error {
 	return response.Success(c, fiber.Map{"message": "Permintaan pertemanan ditolak"})
 }
 
+func (h *FriendController) SearchUsers(c *fiber.Ctx) error {
+	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
+	q := c.Query("q")
+	if q == "" {
+		return response.Error(c, fiber.StatusBadRequest, "Query parameter required")
+	}
+	users, err := h.svc.SearchUsers(userID, q)
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+	}
+	return response.Success(c, users)
+}
+
 func (h *FriendController) RemoveFriend(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
 	if userID == "" {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"time"
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
@@ -10,10 +11,22 @@ import (
 )
 
 type FriendResponse struct {
+	ID          string     `json:"id"`
+	Username    string     `json:"username"`
+	Status      string     `json:"status"`
+	AvatarColor string     `json:"avatar_color"`
+	Level       int        `json:"level"`
+	XP          int        `json:"xp"`
+	Streak      int        `json:"streak"`
+	LastActive  *time.Time `json:"last_active"`
+}
+
+type SearchUserResult struct {
 	ID          string `json:"id"`
 	Username    string `json:"username"`
-	Status      string `json:"status"`
 	AvatarColor string `json:"avatar_color"`
+	Level       int    `json:"level"`
+	XP          int    `json:"xp"`
 }
 
 type FriendService interface {
@@ -23,6 +36,7 @@ type FriendService interface {
 	ListFriends(userID string) ([]FriendResponse, error)
 	ListRequests(userID string) ([]FriendResponse, error)
 	RemoveFriend(userID, friendID string) error
+	SearchUsers(userID, query string) ([]SearchUserResult, error)
 }
 
 type friendService struct{}
@@ -129,10 +143,15 @@ func (s *friendService) ListFriends(userID string) ([]FriendResponse, error) {
 		FriendID    uuid.UUID
 		Username    string
 		AvatarColor string
+		Level       int
+		XP          int
+		Streak      int
+		LastActive  *time.Time
 	}
 
 	err = database.DB.Table("friends").
-		Select("CASE WHEN friends.user_id = ? THEN friends.friend_id ELSE friends.user_id END AS friend_id, users.username, users.avatar_color", uid).
+		Select(`CASE WHEN friends.user_id = ? THEN friends.friend_id ELSE friends.user_id END AS friend_id,
+			users.username, users.avatar_color, users.level, users.xp, users.streak, users.last_active`, uid).
 		Joins("JOIN users ON users.id = CASE WHEN friends.user_id = ? THEN friends.friend_id ELSE friends.user_id END", uid).
 		Where("(friends.user_id = ? OR friends.friend_id = ?) AND friends.status = ?", uid, uid, "accepted").
 		Scan(&rows).Error
@@ -147,6 +166,10 @@ func (s *friendService) ListFriends(userID string) ([]FriendResponse, error) {
 			Username:    r.Username,
 			Status:      "accepted",
 			AvatarColor: r.AvatarColor,
+			Level:       r.Level,
+			XP:          r.XP,
+			Streak:      r.Streak,
+			LastActive:  r.LastActive,
 		}
 	}
 	return result, nil
@@ -162,10 +185,14 @@ func (s *friendService) ListRequests(userID string) ([]FriendResponse, error) {
 		ID          uuid.UUID
 		Username    string
 		AvatarColor string
+		Level       int
+		XP          int
+		Streak      int
+		LastActive  *time.Time
 	}
 
 	err = database.DB.Table("friends").
-		Select("friends.id, users.username, users.avatar_color").
+		Select("friends.id, users.username, users.avatar_color, users.level, users.xp, users.streak, users.last_active").
 		Joins("JOIN users ON users.id = friends.user_id").
 		Where("friends.friend_id = ? AND friends.status = ?", uid, "pending").
 		Scan(&rows).Error
@@ -180,6 +207,10 @@ func (s *friendService) ListRequests(userID string) ([]FriendResponse, error) {
 			Username:    r.Username,
 			Status:      "pending",
 			AvatarColor: r.AvatarColor,
+			Level:       r.Level,
+			XP:          r.XP,
+			Streak:      r.Streak,
+			LastActive:  r.LastActive,
 		}
 	}
 	return result, nil
@@ -207,4 +238,29 @@ func (s *friendService) RemoveFriend(userID, friendID string) error {
 		return errors.New("Pertemanan tidak ditemukan")
 	}
 	return nil
+}
+
+func (s *friendService) SearchUsers(userID, query string) ([]SearchUserResult, error) {
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, errors.New("ID pengguna tidak valid")
+	}
+
+	var users []model.User
+	if err := database.DB.Where("username ILIKE ? AND id != ?", query+"%", uid).
+		Limit(10).Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]SearchUserResult, len(users))
+	for i, u := range users {
+		result[i] = SearchUserResult{
+			ID:          u.ID.String(),
+			Username:    u.Username,
+			AvatarColor: u.AvatarColor,
+			Level:       u.Level,
+			XP:          u.XP,
+		}
+	}
+	return result, nil
 }
