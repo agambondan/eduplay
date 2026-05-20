@@ -7,6 +7,7 @@ import { AchievementToast } from '@/components/ui/AchievementToast';
 import { WebAppJsonLd } from '@/components/seo/JsonLd';
 import { SkipLink } from '@/components/layout/SkipLink';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { CookieBanner } from '@/components/layout/CookieBanner';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
             </ErrorBoundary>
             <AchievementToast />
+            <CookieBanner />
           </Providers>
           <WebAppJsonLd />
         </body>
