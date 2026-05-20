@@ -28,7 +28,7 @@ export default function BrickBreakerPage() {
         description="Hancurkan block dan jawab soal matematika dadakan untuk bonus skor!"
         gameSlug="brick-breaker"
       />
-      <GameContainer maxWidth="max-w-4xl">>
+      <GameContainer maxWidth="max-w-4xl">
         <BrickBreaker />
       </GameContainer>
     </>

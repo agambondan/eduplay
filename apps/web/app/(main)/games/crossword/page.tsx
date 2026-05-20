@@ -28,7 +28,7 @@ export default function CrosswordPage() {
         description="Uji wawasan kosakata dengan Teka-Teki Silang!"
         gameSlug="crossword"
       />
-      <GameContainer maxWidth="max-w-4xl">>
+      <GameContainer maxWidth="max-w-4xl">
         <Crossword />
       </GameContainer>
     </>

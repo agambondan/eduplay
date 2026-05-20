@@ -28,7 +28,7 @@ export default function WordSearchPage() {
         description="Asah ketelitianmu dengan mencari kata-kata tersembunyi!"
         gameSlug="word-search"
       />
-      <GameContainer maxWidth="max-w-4xl">>
+      <GameContainer maxWidth="max-w-4xl">
         <WordSearch />
       </GameContainer>
     </>

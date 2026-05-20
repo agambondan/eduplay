@@ -28,7 +28,7 @@ export default function TimelineHistoryPage() {
         description="Tebak tahun kejadian penting di Indonesia dan Dunia!"
         gameSlug="timeline-history"
       />
-      <GameContainer maxWidth="max-w-4xl">>
+      <GameContainer maxWidth="max-w-4xl">
         <TimelineHistory />
       </GameContainer>
     </>

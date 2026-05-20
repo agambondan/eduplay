@@ -28,7 +28,7 @@ export default function BubbleShooterPage() {
         description="Tembak bubble dan jumlahkan angka dengan tepat!"
         gameSlug="bubble-shooter"
       />
-      <GameContainer maxWidth="max-w-4xl">>
+      <GameContainer maxWidth="max-w-4xl">
         <BubbleShooter />
       </GameContainer>
     </>
