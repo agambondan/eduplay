@@ -25,7 +25,7 @@ for port in 3000 3001 8080; do
     pid=$(lsof -ti tcp:"$port" 2>/dev/null) || true
     [ -z "$pid" ] && break
     echo "Freeing port $port (pid $pid)"
-    kill -9 $pid 2>/dev/null || true
+    kill -9 "$pid" 2>/dev/null || true
     sleep 0.3
   done
 done
