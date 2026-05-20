@@ -6,7 +6,7 @@ PID_FILE="$ROOT_DIR/.dev.pids"
 
 # Kill previous instances if any
 if [ -f "$PID_FILE" ]; then
-  echo "🛑 Stopping previous dev processes..."
+  echo "Stopping previous dev processes..."
   while read pid; do
     kill "$pid" 2>/dev/null || true
   done < "$PID_FILE"
@@ -18,27 +18,33 @@ fi
 for port in 3000 8080; do
   pid=$(lsof -ti :$port 2>/dev/null) || true
   if [ -n "$pid" ]; then
-    echo "🔫 Freeing port $port (pid $pid)"
+    echo "Freeing port $port (pid $pid)"
     kill -9 "$pid" 2>/dev/null || true
   fi
 done
 
-echo "🚀 Starting backend (air)..."
+# Start shared infra (postgres + redis) via docker if not running
+if ! docker compose ps postgres 2>/dev/null | grep -q "Up"; then
+  echo "Starting postgres & redis via docker..."
+  docker compose up -d postgres redis
+fi
+
+echo "Starting backend (air)..."
 cd "$ROOT_DIR/services/api"
 air &
 echo $! >> "$PID_FILE"
 
-echo "🚀 Starting frontend (npm run dev)..."
+echo "Starting frontend (next dev)..."
 cd "$ROOT_DIR/apps/web"
 npx next dev --webpack &
 echo $! >> "$PID_FILE"
 
 echo ""
-echo "✅ Dev servers running!"
-echo "   Backend:  http://localhost:8080"
-echo "   Frontend: http://localhost:3000"
+echo "Dev servers running!"
+echo "  Backend:  http://localhost:8080"
+echo "  Frontend: http://localhost:3000"
 echo ""
-echo "   To stop: run this script again, or: kill \$(cat $PID_FILE)"
+echo "To stop: run this script again, or: kill \$(cat $PID_FILE)"
 echo ""
 
 wait
