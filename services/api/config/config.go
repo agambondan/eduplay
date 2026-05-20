@@ -25,10 +25,12 @@ type Config struct {
         AccessExpiry  string
         RefreshExpiry string
     }
-    Anthropic struct {
-        APIKey string
-        Model  string
-    }
+	AI struct {
+		Provider string
+		APIKey   string
+		Model    string
+		BaseURL  string
+	}
     Resend struct {
         APIKey string
         From   string
@@ -66,8 +68,10 @@ func Load() (*Config, error) {
     cfg.JWT.Secret = v.GetString("JWT_SECRET")
     cfg.JWT.AccessExpiry = v.GetString("JWT_ACCESS_EXPIRY")
     cfg.JWT.RefreshExpiry = v.GetString("JWT_REFRESH_EXPIRY")
-    cfg.Anthropic.APIKey = v.GetString("ANTHROPIC_API_KEY")
-    cfg.Anthropic.Model = v.GetString("ANTHROPIC_MODEL")
+	cfg.AI.Provider = v.GetString("AI_PROVIDER")
+	cfg.AI.APIKey = v.GetString("AI_API_KEY")
+	cfg.AI.Model = v.GetString("AI_MODEL")
+	cfg.AI.BaseURL = v.GetString("AI_BASE_URL")
     cfg.Resend.APIKey = v.GetString("RESEND_API_KEY")
     cfg.Resend.From = v.GetString("RESEND_FROM")
     cfg.Google.ClientID = v.GetString("GOOGLE_CLIENT_ID")

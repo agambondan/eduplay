@@ -45,9 +45,16 @@ func (s *aiService) GenerateQuestions(gameType string, difficulty string, count 
 
 	prompt := GetPrompt(gameType, difficulty, count)
 
+	baseURL := s.cfg.AI.BaseURL
+	if baseURL == "" {
+		baseURL = "https://openrouter.ai/api/v1"
+	}
+	endpoint := baseURL + "/chat/completions"
+
 	body := map[string]interface{}{
-		"model":      s.cfg.Anthropic.Model,
-		"max_tokens": 2000,
+		"model":       s.cfg.AI.Model,
+		"max_tokens":  2000,
+		"temperature": 0.7,
 		"messages": []map[string]string{
 			{"role": "user", "content": prompt},
 		},
@@ -57,13 +64,12 @@ func (s *aiService) GenerateQuestions(gameType string, difficulty string, count 
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewBuffer(bodyBytes))
+	httpReq, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-api-key", s.cfg.Anthropic.APIKey)
-	httpReq.Header.Set("anthropic-version", "2023-06-01")
+	httpReq.Header.Set("Authorization", "Bearer "+s.cfg.AI.APIKey)
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(httpReq)
@@ -77,21 +83,27 @@ func (s *aiService) GenerateQuestions(gameType string, difficulty string, count 
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("ai API error: %d - %s", resp.StatusCode, string(respBody))
+	}
+
 	var apiResp struct {
-		Content []struct {
-			Text string `json:"text"`
-		} `json:"content"`
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
 	}
 	if err := json.Unmarshal(respBody, &apiResp); err != nil {
 		return nil, fmt.Errorf("failed to parse AI response: %w", err)
 	}
 
-	if len(apiResp.Content) == 0 {
+	if len(apiResp.Choices) == 0 {
 		return nil, fmt.Errorf("empty response from AI")
 	}
 
 	var questions []Question
-	if err := json.Unmarshal([]byte(apiResp.Content[0].Text), &questions); err != nil {
+	if err := json.Unmarshal([]byte(apiResp.Choices[0].Message.Content), &questions); err != nil {
 		return nil, fmt.Errorf("failed to parse questions from AI response: %w", err)
 	}
 

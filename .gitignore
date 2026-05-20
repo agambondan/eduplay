@@ -8,6 +8,10 @@ node_modules/
 **/.env
 **/*.db
 services/api/bin/
+services/api/tmp/main
+
+# TypeScript
+*.tsbuildinfo
 
 # Node Frontend (Monorepo paths)
 apps/web/.next/
