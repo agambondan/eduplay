@@ -102,9 +102,7 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isAvatarUrl =
-    user?.avatar_color &&
-    (user.avatar_color.startsWith('http') || user.avatar_color.startsWith('/uploads'));
+  const isAvatarUrl = !!(user?.avatar_url && user.avatar_url.length > 0);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -120,7 +118,7 @@ export default function ProfilePage() {
     setUploading(true);
     try {
       const url = await userApi.uploadAvatar(avatarFile);
-      setUser({ ...user!, avatar_color: url });
+      setUser({ ...user!, avatar_url: url });
       setAvatarFile(null);
       setAvatarPreview(null);
     } catch {
@@ -177,7 +175,7 @@ export default function ProfilePage() {
         <div className="flex items-center gap-4">
           {isAvatarUrl ? (
             <img
-              src={user.avatar_color}
+              src={user.avatar_url}
               alt="avatar"
               className="h-16 w-16 rounded-full object-cover shadow-inner"
             />
@@ -217,7 +215,7 @@ export default function ProfilePage() {
               />
             ) : isAvatarUrl ? (
               <img
-                src={user.avatar_color}
+                src={user.avatar_url}
                 alt="avatar"
                 className="h-14 w-14 rounded-full object-cover shadow-inner"
               />

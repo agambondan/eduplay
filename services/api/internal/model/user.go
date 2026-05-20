@@ -25,6 +25,7 @@ type User struct {
 	ResetToken        *string    `gorm:"size:255" json:"-"`
 	ResetTokenExpiry  *time.Time `json:"-"`
 	AvatarColor       string     `gorm:"size:7;default:'#4F46E5'" json:"avatar_color"`
+	AvatarURL         string     `gorm:"size:500" json:"avatar_url"`
 	GoogleID          *string    `gorm:"uniqueIndex;size:255" json:"-"`
 	Role              string     `gorm:"size:20;default:'user'" json:"role"`
 	IsActive          bool       `gorm:"default:true" json:"is_active"`

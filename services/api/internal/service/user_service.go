@@ -95,7 +95,7 @@ func (s *userService) UploadAvatar(userID string, file multipart.File, header *m
 	if err != nil {
 		return "", err
 	}
-	u.AvatarColor = url
+	u.AvatarURL = url
 	if err := s.repo.Update(u); err != nil {
 		return "", err
 	}

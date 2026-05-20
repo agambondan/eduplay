@@ -9,6 +9,7 @@ export interface User {
   last_active: string | null;
   email_verified_at: string | null;
   avatar_color: string;
+  avatar_url: string;
   role: string;
   is_active: boolean;
   referral_code: string;
