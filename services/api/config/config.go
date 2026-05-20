@@ -1,7 +1,9 @@
 package config
 
 import (
-    "github.com/spf13/viper"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -10,6 +12,7 @@ type Config struct {
         Port  string
         Secret string
     }
+    AvatarUploadPath string
     DB struct {
         Host     string
         Port     string
@@ -46,37 +49,34 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-    v := viper.New()
-    v.SetConfigName(".env")
-    v.AddConfigPath(".")
-    v.AutomaticEnv()
-    if err := v.ReadInConfig(); err != nil {
-        if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-            return nil, err
-        }
-    }
-    var cfg Config
-    cfg.App.Env = v.GetString("APP_ENV")
-    cfg.App.Port = v.GetString("APP_PORT")
-    cfg.App.Secret = v.GetString("APP_SECRET")
-    cfg.DB.Host = v.GetString("DB_HOST")
-    cfg.DB.Port = v.GetString("DB_PORT")
-    cfg.DB.Name = v.GetString("DB_NAME")
-    cfg.DB.User = v.GetString("DB_USER")
-    cfg.DB.Password = v.GetString("DB_PASSWORD")
-    cfg.Redis.URL = v.GetString("REDIS_URL")
-    cfg.JWT.Secret = v.GetString("JWT_SECRET")
-    cfg.JWT.AccessExpiry = v.GetString("JWT_ACCESS_EXPIRY")
-    cfg.JWT.RefreshExpiry = v.GetString("JWT_REFRESH_EXPIRY")
-	cfg.AI.Provider = v.GetString("AI_PROVIDER")
-	cfg.AI.APIKey = v.GetString("AI_API_KEY")
-	cfg.AI.Model = v.GetString("AI_MODEL")
-	cfg.AI.BaseURL = v.GetString("AI_BASE_URL")
-    cfg.Resend.APIKey = v.GetString("RESEND_API_KEY")
-    cfg.Resend.From = v.GetString("RESEND_FROM")
-    cfg.Google.ClientID = v.GetString("GOOGLE_CLIENT_ID")
-    cfg.VAPID.PublicKey = v.GetString("VAPID_PUBLIC_KEY")
-    cfg.VAPID.PrivateKey = v.GetString("VAPID_PRIVATE_KEY")
-    cfg.FrontendURL = v.GetString("FRONTEND_URL")
-    return &cfg, nil
+	godotenv.Load()
+
+	var cfg Config
+	cfg.App.Env = os.Getenv("APP_ENV")
+	cfg.App.Port = os.Getenv("APP_PORT")
+	cfg.App.Secret = os.Getenv("APP_SECRET")
+	cfg.DB.Host = os.Getenv("DB_HOST")
+	cfg.DB.Port = os.Getenv("DB_PORT")
+	cfg.DB.Name = os.Getenv("DB_NAME")
+	cfg.DB.User = os.Getenv("DB_USER")
+	cfg.DB.Password = os.Getenv("DB_PASSWORD")
+	cfg.Redis.URL = os.Getenv("REDIS_URL")
+	cfg.JWT.Secret = os.Getenv("JWT_SECRET")
+	cfg.JWT.AccessExpiry = os.Getenv("JWT_ACCESS_EXPIRY")
+	cfg.JWT.RefreshExpiry = os.Getenv("JWT_REFRESH_EXPIRY")
+	cfg.AI.Provider = os.Getenv("AI_PROVIDER")
+	cfg.AI.APIKey = os.Getenv("AI_API_KEY")
+	cfg.AI.Model = os.Getenv("AI_MODEL")
+	cfg.AI.BaseURL = os.Getenv("AI_BASE_URL")
+	cfg.Resend.APIKey = os.Getenv("RESEND_API_KEY")
+	cfg.Resend.From = os.Getenv("RESEND_FROM")
+	cfg.Google.ClientID = os.Getenv("GOOGLE_CLIENT_ID")
+	cfg.VAPID.PublicKey = os.Getenv("VAPID_PUBLIC_KEY")
+	cfg.VAPID.PrivateKey = os.Getenv("VAPID_PRIVATE_KEY")
+	cfg.AvatarUploadPath = os.Getenv("AVATAR_UPLOAD_PATH")
+	if cfg.AvatarUploadPath == "" {
+		cfg.AvatarUploadPath = "./uploads/avatars"
+	}
+	cfg.FrontendURL = os.Getenv("FRONTEND_URL")
+	return &cfg, nil
 }

@@ -21,6 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
+        <Script id="theme-init" strategy="beforeInteractive">{`
+          (function(){try{var t=JSON.parse(localStorage.getItem('eduplay-theme'));var e=t&&t.state&&t.state.theme||'system';var n=e==='dark'||(e==='system'&&window.matchMedia('(prefers-color-scheme:dark)').matches);if(n)document.documentElement.classList.add('dark')}catch(e){}})()
+        `}</Script>
         {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
           <Script
             async

@@ -15,6 +15,13 @@ func NewDailyController(svc service.DailyService) *DailyController {
 	return &DailyController{svc: svc}
 }
 
+// GetDailyChallenge godoc
+// @Summary Get daily challenge
+// @Description Get today's daily challenge
+// @Tags daily
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /daily [get]
 func (h *DailyController) GetDailyChallenge(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
 	dc, err := h.svc.GetTodayChallenge(userID)

@@ -15,4 +15,12 @@ export const userApi = {
     const res = await api.patch<ApiResponse<User>>('/user/profile', data);
     return res.data.data;
   },
+  uploadAvatar: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const res = await api.post<ApiResponse<{ avatar_url: string }>>('/user/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data.avatar_url;
+  },
 };

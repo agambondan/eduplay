@@ -14,6 +14,13 @@ func NewAchievementController(svc service.AchievementService) *AchievementContro
 	return &AchievementController{svc: svc}
 }
 
+// GetAll godoc
+// @Summary List all achievements
+// @Description Get all available achievements
+// @Tags achievements
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /user/achievements [get]
 func (h *AchievementController) GetAll(c *fiber.Ctx) error {
 	achs, err := h.svc.GetAchievements()
 	if err != nil {

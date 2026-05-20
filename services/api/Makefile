@@ -1,4 +1,4 @@
-.PHONY: dev build run migrate test lint fmt clean
+.PHONY: dev build run migrate test lint fmt clean swagger
 
 dev:
 	air
@@ -21,6 +21,9 @@ fmt:
 
 migrate:
 	@echo "Running migrations..."
+
+swagger:
+	swag init -g cmd/main.go
 
 clean:
 	rm -rf tmp

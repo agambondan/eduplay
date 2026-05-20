@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { authApi } from '@/lib/api/auth';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -55,6 +56,7 @@ export default function Navbar() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            <ThemeToggle />
             <LanguageSwitcher />
             {user ? (
               <>

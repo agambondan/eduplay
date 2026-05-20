@@ -1,7 +1,8 @@
 'use client';
 
 import { useAuthStore } from '@/lib/stores/authStore';
-import { useEffect, useState } from 'react';
+import { userApi } from '@/lib/api/user';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api/client';
 import { Stats } from '@/types/user';
@@ -9,7 +10,7 @@ import { Achievement } from '@/types/game';
 import { XPBadge } from '@/components/ui/XPBadge';
 import { StreakCounter } from '@/components/ui/StreakCounter';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Trophy, Gamepad2, TrendingUp, ShieldCheck, Crown, Loader2 } from 'lucide-react';
+import { Trophy, Gamepad2, TrendingUp, ShieldCheck, Crown, Loader2, Upload } from 'lucide-react';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
@@ -46,6 +47,38 @@ export default function ProfilePage() {
     }
   };
 
+  const setUser = useAuthStore((state) => state.setUser);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isAvatarUrl = user?.avatar_color && (user.avatar_color.startsWith('http') || user.avatar_color.startsWith('/uploads'));
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setAvatarPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpload = async () => {
+    if (!avatarFile) return;
+    setUploading(true);
+    try {
+      const url = await userApi.uploadAvatar(avatarFile);
+      setUser({ ...user!, avatar_color: url });
+      setAvatarFile(null);
+      setAvatarPreview(null);
+    } catch {
+      // ignore
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const level = user?.level || 1;
   const xp = user?.xp || 0;
   const nextLevelXP = (200 * level * (level + 1)) / 2;
@@ -78,9 +111,13 @@ export default function ProfilePage() {
 
       <div className="space-y-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-2xl font-bold text-white shadow-inner">
-            {user?.username?.[0]?.toUpperCase()}
-          </div>
+          {isAvatarUrl ? (
+            <img src={user.avatar_color} alt="avatar" className="h-16 w-16 rounded-full object-cover shadow-inner" />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-2xl font-bold text-white shadow-inner">
+              {user?.username?.[0]?.toUpperCase()}
+            </div>
+          )}
           <div className="flex-1">
             <div className="text-xl font-bold text-gray-900 dark:text-white">{user?.username}</div>
             <div className="text-sm text-gray-500 dark:text-slate-400">{user?.email}</div>
@@ -98,6 +135,46 @@ export default function ProfilePage() {
           showValue
           colorClass="bg-indigo-600"
         />
+
+        <div className="border-t border-gray-100 pt-4 dark:border-slate-700">
+          <h3 className="mb-3 text-sm font-bold text-gray-700 dark:text-slate-300">Ganti Foto Profil</h3>
+          <div className="flex items-center gap-4">
+            {avatarPreview ? (
+              <img src={avatarPreview} alt="preview" className="h-14 w-14 rounded-full object-cover shadow-inner" />
+            ) : isAvatarUrl ? (
+              <img src={user.avatar_color} alt="avatar" className="h-14 w-14 rounded-full object-cover shadow-inner" />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-xl font-bold text-white shadow-inner">
+                {user?.username?.[0]?.toUpperCase()}
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.gif,.webp"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              Pilih File
+            </button>
+            <button
+              onClick={handleUpload}
+              disabled={!avatarFile || uploading}
+              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+              {uploading ? 'Mengupload...' : 'Upload'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {stats && (

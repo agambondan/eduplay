@@ -1,3 +1,12 @@
+// @title EduPlay API
+// @version 1.0
+// @description Educational Mini Games Platform API
+// @host localhost:8080
+// @BasePath /api/v1
+// @SecurityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
 package main
 
 import (
@@ -64,6 +73,7 @@ func main() {
 		&model.PushSubscription{},
 		&model.SupportTicket{},
 		&model.Subscription{},
+		&model.Friend{},
 	)
 
 	seedData()
@@ -98,7 +108,7 @@ func main() {
 	// Services
 	achSvc := service.NewAchievementService(achRepo)
 	authSvc := service.NewAuthService(cfg, userRepo, emailCl, achSvc)
-	userSvc := service.NewUserService(userRepo)
+	userSvc := service.NewUserService(userRepo, cfg)
 	leadSvc := service.NewLeaderboardService(leadRepo, gameRepo)
 	gameSvc := service.NewGameService(gameRepo, achSvc, leadSvc)
 	dailySvc := service.NewDailyService(gameRepo, achSvc)
@@ -106,6 +116,7 @@ func main() {
 	pushSvc := service.NewPushService(cfg)
 	supportSvc := service.NewSupportService(emailCl)
 	subSvc := service.NewSubscriptionService()
+	friendSvc := service.NewFriendService()
 
 	// Controllers
 	authHandler := controller.NewAuthController(authSvc)
@@ -120,6 +131,7 @@ func main() {
 	pushHandler := controller.NewPushController(pushSvc, cfg)
 	supportHandler := controller.NewSupportController(supportSvc)
 	subHandler := controller.NewSubscriptionController(subSvc)
+	friendHandler := controller.NewFriendController(friendSvc)
 
 	// Routes
 	authGroup := apiV1.Group("/auth")
@@ -137,6 +149,7 @@ func main() {
 	userGroup.Get("/me", userHandler.GetMe)
 	userGroup.Get("/stats", userHandler.GetStats)
 	userGroup.Patch("/profile", userHandler.UpdateProfile)
+	userGroup.Post("/avatar", userHandler.UploadAvatar)
 	userGroup.Get("/achievements", achHandler.GetUserAchievements)
 
 	gameGroup := apiV1.Group("/games")
@@ -182,6 +195,14 @@ func main() {
 	subGroup.Post("/", subHandler.Subscribe)
 	subGroup.Get("/status", subHandler.Status)
 	subGroup.Post("/cancel", subHandler.Cancel)
+
+	friendGroup := apiV1.Group("/friends", middleware.AuthMiddleware(cfg))
+	friendGroup.Get("/", friendHandler.ListFriends)
+	friendGroup.Get("/requests", friendHandler.ListRequests)
+	friendGroup.Post("/request", friendHandler.SendRequest)
+	friendGroup.Post("/:id/accept", friendHandler.AcceptRequest)
+	friendGroup.Post("/:id/decline", friendHandler.DeclineRequest)
+	friendGroup.Delete("/:id", friendHandler.RemoveFriend)
 
 	// Start schedulers
 	service.StartDailyScheduler(gameRepo, aiSvc)

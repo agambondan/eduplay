@@ -44,6 +44,15 @@ func (h *AuthController) clearRefreshCookie(c *fiber.Ctx) {
 	})
 }
 
+// Register godoc
+// @Summary Register a new user
+// @Description Create a new user account
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body service.RegisterRequest true "Registration payload"
+// @Success 200 {object} map[string]interface{}
+// @Router /auth/register [post]
 func (h *AuthController) Register(c *fiber.Ctx) error {
 	var req service.RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -72,6 +81,15 @@ func (h *AuthController) Register(c *fiber.Ctx) error {
 	})
 }
 
+// Login godoc
+// @Summary Login user
+// @Description Authenticate and get access token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body service.LoginRequest true "Login payload"
+// @Success 200 {object} map[string]interface{}
+// @Router /auth/login [post]
 func (h *AuthController) Login(c *fiber.Ctx) error {
 	var req service.LoginRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -95,6 +113,14 @@ func (h *AuthController) Login(c *fiber.Ctx) error {
 	})
 }
 
+// Refresh godoc
+// @Summary Refresh access token
+// @Description Get a new access token using refresh token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /auth/refresh [post]
 func (h *AuthController) Refresh(c *fiber.Ctx) error {
 	refreshToken := c.Cookies("refresh_token")
 
@@ -120,6 +146,14 @@ func (h *AuthController) Refresh(c *fiber.Ctx) error {
 	return response.Success(c, fiber.Map{"access_token": res.AccessToken})
 }
 
+// Logout godoc
+// @Summary Logout user
+// @Description Invalidate access token
+// @Tags auth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /auth/logout [post]
 func (h *AuthController) Logout(c *fiber.Ctx) error {
 	userToken := c.Locals("user").(*jwt.Token)
 	claims := userToken.Claims.(jwt.MapClaims)

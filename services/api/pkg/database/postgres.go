@@ -8,6 +8,7 @@ import (
 
 	"github.com/agambondan/eduplay/services/api/config"
 	"github.com/agambondan/eduplay/services/api/pkg/logger"
+	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -20,7 +21,7 @@ func ConnectPostgres(cfg *config.Config) {
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		logger.Log.Fatal("Failed to connect to postgres")
+		logger.Log.Fatal("Failed to connect to postgres", zap.String("host", cfg.DB.Host), zap.String("port", cfg.DB.Port), zap.String("user", cfg.DB.User), zap.String("db", cfg.DB.Name), zap.Error(err))
 	}
 
 	sqlDB, err := DB.DB()
