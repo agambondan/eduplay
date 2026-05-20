@@ -8,7 +8,6 @@ import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
 import { Pause } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
-import { useLocale } from '@/lib/i18n';
 
 type Board = number[][];
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -100,7 +99,6 @@ const TILE_COLORS: Record<number, string> = {
 export default function Game2048() {
   const { t } = useLocale();
   const { score, isPlaying, addScore, setScore, startGame, endGame, submitScore, pauseGame } = useGame('2048');
-  const { t } = useLocale();
   const [board, setBoard] = useState<Board>(createEmptyBoard);
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);

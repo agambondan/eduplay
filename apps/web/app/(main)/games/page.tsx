@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { gamesApi } from '@/lib/api/games';
 import { GameCard } from '@/components/ui/GameCard';
-import { useMemo } from 'react';
+import { useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
     Calculator,
@@ -78,7 +78,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     },
 };
 
-export default function GamesPage() {
+function GamesContent() {
     const { t } = useLocale();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -212,5 +212,13 @@ export default function GamesPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function GamesPage() {
+    return (
+        <Suspense>
+            <GamesContent />
+        </Suspense>
     );
 }

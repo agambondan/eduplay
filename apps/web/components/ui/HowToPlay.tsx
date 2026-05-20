@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 interface Step {
     emoji: string;
@@ -14,6 +15,7 @@ interface HowToPlayProps {
 
 export function HowToPlay({ steps }: HowToPlayProps) {
     const [open, setOpen] = useState(false);
+    const { t } = useLocale();
 
     return (
         <div className='w-full rounded-xl border border-gray-200 dark:border-slate-700'>
@@ -22,7 +24,7 @@ export function HowToPlay({ steps }: HowToPlayProps) {
                 className='flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 dark:text-slate-300'
             >
                 <span className='flex items-center gap-1.5'>
-                    <span>📖</span> Cara Bermain
+                    <span>📖</span> {t('game.how_to_play')}
                 </span>
                 {open ? (
                     <ChevronUp className='h-4 w-4 text-gray-400' />

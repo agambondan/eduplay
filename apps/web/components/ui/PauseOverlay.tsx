@@ -24,7 +24,7 @@ export function PauseOverlay() {
         className="flex flex-col items-center gap-6 rounded-2xl bg-white p-10 shadow-2xl dark:bg-slate-800"
       >
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.pause')}</h2>
-        <p className="text-gray-500 dark:text-slate-400">Tekan tombol di bawah untuk melanjutkan</p>
+        <p className="text-gray-500 dark:text-slate-400">{t('game.resume_prompt')}</p>
         <button
           onClick={togglePause}
           className="touch-target rounded-xl bg-emerald-500 px-10 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"

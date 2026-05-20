@@ -12,6 +12,7 @@ import { StreakCounter } from '@/components/ui/StreakCounter';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Trophy, Gamepad2, TrendingUp, ShieldCheck, Crown, Loader2, Upload, Settings } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   const [subscription, setSubscription] = useState<{ id: string; plan: string; status: string; started_at: string; expires_at: string } | null>(null);
   const [subLoading, setSubLoading] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api

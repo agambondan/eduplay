@@ -7,9 +7,11 @@ import { ResultScreen } from '@/components/ui/ResultScreen';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
 import { Pause } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 export default function TimesTable() {
   const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('times-table');
+  const { t } = useLocale();
   const [selectedTable, setSelectedTable] = useState<number | 'mix'>(1);
   const [numA, setNumA] = useState(1);
   const [numB, setNumB] = useState(1);
@@ -68,9 +70,9 @@ export default function TimesTable() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Times Table Challenge</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.times_table.title')}</h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
-          Latih perkalian 1-12 dengan gamified drilling!
+          {t('game.times_table.desc')}
         </p>
         <HowToPlay
           steps={[
@@ -110,7 +112,7 @@ export default function TimesTable() {
           onClick={handleStart}
           className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
-          Mulai!
+          {t('game.start')}
         </button>
       </div>
     );
@@ -120,8 +122,8 @@ export default function TimesTable() {
     <div className="flex flex-col items-center gap-4 py-6">
       <div className="flex items-center gap-4">
         <ScoreBoard score={score} />
-        <span className="text-sm text-gray-500 dark:text-slate-400">Soal {questionCount}/10</span>
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+        <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.questions', { n: questionCount, total: 10 })}</span>
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
           <Pause className='h-4 w-4' />
         </button>
       </div>

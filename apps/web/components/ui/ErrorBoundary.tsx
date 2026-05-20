@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
             {this.context.t('common.error')}
           </h2>
           <p className="max-w-md text-sm text-red-600 dark:text-red-300">
-            Maaf, terjadi kesalahan yang tidak terduga. Silakan coba lagi.
+            {this.context.t('common.error_desc')}
           </p>
           <button
             onClick={this.handleRetry}

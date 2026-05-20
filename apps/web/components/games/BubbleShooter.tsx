@@ -16,10 +16,29 @@ interface Bubble {
   radius: number;
   value: number;
   color: string;
+  gradient: CanvasGradient;
   isTarget: boolean;
+  opacity: number;
+}
+
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  color: string;
+  size: number;
 }
 
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const GRADIENT_COLORS: Record<string, [string, string]> = {
+  '#4f46e5': ['#6366f1', '#3730a3'],
+  '#10b981': ['#34d399', '#059669'],
+  '#f59e0b': ['#fbbf24', '#d97706'],
+  '#ef4444': ['#f87171', '#dc2626'],
+  '#8b5cf6': ['#a78bfa', '#7c3aed'],
+};
 
 export default function BubbleShooter() {
   const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('bubble-shooter');
@@ -41,6 +60,7 @@ export default function BubbleShooter() {
       radius: number;
     }[],
     lastSpawn: 0,
+    particles: [] as Particle[],
   });
 
   const spawnBubble = useCallback(() => {
@@ -48,6 +68,11 @@ export default function BubbleShooter() {
     const x = Math.random() * (600 - radius * 2) + radius;
     const value = Math.floor(Math.random() * 10) + 1;
     const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    const [c1, c2] = GRADIENT_COLORS[color];
+    const grad = document.createElement('canvas').getContext('2d')!;
+    const g = grad.createRadialGradient(0, 0, 0, 0, 0, radius);
+    g.addColorStop(0, c1);
+    g.addColorStop(1, c2);
 
     gameState.current.bubbles.push({
       x,
@@ -55,7 +80,9 @@ export default function BubbleShooter() {
       radius,
       value,
       color,
+      gradient: g,
       isTarget: false,
+      opacity: 1,
     });
   }, []);
 
@@ -87,34 +114,85 @@ export default function BubbleShooter() {
         gameState.current.lastSpawn = time;
       }
 
-      // Draw Cannon (bottom center)
+      // Draw background grid
+      ctx.strokeStyle = 'rgba(0,0,0,0.03)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 30) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 30) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      // Draw Cannon with gradient
+      const cGrad = ctx.createRadialGradient(gameState.current.cannonX, canvas.height - 10, 0, gameState.current.cannonX, canvas.height, 35);
+      cGrad.addColorStop(0, '#6366f1');
+      cGrad.addColorStop(1, '#312e81');
       ctx.beginPath();
       ctx.arc(gameState.current.cannonX, canvas.height, 30, Math.PI, 0);
-      ctx.fillStyle = '#3730a3';
+      ctx.fillStyle = cGrad;
       ctx.fill();
       ctx.closePath();
 
-      // Update & Draw Projectiles
+      // Cannon barrel
+      ctx.beginPath();
+      ctx.arc(gameState.current.cannonX, canvas.height - 5, 10, Math.PI, 0);
+      ctx.fillStyle = '#4338ca';
+      ctx.fill();
+      ctx.closePath();
+
+      // Draw projectiles with glow
       gameState.current.projectiles.forEach((p, pi) => {
         p.x += p.dx;
         p.y += p.dy;
 
+        // Glow
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 14, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(99,102,241,0.2)';
+        ctx.fill();
+        ctx.closePath();
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
-        ctx.fillStyle = '#000';
+        const pGrad = ctx.createRadialGradient(p.x - 2, p.y - 2, 0, p.x, p.y, 10);
+        pGrad.addColorStop(0, '#818cf8');
+        pGrad.addColorStop(1, '#3730a3');
+        ctx.fillStyle = pGrad;
         ctx.fill();
         ctx.closePath();
 
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 12px Inter';
+        ctx.font = 'bold 11px Inter';
         ctx.textAlign = 'center';
-        ctx.fillText(p.value.toString(), p.x, p.y + 4);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.value.toString(), p.x, p.y);
 
         // Collision with bubbles
         gameState.current.bubbles.forEach((b, bi) => {
           const dist = Math.sqrt((p.x - b.x) ** 2 + (p.y - b.y) ** 2);
           if (dist < p.radius + b.radius + 10) {
-            // simplified collision
+            // Particle burst
+            for (let i = 0; i < 12; i++) {
+              const angle = (Math.PI * 2 * i) / 12;
+              const speed = 2 + Math.random() * 3;
+              gameState.current.particles.push({
+                x: b.x,
+                y: b.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1,
+                color: b.color,
+                size: 4 + Math.random() * 4,
+              });
+            }
+
             if (p.value + b.value === targetSum) {
               addScore(20);
               gameState.current.bubbles.splice(bi, 1);
@@ -127,20 +205,61 @@ export default function BubbleShooter() {
         });
       });
 
-      // Update & Draw Bubbles
-      gameState.current.bubbles.forEach((b, i) => {
-        b.y += 0.5; // slow fall
+      // Update & Draw Particles
+      gameState.current.particles.forEach((pt, i) => {
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.vy += 0.05;
+        pt.life -= 0.03;
 
+        if (pt.life <= 0) {
+          gameState.current.particles.splice(i, 1);
+          return;
+        }
+
+        ctx.globalAlpha = pt.life;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size * pt.life, 0, Math.PI * 2);
+        ctx.fillStyle = pt.color;
+        ctx.fill();
+        ctx.closePath();
+        ctx.globalAlpha = 1;
+      });
+
+      // Update & Draw Bubbles with gradient
+      gameState.current.bubbles.forEach((b) => {
+        b.y += 0.5;
+
+        // Glow
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius + 4, 0, Math.PI * 2);
+        ctx.fillStyle = b.color + '30';
+        ctx.fill();
+        ctx.closePath();
+
+        // Bubble body with gradient
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-        ctx.fillStyle = b.color;
+        const g = ctx.createRadialGradient(b.x - 5, b.y - 5, 0, b.x, b.y, b.radius);
+        const [c1, c2] = GRADIENT_COLORS[b.color];
+        g.addColorStop(0, c1);
+        g.addColorStop(1, c2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.closePath();
+
+        // Highlight
+        ctx.beginPath();
+        ctx.arc(b.x - 6, b.y - 6, b.radius * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
         ctx.fill();
         ctx.closePath();
 
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 16px Inter';
+        ctx.font = 'bold 15px Inter';
         ctx.textAlign = 'center';
-        ctx.fillText(b.value.toString(), b.x, b.y + 6);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(b.value.toString(), b.x, b.y);
 
         // Ground collision
         if (b.y + b.radius > canvas.height - 20) {
@@ -225,11 +344,11 @@ export default function BubbleShooter() {
     <div className="flex flex-col items-center gap-4 py-6">
       <div className="flex w-full max-w-md items-center justify-between">
         <div className="rounded-xl border border-amber-200 bg-amber-100 px-4 py-2 dark:bg-amber-900/40">
-          <span className="text-xs font-bold uppercase text-amber-600">Target Sum:</span>
+          <span className="text-xs font-bold uppercase text-amber-600">{t('game.target_sum')}:</span>
           <div className="text-2xl font-black text-amber-700 dark:text-amber-300">{targetSum}</div>
         </div>
         <ScoreBoard score={score} />
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
           <Pause className='h-4 w-4' />
         </button>
       </div>

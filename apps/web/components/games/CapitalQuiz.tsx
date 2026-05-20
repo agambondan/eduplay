@@ -192,7 +192,7 @@ export default function CapitalQuiz() {
           <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{streak}x</span>
         </div>
         <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.questions', { n: questionCount, total: 15 })}</span>
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
           <Pause className='h-4 w-4' />
         </button>
       </div>

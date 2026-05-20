@@ -246,7 +246,7 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
 
   return (
     <div className="flex flex-col items-center gap-4 py-6">
-      <div className="flex items-center gap-4">
+      <div aria-live="polite" className="flex items-center gap-4">
         <ScoreBoard score={score} />
         <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.attempt').replace('{n}', String(attempt))}</span>
         <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>

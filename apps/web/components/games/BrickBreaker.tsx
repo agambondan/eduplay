@@ -52,6 +52,7 @@ export default function BrickBreaker() {
     brickPadding: 10,
     brickOffsetTop: 30,
     brickOffsetLeft: 30,
+    trail: [] as { x: number; y: number; life: number }[],
   });
 
   const initBricks = useCallback(() => {
@@ -104,7 +105,31 @@ export default function BrickBreaker() {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw Bricks
+      // Draw background grid
+      ctx.strokeStyle = 'rgba(0,0,0,0.03)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 30) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 30) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      // Draw Bricks with gradient
+      const brickColors = ['#4f46e5', '#7c3aed', '#0891b2', '#059669', '#d97706'];
+      const brickGradients: [string, string][] = [
+        ['#6366f1', '#3730a3'],
+        ['#8b5cf6', '#6d28d9'],
+        ['#22d3ee', '#0891b2'],
+        ['#34d399', '#059669'],
+        ['#fbbf24', '#d97706'],
+      ];
       gameState.current.bricks.forEach((b, i) => {
         if (b.status === 1) {
           const bc = Math.floor(i / gameState.current.brickRows);
@@ -117,15 +142,58 @@ export default function BrickBreaker() {
             gameState.current.brickOffsetTop;
           b.x = brickX;
           b.y = brickY;
+          const [g1, g2] = b.isSpecial ? ['#f59e0b', '#b45309'] : brickGradients[br % brickGradients.length];
+          const brickGrad = ctx.createLinearGradient(brickX, brickY, brickX, brickY + gameState.current.brickHeight);
+          brickGrad.addColorStop(0, g1);
+          brickGrad.addColorStop(1, g2);
+
+          // Rounded rect
+          const r = 4;
           ctx.beginPath();
-          ctx.rect(brickX, brickY, gameState.current.brickWidth, gameState.current.brickHeight);
-          ctx.fillStyle = b.isSpecial ? '#f59e0b' : '#4f46e5';
-          ctx.fill();
+          ctx.moveTo(brickX + r, brickY);
+          ctx.lineTo(brickX + gameState.current.brickWidth - r, brickY);
+          ctx.quadraticCurveTo(brickX + gameState.current.brickWidth, brickY, brickX + gameState.current.brickWidth, brickY + r);
+          ctx.lineTo(brickX + gameState.current.brickWidth, brickY + gameState.current.brickHeight - r);
+          ctx.quadraticCurveTo(brickX + gameState.current.brickWidth, brickY + gameState.current.brickHeight, brickX + gameState.current.brickWidth - r, brickY + gameState.current.brickHeight);
+          ctx.lineTo(brickX + r, brickY + gameState.current.brickHeight);
+          ctx.quadraticCurveTo(brickX, brickY + gameState.current.brickHeight, brickX, brickY + gameState.current.brickHeight - r);
+          ctx.lineTo(brickX, brickY + r);
+          ctx.quadraticCurveTo(brickX, brickY, brickX + r, brickY);
           ctx.closePath();
+          ctx.fillStyle = brickGrad;
+          ctx.fill();
+
+          // Special brick indicator
+          if (b.isSpecial) {
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = 'bold 14px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('?', brickX + gameState.current.brickWidth / 2, brickY + gameState.current.brickHeight / 2);
+          }
         }
       });
 
-      // Draw Ball
+      // Draw ball trail
+      gameState.current.trail.push({ x: gameState.current.ball.x, y: gameState.current.ball.y, life: 1 });
+      if (gameState.current.trail.length > 8) gameState.current.trail.shift();
+      gameState.current.trail.forEach((t, i) => {
+        t.life -= 0.12;
+        ctx.globalAlpha = t.life * 0.3;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, gameState.current.ball.radius * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444';
+        ctx.fill();
+        ctx.closePath();
+        ctx.globalAlpha = 1;
+      });
+
+      // Draw Ball with glow
+      ctx.beginPath();
+      ctx.arc(gameState.current.ball.x, gameState.current.ball.y, gameState.current.ball.radius + 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(239,68,68,0.2)';
+      ctx.fill();
+      ctx.closePath();
       ctx.beginPath();
       ctx.arc(
         gameState.current.ball.x,
@@ -134,21 +202,35 @@ export default function BrickBreaker() {
         0,
         Math.PI * 2
       );
-      ctx.fillStyle = '#ef4444';
+      const ballGrad = ctx.createRadialGradient(
+        gameState.current.ball.x - 2, gameState.current.ball.y - 2, 0,
+        gameState.current.ball.x, gameState.current.ball.y, gameState.current.ball.radius
+      );
+      ballGrad.addColorStop(0, '#fca5a5');
+      ballGrad.addColorStop(1, '#dc2626');
+      ctx.fillStyle = ballGrad;
       ctx.fill();
       ctx.closePath();
 
-      // Draw Paddle
-      ctx.beginPath();
-      ctx.rect(
-        gameState.current.paddle.x,
-        canvas.height - gameState.current.paddle.height,
-        gameState.current.paddle.width,
-        gameState.current.paddle.height
+      // Draw Paddle with gradient
+      const paddleGrad = ctx.createLinearGradient(
+        gameState.current.paddle.x, 0,
+        gameState.current.paddle.x + gameState.current.paddle.width, 0
       );
-      ctx.fillStyle = '#10b981';
-      ctx.fill();
+      paddleGrad.addColorStop(0, '#34d399');
+      paddleGrad.addColorStop(1, '#059669');
+      const pr = 6;
+      ctx.beginPath();
+      ctx.moveTo(gameState.current.paddle.x + pr, canvas.height - gameState.current.paddle.height);
+      ctx.lineTo(gameState.current.paddle.x + gameState.current.paddle.width - pr, canvas.height - gameState.current.paddle.height);
+      ctx.quadraticCurveTo(gameState.current.paddle.x + gameState.current.paddle.width, canvas.height - gameState.current.paddle.height, gameState.current.paddle.x + gameState.current.paddle.width, canvas.height - gameState.current.paddle.height + pr);
+      ctx.lineTo(gameState.current.paddle.x + gameState.current.paddle.width, canvas.height);
+      ctx.lineTo(gameState.current.paddle.x, canvas.height);
+      ctx.lineTo(gameState.current.paddle.x, canvas.height - gameState.current.paddle.height + pr);
+      ctx.quadraticCurveTo(gameState.current.paddle.x, canvas.height - gameState.current.paddle.height, gameState.current.paddle.x + pr, canvas.height - gameState.current.paddle.height);
       ctx.closePath();
+      ctx.fillStyle = paddleGrad;
+      ctx.fill();
 
       // Collision detection
       gameState.current.bricks.forEach((b) => {
@@ -259,7 +341,7 @@ export default function BrickBreaker() {
       <div className="flex w-full max-w-md items-center justify-between">
         <div className="text-sm font-bold text-gray-500">Brick Breaker</div>
         <ScoreBoard score={score} />
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
+        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
           <Pause className='h-4 w-4' />
         </button>
       </div>
@@ -311,7 +393,7 @@ export default function BrickBreaker() {
         </div>
       )}
 
-      <p className="text-xs text-gray-400">Gunakan mouse untuk menggerakkan papan</p>
+      <p className="text-xs text-gray-400">{t('game.mouse_instructions')}</p>
     </div>
   );
 }

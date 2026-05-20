@@ -11,7 +11,7 @@ const messages: Record<Locale, Record<string, string>> = { id, en };
 interface I18nContextType {
   locale: Locale;
   setLocale: (l: Locale) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
   isRTL: boolean;
 }
 
@@ -39,8 +39,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback(
-    (key: string): string => {
-      return messages[locale]?.[key] || messages['id']?.[key] || key;
+    (key: string, params?: Record<string, string | number>): string => {
+      let str = messages[locale]?.[key] || messages['id']?.[key] || key;
+      if (params) {
+        Object.entries(params).forEach(([k, v]) => {
+          str = str.replace(`{${k}}`, String(v));
+        });
+      }
+      return str;
     },
     [locale]
   );

@@ -59,8 +59,7 @@ export function LevelUpModal({ newLevel, onClose }: LevelUpModalProps) {
                 </div>
 
                 <p className='text-indigo-100'>
-                    Selamat! Kamu telah mencapai <strong>Level {newLevel}</strong>. Terus bermain untuk unlock
-                    achievement baru!
+                    {t('level.up_desc', { level: newLevel })}
                 </p>
 
                 <button

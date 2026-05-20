@@ -142,7 +142,7 @@ export default function ElementQuiz() {
       <div className="flex items-center gap-4">
         <Timer initialSeconds={60} onTimeUp={handleTimeUp} isRunning={isPlaying && !gameOver} />
         <ScoreBoard score={score} />
-        <span className="text-sm text-gray-500 dark:text-slate-400">Soal {questionCount}/10</span>
+        <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.questions', { n: questionCount, total: 10 })}</span>
         <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
           <Pause className='h-4 w-4' />
         </button>

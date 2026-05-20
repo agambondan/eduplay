@@ -248,6 +248,7 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
         <AnimatePresence mode="wait">
           <motion.div
             key={question.text}
+            aria-live="polite"
             className="w-full max-w-md space-y-6"
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -281,6 +282,12 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
                 </button>
               ))}
             </div>
+
+            {feedback && (
+              <p aria-live="assertive" className="text-center text-lg font-bold">
+                {feedback === 'correct' ? 'Benar!' : 'Salah!'}
+              </p>
+            )}
           </motion.div>
         </AnimatePresence>
       )}

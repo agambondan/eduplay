@@ -8,6 +8,7 @@ import { ResultScreen } from '@/components/ui/ResultScreen';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
 import { Pause } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -79,6 +80,7 @@ function generateEquation(difficulty: Difficulty): Equation {
 
 export default function MentalMath() {
   const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('mental-math');
+  const { t } = useLocale();
 
   const [eq, setEq] = useState<Equation | null>(null);
   const [input, setInput] = useState('');
@@ -130,9 +132,9 @@ export default function MentalMath() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mental Math Speed</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.mental_math.title')}</h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
-          Ketik jawabannya langsung secepat kilat! Tidak perlu pencet submit.
+          {t('game.mental_math.desc')}
         </p>
         <HowToPlay
           steps={[
@@ -161,7 +163,7 @@ export default function MentalMath() {
           onClick={handleStart}
           className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
-          Mulai!
+          {t('game.start')}
         </button>
       </div>
     );

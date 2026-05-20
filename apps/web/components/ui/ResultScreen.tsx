@@ -63,7 +63,7 @@ export function ResultScreen({
     }, [score, xpEarned]);
 
     const handleShare = () => {
-        const text = shareText || `Aku baru dapat skor ${score} di ${gameName} di EduPlay!`;
+        const text = shareText || t('level.up_share', { score, game: gameName });
         if (navigator.share) {
             navigator.share({ title: 'EduPlay', text }).catch(() => {});
         } else {
@@ -79,11 +79,12 @@ export function ResultScreen({
             transition={{ duration: 0.3 }}
         >
             {description && (
-                <p className='text-sm text-gray-500 dark:text-slate-400'>{description}</p>
+                <p aria-live="assertive" className='text-sm text-gray-500 dark:text-slate-400'>{description}</p>
             )}
 
             {/* Score */}
             <motion.div
+                aria-live="polite"
                 className='flex flex-col items-center'
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -187,7 +188,7 @@ export function ResultScreen({
                         className='flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700'
                     >
                         <Share2 className='h-4 w-4' />
-                        Bagikan
+                        {t('game.share')}
                     </button>
                 </div>
             </motion.div>

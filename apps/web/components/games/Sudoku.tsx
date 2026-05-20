@@ -9,7 +9,6 @@ import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
 import { Delete, RotateCcw, Pause } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
-import { useLocale } from '@/lib/i18n';
 
 type Board = (number | null)[][];
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -88,7 +87,6 @@ function shuffle<T>(arr: T[]): T[] {
 export default function Sudoku() {
     const { t } = useLocale();
     const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('sudoku');
-    const { t } = useLocale();
     const [puzzle, setPuzzle] = useState<Board>([]);
     const [solution, setSolution] = useState<Board>([]);
     const [current, setCurrent] = useState<Board>([]);
@@ -247,9 +245,9 @@ export default function Sudoku() {
                     onTimeUp={handleTimeUp}
                     isRunning={isPlaying && !gameOver}
                 />
-                <div className='flex items-center gap-2'>
+                <div aria-live="polite" className='flex items-center gap-2'>
                     {errors.size > 0 && (
-                        <span className='rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400'>
+                        <span aria-live="polite" className='rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400'>
                             {t('game.sudoku_errors').replace('{n}', String(errors.size))}
                         </span>
                     )}
