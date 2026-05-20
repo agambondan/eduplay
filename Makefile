@@ -1,4 +1,4 @@
-.PHONY: up down build rebuild logs ps clean
+.PHONY: up down build rebuild logs ps clean load-test load-test-local
 
 up:
 	docker compose up -d
@@ -31,3 +31,9 @@ ps:
 clean:
 	docker compose down -v --remove-orphans
 	docker compose rm -f
+
+load-test:
+	k6 run load-test/script.js
+
+load-test-local:
+	BASE_URL=http://localhost:8080/api/v1 k6 run load-test/script.js

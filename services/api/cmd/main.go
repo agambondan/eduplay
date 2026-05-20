@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/config"
+	_ "github.com/agambondan/eduplay/services/api/docs"
 	"github.com/agambondan/eduplay/services/api/internal/controller"
 	"github.com/agambondan/eduplay/services/api/internal/middleware"
 	"github.com/agambondan/eduplay/services/api/internal/model"
@@ -27,6 +28,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/swagger"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -87,8 +89,11 @@ func main() {
 		},
 	})
 
+	app.Get("/swagger/*", swagger.HandlerDefault)
+
 	app.Use(recover.New())
 	app.Use(middleware.RequestLogger())
+	app.Static("/uploads", "./uploads")
 	app.Use(cors.New(cors.Config{
 		AllowOriginsFunc: func(origin string) bool {
 			return true

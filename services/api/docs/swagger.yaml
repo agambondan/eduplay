@@ -1,0 +1,373 @@
+basePath: /api/v1
+definitions:
+  controller.UpdateProfileRequest:
+    properties:
+      username:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - username
+    type: object
+  model.Game:
+    properties:
+      category:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  service.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  service.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      username:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  service.SubmitScoreRequest:
+    properties:
+      difficulty:
+        enum:
+        - easy
+        - medium
+        - hard
+        type: string
+      duration:
+        type: integer
+      score:
+        minimum: 0
+        type: integer
+    required:
+    - difficulty
+    - score
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Educational Mini Games Platform API
+  title: EduPlay API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate and get access token
+      parameters:
+      - description: Login payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login user
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Invalidate access token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using refresh token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: Registration payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register a new user
+      tags:
+      - auth
+  /daily:
+    get:
+      description: Get today's daily challenge
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get daily challenge
+      tags:
+      - daily
+  /games:
+    get:
+      description: Get all available games
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Game'
+            type: array
+      summary: List all games
+      tags:
+      - games
+  /games/{slug}:
+    get:
+      description: Get game details by its slug
+      parameters:
+      - description: Game slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Game'
+      summary: Get a game by slug
+      tags:
+      - games
+  /games/{slug}/score:
+    post:
+      consumes:
+      - application/json
+      description: Submit a score for a specific game
+      parameters:
+      - description: Game slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Score payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.SubmitScoreRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Submit a game score
+      tags:
+      - games
+  /leaderboard/game/{slug}:
+    get:
+      description: Get leaderboard for a specific game
+      parameters:
+      - description: Game slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Period filter (all, daily, weekly, monthly)
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get game leaderboard
+      tags:
+      - leaderboard
+  /leaderboard/global:
+    get:
+      description: Get global leaderboard across all games
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get global leaderboard
+      tags:
+      - leaderboard
+  /user/achievements:
+    get:
+      description: Get all available achievements
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List all achievements
+      tags:
+      - achievements
+  /user/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload avatar image for the authenticated user
+      parameters:
+      - description: Avatar image file (max 2MB, jpg/png/gif/webp)
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload user avatar
+      tags:
+      - user
+  /user/me:
+    get:
+      description: Get the authenticated user's profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - user
+  /user/profile:
+    patch:
+      consumes:
+      - application/json
+      description: Update the authenticated user's profile
+      parameters:
+      - description: Profile update payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controller.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - user
+  /user/stats:
+    get:
+      description: Get the authenticated user's game statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user stats
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

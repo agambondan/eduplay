@@ -1,0 +1,129 @@
+name: eduplay-prod
+
+services:
+  api:
+    image: eduplay-api:prod
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080'
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - eduplay-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8080/swagger/index.html']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  web:
+    image: eduplay-web:prod
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - eduplay-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  postgres:
+    image: pgvector/pgvector:pg18
+    ports:
+      - '5435:5432'
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - eduplay-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-edugame}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - '6382:6379'
+    env_file:
+      - .env
+    volumes:
+      - redis_data:/data
+    networks:
+      - eduplay-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  eduplay-network:
+    driver: bridge
