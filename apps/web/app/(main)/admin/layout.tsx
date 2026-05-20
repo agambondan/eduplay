@@ -8,6 +8,7 @@ import {
   Gamepad2,
   ToggleLeft,
   Trophy,
+  Megaphone,
   ChevronLeft,
   Menu,
   X,
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { href: '/admin/games', label: 'Games', icon: Gamepad2 },
   { href: '/admin/features', label: 'Feature Flags', icon: ToggleLeft },
   { href: '/admin/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/admin/ads', label: 'Iklan', icon: Megaphone },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

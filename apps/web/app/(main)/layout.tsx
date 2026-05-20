@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Footer from '@/components/layout/Footer';
 import MobileNav from '@/components/layout/MobileNav';
 import Navbar from '@/components/layout/Navbar';
+import { BannerAd } from '@/components/ads/BannerAd';
 import { GameLevelUpHandler } from '@/components/ui/GameLevelUpHandler';
 import { PauseOverlay } from '@/components/ui/PauseOverlay';
 import { useGameStore } from '@/lib/stores/gameStore';
@@ -47,6 +48,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           </motion.div>
         </AnimatePresence>
       </main>
+      {!isPlaying && (
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <BannerAd />
+        </div>
+      )}
       {!isPlaying && <MobileNav />}
       {!isPlaying && (
         <div className="hidden md:block">

@@ -90,6 +90,10 @@ func main() {
 		&model.WordChainGame{},
 		&model.ScoreChallenge{},
 		&model.Referral{},
+		&model.Tournament{},
+		&model.TournamentPlayer{},
+		&model.TournamentMatch{},
+		&model.Ad{},
 	)
 
 	seedData()
@@ -142,6 +146,7 @@ func main() {
 	scoreChallengeSvc := service.NewScoreChallengeService()
 	mpLeadSvc := service.NewMultiplayerLeaderboardService()
 	rematchSvc := service.NewRematchService(roomSvc)
+	tournamentSvc := service.NewTournamentService()
 
 	// Controllers
 	authHandler := controller.NewAuthController(authSvc)
@@ -166,6 +171,10 @@ func main() {
 	mpLeadHandler := controller.NewMultiplayerLeaderboardController(mpLeadSvc)
 	rematchHandler := controller.NewRematchController(rematchSvc)
 	scoreChallengeHandler := controller.NewScoreChallengeController(scoreChallengeSvc)
+	tournamentHandler := controller.NewTournamentController(tournamentSvc)
+	adRepo := repository.NewAdRepository()
+	adSvc := service.NewAdService(adRepo)
+	adHandler := controller.NewAdController(adSvc)
 
 	// WebSocket
 	roomMgr := ws.NewRoomManager()
@@ -280,6 +289,7 @@ func main() {
 	roomGroup.Post("/:code/join", roomHandler.Join)
 	roomGroup.Delete("/:code/leave", roomHandler.Leave)
 	roomGroup.Post("/:code/start", roomHandler.Start)
+	roomGroup.Put("/:code/settings", roomHandler.UpdateSettings)
 	roomGroup.Delete("/:code/kick/:user_id", roomHandler.Kick)
 
 	mpLeadGroup := apiV1.Group("/multiplayer/leaderboard", middleware.OptionalAuthMiddleware(cfg))
@@ -295,6 +305,21 @@ func main() {
 	scoreChallengeGroup.Get("/:link", scoreChallengeHandler.GetByLink)
 	scoreChallengeGroup.Post("/:link/accept", scoreChallengeHandler.Accept)
 	scoreChallengeGroup.Post("/:link/submit", scoreChallengeHandler.SubmitScore)
+
+	tournamentGroup := apiV1.Group("/tournaments", middleware.AuthMiddleware(cfg))
+	tournamentGroup.Get("/", tournamentHandler.List)
+	tournamentGroup.Post("/", tournamentHandler.Create)
+	tournamentGroup.Get("/:id", tournamentHandler.Get)
+	tournamentGroup.Post("/:id/join", tournamentHandler.Join)
+	tournamentGroup.Post("/:id/start", tournamentHandler.Start)
+	tournamentGroup.Post("/:id/matches/:match_id/report", tournamentHandler.ReportMatch)
+
+	// Ads — public slot query + admin CRUD
+	apiV1.Get("/ads", adHandler.GetActiveAd)
+	adminGroup.Get("/ads", adHandler.List)
+	adminGroup.Post("/ads", adHandler.Create)
+	adminGroup.Patch("/ads/:id", adHandler.Update)
+	adminGroup.Delete("/ads/:id", adHandler.Delete)
 
 	apiV1.Get("/ws/game/:room_id", wsHandler.WSHandler())
 
@@ -352,6 +377,9 @@ func seedGames() {
 		{Slug: "quiz-showdown", Name: "Quiz Showdown", Description: "Real-time quiz battle 2-4 player — siapa paling cepat & benar!", Category: "multiplayer", IsActive: true},
 		{Slug: "wordle-duel", Name: "Wordle Duel", Description: "Tebak kata 5 huruf yang sama — siapa lebih cepat?", Category: "multiplayer", IsActive: true},
 		{Slug: "sudoku-race", Name: "Sudoku Race", Description: "Selesaikan puzzle Sudoku yang sama — duluan menang!", Category: "multiplayer", IsActive: true},
+		{Slug: "flag-team-battle", Name: "Flag Quiz Team Battle", Description: "Kuis bendera 2v2 dengan buzzer cepat dan skor tim.", Category: "multiplayer", IsActive: true},
+		{Slug: "battleship-math", Name: "Battleship Math", Description: "Tembak koordinat lawan dengan menjawab soal matematika terlebih dahulu.", Category: "multiplayer", IsActive: true},
+		{Slug: "math-tournament", Name: "Math Tournament", Description: "Bracket single-elimination berbasis Math Battle dengan 4-16 pemain.", Category: "multiplayer", IsActive: true},
 	}
 	for _, g := range games {
 		var count int64
