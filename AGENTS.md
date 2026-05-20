@@ -2,8 +2,8 @@
 
 ## Architecture & Boundary Overview
 
-- **Backend:** Go 1.25 (Fiber v2, GORM, Postgres 18, Redis 8). Root: `services/api/`.
-- **Frontend:** Next.js 14.1 App Router. Root: `apps/web/`.
+- **Backend:** Go 1.26 (Fiber v2, GORM, Postgres 18, Redis 8). Root: `services/api/`.
+- **Frontend:** Next.js 16 App Router, React 19. Root: `apps/web/`.
 - **Project Goal:** PWA educational mini-games. No human/creature images (geometric/abstract only).
 
 ## Command Guide
@@ -49,3 +49,23 @@
 
 - Check `services/api/.env.example` to ensure necessary environment variables are set locally.
 - Do not commit changes unless the user explicitly requests it.
+
+## PRD Sync Policy
+
+**Whenever a development decision diverges from what is specified in PRD_EduPlay_v2.md
+(or its addenda), update the relevant PRD section immediately as part of the same task.**
+
+Examples of changes that require PRD sync:
+- Adding, removing, or renaming a feature or game
+- Changing a priority level (P0/P1/P2)
+- Changing a tech stack version or library
+- Moving something between "In Scope" and "Out of Scope"
+- Changing navigation structure (tabs, routes)
+- Changing scoring formulas, XP rules, or game mechanics
+- Adding endpoints not listed in the API specification
+
+The PRD files are:
+- `PRD_EduPlay_v2.md` — master specification (always update this first)
+- `PRD_Addendum_Multiplayer_Bot.md` — multiplayer + bot system
+- `PRD_Addendum_Multiplayer_Games.md` — additional multiplayer games
+- `PRD.md` — deprecated v1 (do not edit, historical reference only)

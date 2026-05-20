@@ -2,11 +2,15 @@
 ## EduPlay — Educational Mini Game Platform
 ### Version 2.0 — Full Specification
 
-**Version:** 2.0.0
-**Status:** Final Draft
+**Version:** 2.1.0
+**Status:** Living Document — actively updated as implementation progresses
 **Last Updated:** 2026-05-20
 **Author:** Product Team
 **Confidentiality:** Internal Use Only
+
+> **PRD Sync Policy:** Dokumen ini harus selalu mencerminkan keputusan implementasi aktual.
+> Jika development mengubah ketentuan di PRD ini, update dokumen ini sekalian.
+> Lihat bagian terakhir dokumen untuk panduan lengkap.
 
 ---
 
@@ -151,13 +155,18 @@ Platform mini game edukatif berbasis web dengan:
 - Admin dashboard basic
 - Bahasa Indonesia (primary) + English (secondary)
 
+**In Scope (tambahan dari v1.0):**
+- Friends system (basic — friends page, add/view friends) ✅ Implemented
+- Support / bug reporting page ✅ Implemented
+- 20 games (8 launch + 12 roadmap games sudah diimplementasi) ✅
+
 **Out of Scope (v1):**
 - Native iOS / Android app
-- Real-time multiplayer
+- Real-time multiplayer (diaddress di PRD Addendum)
 - Teacher / classroom dashboard
-- Subscription / payment gateway
-- Social features (follow, chat, friend)
-- Offline-first full experience
+- Subscription / payment gateway (backend stub tersedia)
+- Social features (chat rooms, follow system, group/community)
+- Offline-first full experience (partial via PWA cache)
 - Custom avatar builder
 
 ---
@@ -517,9 +526,9 @@ Buka App/Website
 | --------------- | --------------------------------------------------------------------------- |
 | **Kategori**    | Logic                                                                       |
 | **Deskripsi**   | Classic Sudoku 9x9 grid                                                     |
-| **Mechanic**    | Isi angka di grid, highlight konflik otomatis (merah), pencil mode, notes   |
+| **Mechanic**    | Isi angka di grid, highlight konflik otomatis (merah), pencil mode, notes; navigasi keyboard arrow keys (✅ implemented) |
 | **Generator**   | Algoritma backtracking untuk generate puzzle valid                          |
-| **Difficulty**  | Easy (35+ sel terisi), Medium (27-34), Hard (20-26), Expert (<20)           |
+| **Difficulty**  | Easy (35+ sel terisi), Medium (27-34), Hard (20-26), Expert (<20) — Expert belum diimplementasi |
 | **Scoring**     | Waktu selesai + jumlah kesalahan (skor terbalik — makin cepat makin tinggi) |
 | **Hint System** | Reveal 1 sel via rewarded ad atau pengurangan skor                          |
 | **Auto-check**  | Validasi otomatis saat selesai                                              |
@@ -540,20 +549,72 @@ Buka App/Website
 
 ---
 
+### 8.9 Memory Match ✅ Implemented
+
+| Aspek          | Detail                                                                         |
+| -------------- | ------------------------------------------------------------------------------ |
+| **Kategori**   | Logic                                                                          |
+| **Deskripsi**  | Temukan semua pasangan kartu emoji yang tersembunyi                            |
+| **Mechanic**   | Balik 2 kartu; jika cocok tetap terbuka, jika tidak tertutup kembali           |
+| **Difficulty** | Easy: 12 kartu (6 pasang) \| Medium: 16 kartu \| Hard: 20 kartu               |
+| **Scoring**    | `max(0, 2000 - moves*20 - elapsed_seconds*5)` — makin sedikit langkah = lebih bagus |
+| **Ad Slots**   | Banner, interstitial setelah selesai                                           |
+
+### 8.10 Typing Speed ✅ Implemented
+
+| Aspek          | Detail                                                                         |
+| -------------- | ------------------------------------------------------------------------------ |
+| **Kategori**   | Language                                                                       |
+| **Deskripsi**  | Ketik kata-kata yang muncul secepat dan seakurat mungkin dalam 60 detik        |
+| **Mechanic**   | Kata muncul satu per satu; Space/Enter untuk submit. Feedback hijau (benar) / merah (salah) |
+| **Scoring**    | WPM × 10 (Words Per Minute × 10)                                              |
+| **Metrics**    | WPM + Accuracy % ditampilkan di result screen                                  |
+| **Ad Slots**   | Banner, interstitial setelah selesai                                           |
+
+### 8.11 Simon Says ✅ Implemented
+
+| Aspek          | Detail                                                                         |
+| -------------- | ------------------------------------------------------------------------------ |
+| **Kategori**   | Logic / Memory                                                                 |
+| **Deskripsi**  | 4 tombol warna berkedip dalam urutan acak; user harus mengulangi urutannya     |
+| **Mechanic**   | Sequence bertambah 1 tombol setiap level. Progress dots menunjukkan sequence vs input user |
+| **Scoring**    | `level × 100` — bertambah setiap level berhasil dilewati                      |
+| **Colors**     | Merah, Biru, Hijau, Kuning — tidak ada gambar makhluk hidup                    |
+| **Ad Slots**   | Banner, interstitial game over                                                 |
+
+### 8.12 Snake Classic ✅ Implemented
+
+| Aspek          | Detail                                                                         |
+| -------------- | ------------------------------------------------------------------------------ |
+| **Kategori**   | Arcade                                                                         |
+| **Deskripsi**  | Kendalikan ular; makan makanan untuk tumbuh, hindari menabrak dinding atau badan |
+| **Mechanic**   | Canvas 400×400px. WASD / Arrow keys (desktop) + touch swipe + on-screen d-pad (mobile) |
+| **Scoring**    | Makanan yang dimakan × 10                                                      |
+| **Implementation** | `useRef` untuk mutable game state, `setInterval` untuk game loop — mencegah stale closure |
+| **Ad Slots**   | Banner, interstitial game over                                                 |
+
+---
+
 ### Roadmap Games
 
-| Game                | Kategori | Target Version | Catatan                                |
+> **Status per Mei 2026:** Semua game roadmap v1.1–v1.3 sudah diimplementasikan lebih awal.
+
+| Game                | Kategori | Status         | Catatan                                |
 | ------------------- | -------- | -------------- | -------------------------------------- |
-| Nonogram            | Logic    | v1.1           | Grid puzzle hitam-putih                |
-| Crossword Indonesia | Language | v1.1           | TTS Bahasa Indonesia                   |
-| Mental Math Speed   | Math     | v1.1           | Hitung cepat tanpa pilihan ganda       |
-| Element Quiz        | Science  | v1.2           | Simbol kimia, nomor atom               |
-| Timeline History    | History  | v1.2           | Urutkan peristiwa bersejarah           |
-| Bubble Shooter Math | Math     | v1.2           | Tembak gelembung jawab soal math       |
-| Word Search         | Language | v1.3           | Cari kata tersembunyi di grid          |
-| Brick Breaker Math  | Math     | v1.3           | Hancurkan bata dengan jawaban benar    |
-| Number Match        | Math     | v1.3           | Coret pasangan angka yang berjumlah 10 |
-| Fraction Visualizer | Math     | v2.0           | Visualisasi pecahan interaktif         |
+| Nonogram            | Logic    | ✅ Done (v1.1)  | Grid puzzle hitam-putih                |
+| Crossword Indonesia | Language | ✅ Done (v1.1)  | TTS Bahasa Indonesia                   |
+| Mental Math Speed   | Math     | ✅ Done (v1.1)  | Hitung cepat tanpa pilihan ganda       |
+| Element Quiz        | Science  | ✅ Done (v1.2)  | Simbol kimia, nomor atom               |
+| Timeline History    | History  | ✅ Done (v1.2)  | Urutkan peristiwa bersejarah           |
+| Bubble Shooter Math | Math     | ✅ Done (v1.2)  | Tembak gelembung jawab soal math       |
+| Word Search         | Language | ✅ Done (v1.3)  | Cari kata tersembunyi di grid          |
+| Brick Breaker Math  | Math     | ✅ Done (v1.3)  | Hancurkan bata dengan jawaban benar    |
+| Memory Match        | Logic    | ✅ Done (added) | Kartu pasangan emoji                   |
+| Typing Speed        | Language | ✅ Done (added) | WPM test 60 detik                      |
+| Simon Says          | Logic    | ✅ Done (added) | Urutan warna dari memori               |
+| Snake Classic       | Arcade   | ✅ Done (added) | Classic snake canvas game              |
+| Number Match        | Math     | Backlog        | Coret pasangan angka yang berjumlah 10 |
+| Fraction Visualizer | Math     | Backlog (v2.0) | Visualisasi pecahan interaktif         |
 
 ---
 
@@ -761,7 +822,7 @@ Breakpoints:
 ```
 LAYOUT COMPONENTS:
   - Navbar (desktop horizontal, mobile hidden)
-  - BottomNav (mobile only, 4 tabs: Home, Games, Leaderboard, Profile)
+  - BottomNav (mobile only, 6 tabs: Home, Games, Daily, Friends, Leaderboard, Profile) ← Updated dari 4 tab
   - PageContainer
   - GameCanvas (responsive wrapper)
   - AdBannerWrapper (sticky bottom)
@@ -1127,7 +1188,7 @@ Rewarded Offered → Rewarded Accepted → Rewarded Completed → Reward Claimed
         ┌──────────┴──────────┐
         │                     │
 ┌───────▼──────┐    ┌─────────▼────────┐
-│  Next.js 14  │    │   Go / Fiber API │
+│  Next.js 16  │    │   Go / Fiber API │
 │  (Vercel)    │    │  (Railway/Fly.io)│
 │              │    │                  │
 │ - SSR pages  │    │ - REST API       │
@@ -1149,8 +1210,8 @@ Rewarded Offered → Rewarded Accepted → Rewarded Completed → Reward Claimed
 
 | Teknologi       | Versi  | Fungsi                                    |
 | --------------- | ------ | ----------------------------------------- |
-| Next.js         | 14+    | Framework, App Router, SSR/SSG            |
-| React           | 18+    | UI library                                |
+| Next.js         | 16+    | Framework, App Router, SSR/SSG            |
+| React           | 19+    | UI library                                |
 | TypeScript      | 5+     | Type safety                               |
 | Tailwind CSS    | 3+     | Utility-first styling                     |
 | shadcn/ui       | latest | Base component library                    |
@@ -1169,7 +1230,7 @@ Rewarded Offered → Rewarded Accepted → Rewarded Completed → Reward Claimed
 
 | Teknologi               | Versi  | Fungsi                                          |
 | ----------------------- | ------ | ----------------------------------------------- |
-| Go                      | 1.22+  | Bahasa pemrograman utama                        |
+| Go                      | 1.26+  | Bahasa pemrograman utama                        |
 | Fiber                   | v2     | HTTP framework (Express-like, high performance) |
 | GORM                    | v2     | ORM PostgreSQL                                  |
 | go-redis                | v9     | Redis client                                    |
@@ -2867,106 +2928,106 @@ messages/
 
 ## 31. Development Roadmap
 
-### Phase 1 — Foundation (Minggu 1-3)
+### Phase 1 — Foundation (Minggu 1-3) ✅ Done
 
 **Backend:**
-- [ ] Project setup: Fiber, GORM, Redis, config, logger
-- [ ] Database migrations (semua tabel)
-- [ ] Auth module: register, login, refresh, logout, forgot password
-- [ ] User module: profile, stats
-- [ ] Game module: list, detail, score submit (dengan validasi basic)
-- [ ] Seed data: 8 games master data
-- [ ] Docker compose untuk local dev
+- [x] Project setup: Fiber, GORM, Redis, config, logger
+- [x] Database migrations (semua tabel)
+- [x] Auth module: register, login, refresh, logout, forgot password
+- [x] User module: profile, stats
+- [x] Game module: list, detail, score submit (dengan validasi basic)
+- [x] Seed data: 8 games master data
+- [x] Docker compose untuk local dev
 
 **Frontend:**
-- [ ] Next.js 14 setup + Tailwind + shadcn/ui + TypeScript
-- [ ] Design tokens (warna, typography, spacing)
-- [ ] Auth pages (login, register, forgot password)
-- [ ] Main layout (navbar desktop, bottom nav mobile)
-- [ ] Game Hub halaman (card grid, filter kategori)
-- [ ] API client setup (Axios + TanStack Query)
-- [ ] Auth state management (Zustand)
+- [x] Next.js 16 setup + Tailwind + shadcn/ui + TypeScript
+- [x] Design tokens (warna, typography, spacing)
+- [x] Auth pages (login, register, forgot password)
+- [x] Main layout (navbar desktop, bottom nav mobile)
+- [x] Game Hub halaman (card grid, filter kategori)
+- [x] API client setup (Axios + TanStack Query)
+- [x] Auth state management (Zustand)
 
-### Phase 2 — Core Games (Minggu 4-6)
+### Phase 2 — Core Games (Minggu 4-6) ✅ Done
 
 **Games:**
-- [ ] Math Quiz Blitz (dengan timer, pilihan ganda, scoring)
-- [ ] 2048 (engine, swipe + keyboard, undo)
-- [ ] Wordle Bahasa Indonesia (engine, keyboard virtual, color feedback)
-- [ ] Sudoku (generator backtracking, grid UI, hint)
+- [x] Math Quiz Blitz (dengan timer, pilihan ganda, scoring)
+- [x] 2048 (engine, swipe + keyboard, undo)
+- [x] Wordle Bahasa Indonesia (engine, keyboard virtual, color feedback)
+- [x] Sudoku (generator backtracking, grid UI, hint, keyboard navigation)
 
 **Backend:**
-- [ ] Leaderboard module (Redis sorted set, per-game + global)
-- [ ] XP & level calculation service
-- [ ] Score anti-cheat (range check, rate limit, checksum)
-- [ ] Unit tests untuk game service & auth service
+- [x] Leaderboard module (Redis sorted set, per-game + global)
+- [x] XP & level calculation service
+- [x] Score anti-cheat (range check, rate limit, checksum)
+- [x] Unit tests untuk game service & auth service
 
-### Phase 3 — Remaining Games & Gamification (Minggu 7-9)
+### Phase 3 — Remaining Games & Gamification (Minggu 7-9) ✅ Done
 
 **Games:**
-- [ ] Times Table Challenge
-- [ ] Spelling Bee
-- [ ] Flag Quiz (195 bendera SVG)
-- [ ] Capital City Quiz
+- [x] Times Table Challenge
+- [x] Spelling Bee
+- [x] Flag Quiz (195 bendera SVG)
+- [x] Capital City Quiz
 
 **Gamifikasi:**
-- [ ] Achievement system (evaluator + 10 achievement awal)
-- [ ] Daily Streak system
-- [ ] Daily Challenge (scheduler + UI)
-- [ ] Result screen (skor, XP, animasi highscore)
-- [ ] Level up modal + konfetti
-- [ ] Achievement toast
+- [x] Achievement system (evaluator + 10 achievement awal)
+- [x] Daily Streak system
+- [x] Daily Challenge (scheduler + UI)
+- [x] Result screen (skor, XP, animasi highscore)
+- [x] Level up modal + konfetti
+- [x] Achievement toast
 
 **Leaderboard UI:**
-- [ ] Leaderboard page (per-game + global)
-- [ ] User rank display
-- [ ] Weekly tab
+- [x] Leaderboard page (per-game + global)
+- [x] User rank display
+- [x] Weekly tab
 
-### Phase 4 — Monetisasi, Notifikasi & PWA (Minggu 10-12)
+### Phase 4 — Monetisasi, Notifikasi & PWA (Minggu 10-12) ✅ Partial
 
 **Monetisasi:**
-- [ ] Google AdSense integration (banner)
-- [ ] Interstitial ads dengan frequency cap
-- [ ] Rewarded ads system
-- [ ] Ad placeholder components (agar ada space saat iklan load)
+- [x] Google AdSense integration (banner — stub components siap)
+- [x] Interstitial ads dengan frequency cap (stub)
+- [x] Rewarded ads system (stub)
+- [x] Ad placeholder components (agar ada space saat iklan load)
 
 **Notifikasi:**
-- [ ] PWA manifest + service worker (next-pwa)
-- [ ] Push notification subscription
-- [ ] Daily reminder notification
-- [ ] Streak alert notification
-- [ ] In-app notification (achievement, level up)
+- [x] PWA manifest + service worker (next-pwa)
+- [x] Push notification subscription
+- [x] Daily reminder notification
+- [x] Streak alert notification
+- [x] In-app notification (achievement, level up)
 
 **Polish:**
-- [ ] Dark mode
-- [ ] Animasi (Framer Motion)
-- [ ] Sound effects (toggle)
-- [ ] Onboarding flow
-- [ ] Empty states
-- [ ] Error states
-- [ ] Loading states (skeleton)
+- [ ] Dark mode — belum diimplementasi
+- [ ] Animasi (Framer Motion) — belum diimplementasi
+- [x] Sound effects (toggle) — Web Audio API
+- [ ] Onboarding flow — belum diimplementasi
+- [x] Empty states
+- [x] Error states
+- [x] Loading states (skeleton)
 
-### Phase 5 — Testing, Legal & Launch (Minggu 13-14)
+### Phase 5 — Testing, Legal & Launch (Minggu 13-14) ⏳ In Progress
 
 **Testing:**
-- [ ] Backend integration tests
-- [ ] Frontend unit tests (game engines)
-- [ ] E2E tests (critical flows)
-- [ ] Load testing (k6)
-- [ ] Manual QA (mobile + desktop)
+- [x] Backend integration tests (partial — game service & auth)
+- [x] Frontend unit tests (Vitest — 21 tests)
+- [ ] E2E tests (critical flows) — belum diimplementasi
+- [ ] Load testing (k6) — belum diimplementasi
+- [ ] Manual QA (mobile + desktop) — belum dilakukan
 
 **Legal & SEO:**
-- [ ] Privacy Policy halaman
-- [ ] Terms of Service halaman
-- [ ] Cookie consent banner
-- [ ] About halaman
-- [ ] SEO meta tags, sitemap.xml, robots.txt
-- [ ] Structured data JSON-LD
+- [ ] Privacy Policy halaman — **P0 blocker untuk AdSense approval**
+- [ ] Terms of Service halaman — **P0 blocker untuk AdSense approval**
+- [ ] Cookie consent banner — **P0 blocker untuk AdSense/GDPR**
+- [ ] About halaman — **P0 blocker untuk AdSense approval**
+- [x] SEO meta tags, sitemap.xml, robots.txt
+- [x] Structured data JSON-LD
 
 **Deployment:**
 - [ ] Staging deployment + testing
 - [ ] Production deployment
-- [ ] Monitoring setup (Sentry, GA4)
+- [x] Monitoring setup (Sentry, GA4) — konfigurasi siap
 - [ ] CI/CD pipeline final
 - [ ] DNS + SSL setup
 
@@ -2978,23 +3039,50 @@ messages/
 
 ---
 
-### v1.1 Roadmap (Bulan 3-4)
+### v1.1 Roadmap (Bulan 3-4) ✅ Done (dipercepat)
 
-- [ ] 3 game baru: Nonogram, Crossword Indonesia, Mental Math Speed
-- [ ] Google OAuth login
+- [x] 3 game baru: Nonogram, Crossword Indonesia, Mental Arithmetic
+- [x] Google OAuth login
 - [ ] Ad mediation (Ad Manager)
 - [ ] Remove ads subscription / IAP
 - [ ] Blog section (konten SEO)
 - [ ] Weekly email summary
 - [ ] A/B testing framework
 
-### v1.2 Roadmap (Bulan 5-6)
+### v1.2 Roadmap (Bulan 5-6) ✅ Done (dipercepat)
 
-- [ ] 3 game baru: Element Quiz, Timeline History, Bubble Shooter Math
-- [ ] English language support penuh
+- [x] 3 game baru: Element Quiz, Timeline History, Bubble Shooter Math
+- [x] English language support penuh (i18n framework siap)
 - [ ] Score sharing (WhatsApp, Instagram Stories)
 - [ ] Near-rank leaderboard
-- [ ] Progress history chart
+- [x] Progress history chart (7-day XP graph di Profile)
+
+### v1.3 Roadmap (Bulan 7-8) ✅ Done (dipercepat)
+
+- [x] 4 game baru: Memory Match, Typing Speed, Simon Says, Snake Classic
+- [x] Sound effects (Web Audio API)
+- [x] Friends system (view friend list + per-user stats)
+- [x] Support / bug reporting (in-app form + email notification via Resend)
+- [x] Accessibility WCAG 2.1 AA (skip links, ARIA, reduced-motion)
+
+### v2.0 Backlog (Prioritas)
+
+| Feature | Priority | Notes |
+| ------- | -------- | ----- |
+| Privacy Policy + Terms + About pages | **P0** | Blocker untuk AdSense approval |
+| Cookie consent banner | **P0** | Blocker untuk AdSense/GDPR |
+| Dark mode | P1 | Framer Motion animations sekalian |
+| Onboarding flow | P1 | First-time user experience |
+| Score sharing (WhatsApp, Instagram) | P1 | Viral mechanic |
+| Guest mode (main tanpa daftar) | P1 | Turunkan friction onboarding |
+| Near-rank leaderboard | P2 | "Kamu rank #47, 23 poin di bawah rank #46" |
+| Referral system | P2 | Kode referral → bonus XP |
+| Number Match game | P2 | New logic game |
+| Fraction Visualizer | P2 | New math game |
+| Ad mediation (Ad Manager) | P2 | Maximize ad revenue |
+| Remove ads subscription / IAP | P2 | Freemium monetization |
+| Blog section | P3 | SEO content |
+| Weekly email summary | P3 | Retention email |
 
 ---
 
@@ -3179,6 +3267,32 @@ make fe-lint      # eslint
 make setup        # Install semua dependencies
 make clean        # Hapus build artifacts
 ```
+
+---
+
+## 35. PRD Sync Policy
+
+**Aturan:** Dokumen ini harus selalu mencerminkan keputusan implementasi aktual. Jika development mengubah ketentuan di PRD ini, update dokumen ini sekalian — sebagai bagian dari PR/commit yang sama.
+
+### Kapan PRD harus diupdate
+
+| Perubahan | Tindakan |
+| --------- | -------- |
+| Menambah / menghapus / merename game atau fitur | Update section 8 (Game Catalog) + Roadmap |
+| Mengubah priority (P0/P1/P2) | Update tabel di section relevan + v2.0 Backlog |
+| Mengubah versi tech stack atau library | Update section 15 (Technical Architecture) |
+| Memindahkan sesuatu antara "In Scope" dan "Out of Scope" | Update section 3 (Product Overview) |
+| Mengubah struktur navigasi (tabs, routes) | Update section 7 (Features) dan UX section |
+| Mengubah formula skor, XP, atau mekanik game | Update section 8 (game spec) + Appendix A |
+| Menambah endpoint yang belum ada di API spec | Update section 17 (API Specification) |
+| Mengubah database schema | Update section 16 (Database Schema) |
+
+### File PRD
+
+- `PRD_EduPlay_v2.md` — **master spec** (selalu update ini dulu)
+- `PRD_Addendum_Multiplayer_Bot.md` — multiplayer + bot system
+- `PRD_Addendum_Multiplayer_Games.md` — game multiplayer tambahan
+- `PRD.md` — deprecated v1 (jangan diedit, referensi historis)
 
 ---
 

@@ -2,8 +2,12 @@
 
 ## EduPlay — Educational Mini Game Platform
 
+> ⚠️ **DEPRECATED — v1.0 ini sudah digantikan oleh [PRD_EduPlay_v2.md](./PRD_EduPlay_v2.md)**
+> Dokumen ini dipertahankan sebagai referensi historis saja.
+> Untuk spesifikasi terkini, selalu gunakan PRD_EduPlay_v2.md.
+
 **Version:** 1.0.0
-**Status:** Draft
+**Status:** Deprecated (digantikan oleh PRD_EduPlay_v2.md)
 **Last Updated:** 2026-05-20
 **Author:** Product Team
 

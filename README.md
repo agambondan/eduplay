@@ -17,21 +17,22 @@ EduPlay is a PWA educational mini-game platform combining learning with gamifica
 
 ## Features
 
-- **Authentication:** Register, Login, JWT with refresh token rotation.
-- **Profile & Progress:** Dynamic XP/level, daily streaks, achievements, 7-day XP history graph.
-- **8 Core Games:**
-  - _Math Quiz Blitz_ — AI-generated math problems (60s).
-  - _Times Table Challenge_ — Multiplication 1–12.
-  - _Wordle Bahasa Indonesia_ — 5-letter word guessing.
-  - _Spelling Bee_ — Drag-and-drop word scramble.
-  - _Flag Quiz_ — Country flag trivia.
-  - _Capital City Quiz_ — Geography capital city match.
-  - _Sudoku_ — 9x9 logic puzzle.
-  - _2048_ — Classic tile-merging game.
-- **Leaderboard:** Global & per-game ranks via Redis Sorted Sets.
+- **Authentication:** Register, Login, JWT with refresh token rotation, Google OAuth.
+- **Profile & Progress:** Dynamic XP/level, daily streaks, achievements, 7-day XP history graph, top-5 games.
+- **20 Games across 5 categories:**
+  - _Math:_ Math Quiz Blitz, Times Table Challenge, Bubble Shooter Math, Brick Breaker
+  - _Language:_ Wordle Bahasa Indonesia, Spelling Bee, Crossword Indonesia, Word Search
+  - _Geography:_ Flag Quiz, Capital City Quiz
+  - _Logic:_ Sudoku, 2048, Nonogram, Memory Match, Simon Says
+  - _Arcade/Other:_ Snake Classic, Typing Speed, Timeline History, Element Quiz, Mental Arithmetic
+- **Leaderboard:** Global & per-game ranks via Redis Sorted Sets, live refresh every 30s.
 - **Daily Challenge:** Unique quiz per day, resets at 00:00 WIB, 2x XP bonus.
-- **Monetization Hooks:** Banner, interstitial, and rewarded ad slots.
+- **Friends:** View friend list, per-user stats.
+- **Support:** In-app bug reporting with email notification.
+- **Monetization Hooks:** Banner, interstitial, and rewarded ad slots (ready for AdSense).
 - **PWA:** Offline-capable via `next-pwa` (enabled in production).
+- **Accessibility:** WCAG 2.1 AA — keyboard navigation, skip links, ARIA labels, reduced-motion support.
+- **i18n:** Bahasa Indonesia (primary) + English.
 
 ---
 
@@ -153,6 +154,29 @@ Images use distroless/base:nonroot (Go) and Next.js standalone output for minima
 |----------|-------------|
 | `NEXT_PUBLIC_API_URL` | Backend URL (e.g. `http://localhost:8080/api/v1`) |
 | `NEXT_PUBLIC_ADSENSE_CLIENT_ID` | Google AdSense ID |
+
+---
+
+## PRD Sync Policy
+
+The product specification lives in the `PRD_EduPlay_v2.md` file (and its addenda).
+
+**Rule: Jika development mengubah ketentuan yang ada di PRD, update PRD-nya sekalian.**
+
+Contoh perubahan yang wajib di-sync ke PRD:
+- Menambah / menghapus / merename game atau fitur
+- Mengubah priority (P0/P1/P2)
+- Mengubah versi tech stack atau library
+- Memindahkan sesuatu antara "In Scope" dan "Out of Scope"
+- Mengubah struktur navigasi (tabs, routes)
+- Mengubah formula skor, XP, atau mekanik game
+- Menambah endpoint yang belum ada di API spec
+
+File PRD:
+- [`PRD_EduPlay_v2.md`](./PRD_EduPlay_v2.md) — master spec (selalu update ini dulu)
+- [`PRD_Addendum_Multiplayer_Bot.md`](./PRD_Addendum_Multiplayer_Bot.md) — multiplayer + bot
+- [`PRD_Addendum_Multiplayer_Games.md`](./PRD_Addendum_Multiplayer_Games.md) — game multiplayer tambahan
+- [`PRD.md`](./PRD.md) — deprecated v1 (jangan diedit, referensi historis)
 
 ---
 
