@@ -24,6 +24,7 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
+  referred_by?: string;
 }
 
 export interface LoginRequest {

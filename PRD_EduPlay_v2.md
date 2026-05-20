@@ -1002,8 +1002,8 @@ Action: Share2, Copy, RotateCcw, ChevronRight
 
 ### 12.3 Technical SEO
 
-- [ ] Sitemap.xml di-generate otomatis (game pages, static pages)
-- [ ] robots.txt — allow all kecuali /admin/
+- [x] Sitemap.xml di-generate otomatis (game pages, static pages)
+- [x] robots.txt — allow all kecuali /admin/
 - [ ] Canonical URLs pada semua halaman
 - [ ] Open Graph tags untuk sharing
 - [ ] Twitter Card meta tags
@@ -3076,9 +3076,9 @@ messages/
 | Score sharing (WhatsApp, Instagram) | P1 | Viral mechanic |
 | Guest mode (main tanpa daftar) | P1 | Turunkan friction onboarding |
 | Near-rank leaderboard | P2 | "Kamu rank #47, 23 poin di bawah rank #46" |
-| Referral system | P2 | Kode referral → bonus XP |
-| Number Match game | P2 | New logic game |
-| Fraction Visualizer | P2 | New math game |
+| Referral system | P2 ✅ | Kode referral → bonus XP — `ReferralCode` on User, `POST /referral/apply`, profile card |
+| Number Match game | P2 ✅ | New logic game — cross pairs summing to 10 |
+| Fraction Visualizer | P2 ✅ | New math game — identify/compare/simplify with visual bar |
 | Ad mediation (Ad Manager) | P2 | Maximize ad revenue |
 | Remove ads subscription / IAP | P2 | Freemium monetization |
 | Blog section | P3 | SEO content |

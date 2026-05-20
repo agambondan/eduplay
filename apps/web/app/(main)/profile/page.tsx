@@ -5,8 +5,10 @@ import { Stats } from '@/types/user';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Copy,
   Crown,
   Gamepad2,
+  Gift,
   Loader2,
   Settings,
   ShieldCheck,
@@ -16,6 +18,7 @@ import {
 } from 'lucide-react';
 import api from '@/lib/api/client';
 import { userApi } from '@/lib/api/user';
+import { referralApi, ReferralStats } from '@/lib/api/referral';
 import { useLocale } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -40,6 +43,8 @@ export default function ProfilePage() {
   const [subLoading, setSubLoading] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [referral, setReferral] = useState<ReferralStats | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let count = 0;
@@ -69,6 +74,8 @@ export default function ProfilePage() {
         tick();
       })
       .catch(() => tick());
+
+    referralApi.getStats().then(setReferral).catch(() => {});
   }, []);
 
   const handleSubscribe = async () => {
@@ -471,6 +478,52 @@ export default function ProfilePage() {
               Premium bebas iklan. Batalkan kapan saja.
             </p>
           </div>
+        )}
+      </div>
+
+      {/* Referral Card */}
+      <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div className="mb-3 flex items-center gap-2 font-bold text-gray-800 dark:text-white">
+          <Gift className="h-5 w-5 text-indigo-500" /> Kode Referral
+        </div>
+        {referral ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 rounded-xl border border-dashed border-indigo-300 bg-indigo-50 px-4 py-3 dark:border-indigo-700 dark:bg-indigo-950/30">
+              <span className="flex-1 font-mono text-lg font-bold tracking-widest text-indigo-700 dark:text-indigo-300">
+                {referral.referral_code}
+              </span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(referral.referral_code);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="rounded-lg p-1.5 text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
+                aria-label="Copy referral code"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </div>
+            {copied && (
+              <p className="text-center text-xs font-semibold text-green-600">Disalin!</p>
+            )}
+            <p className="text-xs text-gray-500 dark:text-slate-400">
+              Bagikan kode ini ke teman. Setiap teman yang mendaftar memberimu{' '}
+              <span className="font-bold text-indigo-600">+100 XP</span>.
+            </p>
+            <div className="flex gap-4 text-center text-sm">
+              <div className="flex-1 rounded-xl bg-gray-50 py-2 dark:bg-slate-700">
+                <p className="font-extrabold text-indigo-600">{referral.total_referrals}</p>
+                <p className="text-xs text-gray-500">Teman diajak</p>
+              </div>
+              <div className="flex-1 rounded-xl bg-gray-50 py-2 dark:bg-slate-700">
+                <p className="font-extrabold text-indigo-600">+{referral.total_xp_earned}</p>
+                <p className="text-xs text-gray-500">XP dari referral</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="h-20 animate-pulse rounded-xl bg-gray-100 dark:bg-slate-700" />
         )}
       </div>
     </div>

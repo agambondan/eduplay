@@ -24,6 +24,7 @@ export default function RegisterPage() {
   const user = useAuthStore((state) => state.user);
 
   const fromGame = searchParams.get('from');
+  const refCode = searchParams.get('ref');
   const redirectAfterAuth = fromGame ? `/games/${fromGame}` : '/';
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: any) => {
     try {
       setError('');
-      const res = await authApi.register(data);
+      const res = await authApi.register({ ...data, referred_by: refCode || undefined });
       setAuth(res.user as any, res.access_token, res.refresh_token);
       router.push(redirectAfterAuth);
     } catch (err: any) {

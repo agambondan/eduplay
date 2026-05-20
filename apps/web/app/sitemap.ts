@@ -19,6 +19,15 @@ const games = [
   'element-quiz',
   'timeline-history',
   'brick-breaker',
+  'math-battle',
+  'memory-match',
+  'typing-speed',
+  'simon-says',
+  'snake',
+  'trivia-challenge',
+  'word-chain',
+  'number-match',
+  'fraction-visualizer',
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

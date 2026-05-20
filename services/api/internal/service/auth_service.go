@@ -25,9 +25,10 @@ import (
 )
 
 type RegisterRequest struct {
-	Username string `json:"username" validate:"required,min=3,max=30"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=6"`
+	Username   string  `json:"username" validate:"required,min=3,max=30"`
+	Email      string  `json:"email" validate:"required,email"`
+	Password   string  `json:"password" validate:"required,min=6"`
+	ReferredBy *string `json:"referred_by"`
 }
 
 type LoginRequest struct {
@@ -115,9 +116,10 @@ func (s *authService) Register(req RegisterRequest) (*AuthResponse, error) {
 	}
 
 	newUser := model.User{
-		Username: req.Username,
-		Email:    req.Email,
-		Password: string(hashedPassword),
+		Username:   req.Username,
+		Email:      req.Email,
+		Password:   string(hashedPassword),
+		ReferredBy: req.ReferredBy,
 	}
 
 	if err := database.DB.Create(&newUser).Error; err != nil {
@@ -125,6 +127,11 @@ func (s *authService) Register(req RegisterRequest) (*AuthResponse, error) {
 			return nil, errors.New("username or email already exists")
 		}
 		return nil, err
+	}
+
+	if req.ReferredBy != nil && *req.ReferredBy != "" {
+		refSvc := NewReferralService()
+		go refSvc.ApplyReferral(newUser.ID, *req.ReferredBy)
 	}
 
 	if s.emailCl != nil {

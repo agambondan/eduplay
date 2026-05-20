@@ -1,6 +1,9 @@
 package model
 
 import (
+	"fmt"
+	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,13 +28,27 @@ type User struct {
 	GoogleID          *string    `gorm:"uniqueIndex;size:255" json:"-"`
 	Role              string     `gorm:"size:20;default:'user'" json:"role"`
 	IsActive          bool       `gorm:"default:true" json:"is_active"`
+	ReferralCode      string     `gorm:"uniqueIndex;size:10" json:"referral_code"`
+	ReferredBy        *string    `gorm:"size:10" json:"referred_by,omitempty"`
 	CreatedAt         time.Time  `json:"created_at"`
 	UpdatedAt         time.Time  `json:"updated_at"`
+}
+
+func generateReferralCode() string {
+	const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	b := strings.Builder{}
+	for i := 0; i < 8; i++ {
+		b.WriteByte(chars[rand.Intn(len(chars))])
+	}
+	return fmt.Sprintf("EP%s", b.String())
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {
 	if u.ID == uuid.Nil {
 		u.ID = uuid.New()
+	}
+	if u.ReferralCode == "" {
+		u.ReferralCode = generateReferralCode()
 	}
 	return nil
 }

@@ -88,6 +88,7 @@ func main() {
 		&model.GhostReplay{},
 		&model.AsyncChallenge{},
 		&model.WordChainGame{},
+		&model.Referral{},
 	)
 
 	seedData()
@@ -136,6 +137,9 @@ func main() {
 	friendSvc := service.NewFriendService()
 	challengeSvc := service.NewChallengeService(aiSvc, pushSvc)
 	wordChainSvc := service.NewWordChainService(cfg, aiSvc)
+	roomSvc := service.NewRoomService()
+	mpLeadSvc := service.NewMultiplayerLeaderboardService()
+	rematchSvc := service.NewRematchService(roomSvc)
 
 	// Controllers
 	authHandler := controller.NewAuthController(authSvc)
@@ -154,6 +158,11 @@ func main() {
 	contentHandler := controller.NewContentController()
 	challengeHandler := controller.NewChallengeController(challengeSvc)
 	wordChainHandler := controller.NewWordChainController(wordChainSvc)
+	roomHandler := controller.NewRoomController(roomSvc)
+	referralSvc := service.NewReferralService()
+	referralHandler := controller.NewReferralController(referralSvc)
+	mpLeadHandler := controller.NewMultiplayerLeaderboardController(mpLeadSvc)
+	rematchHandler := controller.NewRematchController(rematchSvc)
 
 	// WebSocket
 	roomMgr := ws.NewRoomManager()
@@ -229,6 +238,10 @@ func main() {
 	subGroup.Get("/status", subHandler.Status)
 	subGroup.Post("/cancel", subHandler.Cancel)
 
+	referralGroup := apiV1.Group("/referral", middleware.AuthMiddleware(cfg))
+	referralGroup.Get("/stats", referralHandler.GetStats)
+	referralGroup.Post("/apply", referralHandler.Apply)
+
 	friendGroup := apiV1.Group("/friends", middleware.AuthMiddleware(cfg))
 	friendGroup.Get("/", friendHandler.ListFriends)
 	friendGroup.Get("/search", friendHandler.SearchUsers)
@@ -257,6 +270,21 @@ func main() {
 	wordChainGroup.Get("/:id", wordChainHandler.Get)
 	wordChainGroup.Post("/:id/word", wordChainHandler.SubmitWord)
 
+	roomGroup := apiV1.Group("/rooms", middleware.AuthMiddleware(cfg))
+	roomGroup.Post("/", roomHandler.Create)
+	roomGroup.Get("/:code", roomHandler.Get)
+	roomGroup.Post("/:code/join", roomHandler.Join)
+	roomGroup.Delete("/:code/leave", roomHandler.Leave)
+	roomGroup.Post("/:code/start", roomHandler.Start)
+	roomGroup.Delete("/:code/kick/:user_id", roomHandler.Kick)
+
+	mpLeadGroup := apiV1.Group("/multiplayer/leaderboard", middleware.OptionalAuthMiddleware(cfg))
+	mpLeadGroup.Get("/:slug", mpLeadHandler.GetLeaderboard)
+	mpLeadGroup.Get("/global", mpLeadHandler.GetGlobal)
+	mpLeadGroup.Get("/user/stats", middleware.AuthMiddleware(cfg), mpLeadHandler.GetUserStats)
+
+	apiV1.Post("/rooms/:code/rematch", middleware.AuthMiddleware(cfg), rematchHandler.CreateRematch)
+
 	apiV1.Get("/ws/game/:room_id", wsHandler.WSHandler())
 
 	multiplayerGroup := apiV1.Group("/multiplayer", middleware.AuthMiddleware(cfg))
@@ -268,6 +296,7 @@ func main() {
 	service.StartDailyScheduler(gameRepo, aiSvc)
 	service.StartPushScheduler(cfg)
 	service.StartChallengeExpiryCleanup()
+	service.StartGhostReplayCleanup()
 
 	logger.Log.Info("Server starting", zap.String("port", cfg.App.Port))
 	if err := app.Listen(":" + cfg.App.Port); err != nil {
@@ -306,6 +335,7 @@ func seedGames() {
 		{Slug: "trivia-challenge", Name: "Trivia Challenge", Description: "Tantang teman dengan set soal yang sama, bandingkan skor!", Category: "multiplayer", IsActive: true},
 		{Slug: "word-chain", Name: "Word Chain", Description: "Sambung kata Bahasa Indonesia — tantang teman atau bot!", Category: "multiplayer", IsActive: true},
 		{Slug: "math-battle", Name: "Math Battle", Description: "Head-to-head real-time math battle melawan pemain lain atau bot!", Category: "multiplayer", IsActive: true},
+		{Slug: "quiz-showdown", Name: "Quiz Showdown", Description: "Real-time quiz battle 2-4 player — siapa paling cepat & benar!", Category: "multiplayer", IsActive: true},
 	}
 	for _, g := range games {
 		var count int64

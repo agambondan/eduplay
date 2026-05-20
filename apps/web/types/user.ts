@@ -11,6 +11,8 @@ export interface User {
   avatar_color: string;
   role: string;
   is_active: boolean;
+  referral_code: string;
+  referred_by?: string;
   created_at: string;
   updated_at: string;
 }
