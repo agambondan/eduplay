@@ -29,9 +29,9 @@ export default function ProfilePage() {
 
   const level = user?.level || 1;
   const xp = user?.xp || 0;
-  const nextLevelXP = level < 2 ? 100 : (level - 1) * 200 + (level - 1) * level;
-  const currentLevelXP = level < 2 ? 0 : (level - 2) * 200 + (level - 2) * (level - 1);
-  const progress = nextLevelXP > currentLevelXP ? xp - currentLevelXP : 0;
+  const nextLevelXP = (200 * level * (level + 1)) / 2;
+  const currentLevelXP = level > 1 ? (200 * (level - 1) * level) / 2 : 0;
+  const progress = xp - currentLevelXP;
   const needed = nextLevelXP - currentLevelXP;
 
   if (!user) {

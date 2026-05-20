@@ -9,13 +9,13 @@ import (
 )
 
 type UserAchievementResponse struct {
-	AchievementID uuid.UUID `json:"achievement_id"`
-	Slug          string    `json:"slug"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	Icon          string    `json:"icon"`
-	XPReward      int       `json:"xp_reward"`
-	UnlockedAt    time.Time `json:"unlocked_at"`
+	ID          uuid.UUID `json:"id"`
+	Slug        string    `json:"slug"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Icon        string    `json:"icon"`
+	XPReward    int       `json:"xp_reward"`
+	UnlockedAt  time.Time `json:"unlocked_at"`
 }
 
 type AchievementRepository interface {
@@ -46,7 +46,7 @@ func (r *achievementRepository) FindBySlug(slug string) (*model.Achievement, err
 func (r *achievementRepository) FindUserAchievements(userID string) ([]UserAchievementResponse, error) {
 	var uas []UserAchievementResponse
 	err := database.DB.Table("user_achievements").
-		Select(`user_achievements.achievement_id, achievements.slug, achievements.name, 
+		Select(`user_achievements.achievement_id AS id, achievements.slug, achievements.name, 
 			achievements.description, achievements.icon, achievements.xp_reward, 
 			user_achievements.unlocked_at`).
 		Joins("JOIN achievements ON achievements.id = user_achievements.achievement_id").

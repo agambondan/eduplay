@@ -12,14 +12,22 @@ import (
 	"github.com/google/uuid"
 )
 
+type DailyChallengeResponse struct {
+	ChallengeID   string           `json:"challenge_id"`
+	Game          *model.Game      `json:"game"`
+	Questions     []map[string]interface{} `json:"questions"`
+	ExpiresAt     time.Time        `json:"expires_at"`
+	UserSubmitted bool             `json:"user_submitted"`
+}
+
 type DailySubmitResponse struct {
-	XPEarned            int  `json:"xp_earned"`
-	StreakUpdated       bool `json:"streak_updated"`
+	XPEarned             int  `json:"xp_earned"`
+	StreakUpdated        bool `json:"streak_updated"`
 	AchievementsUnlocked bool `json:"achievements_unlocked"`
 }
 
 type DailyService interface {
-	GetTodayChallenge() (*model.DailyChallenge, error)
+	GetTodayChallenge(userID string) (*DailyChallengeResponse, error)
 	SubmitChallenge(userID string, challengeID string, score int) (*DailySubmitResponse, error)
 }
 
@@ -38,28 +46,50 @@ func NewDailyService(gameRepo repository.GameRepository, achSvc interface {
 	return &dailyService{gameRepo: gameRepo, achSvc: achSvc}
 }
 
-func (s *dailyService) GetTodayChallenge() (*model.DailyChallenge, error) {
+func (s *dailyService) GetTodayChallenge(userID string) (*DailyChallengeResponse, error) {
 	today := time.Now().Format("2006-01-02")
 	ctx := context.Background()
 	cacheKey := "daily:challenge:" + today
 
+	var dc model.DailyChallenge
 	val, _ := database.RDB.Get(ctx, cacheKey).Result()
 	if val != "" {
-		var dc model.DailyChallenge
 		json.Unmarshal([]byte(val), &dc)
-		return &dc, nil
+	} else {
+		err := database.DB.Where("challenge_date = ?", today).First(&dc).Error
+		if err != nil {
+			return nil, errors.New("no challenge for today")
+		}
+		data, _ := json.Marshal(dc)
+		database.RDB.Set(ctx, cacheKey, data, 24*time.Hour)
 	}
 
-	var dc model.DailyChallenge
-	err := database.DB.Where("challenge_date = ?", today).First(&dc).Error
-	if err != nil {
-		return nil, errors.New("no challenge for today")
+	var game model.Game
+	if err := database.DB.Where("id = ?", dc.GameID).First(&game).Error; err != nil {
+		return nil, errors.New("game not found")
 	}
 
-	data, _ := json.Marshal(dc)
-	database.RDB.Set(ctx, cacheKey, data, 24*time.Hour)
+	var questions []map[string]interface{}
+	json.Unmarshal([]byte(dc.QuestionsJSON), &questions)
 
-	return &dc, nil
+	userSubmitted := false
+	if userID != "" {
+		uid, _ := uuid.Parse(userID)
+		var sub model.DailySubmission
+		if err := database.DB.Where("user_id = ? AND challenge_id = ?", uid, dc.ID).First(&sub).Error; err == nil {
+			userSubmitted = true
+		}
+	}
+
+	expiresAt := time.Date(dc.ChallengeDate.Year(), dc.ChallengeDate.Month(), dc.ChallengeDate.Day(), 23, 59, 59, 0, time.UTC)
+
+	return &DailyChallengeResponse{
+		ChallengeID:   dc.ID.String(),
+		Game:          &game,
+		Questions:     questions,
+		ExpiresAt:     expiresAt,
+		UserSubmitted: userSubmitted,
+	}, nil
 }
 
 func (s *dailyService) SubmitChallenge(userID string, challengeID string, score int) (*DailySubmitResponse, error) {

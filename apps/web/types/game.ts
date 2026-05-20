@@ -22,7 +22,6 @@ export interface ScoreSubmitResponse {
   session_id: string;
   xp_earned: number;
   new_highscore: boolean;
-  achievements_unlocked: Achievement[];
 }
 
 export interface Achievement {

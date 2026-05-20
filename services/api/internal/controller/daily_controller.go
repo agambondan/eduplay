@@ -16,7 +16,8 @@ func NewDailyController(svc service.DailyService) *DailyController {
 }
 
 func (h *DailyController) GetDailyChallenge(c *fiber.Ctx) error {
-	dc, err := h.svc.GetTodayChallenge()
+	userID, _ := c.Locals("user_id").(string)
+	dc, err := h.svc.GetTodayChallenge(userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusNotFound, err.Error())
 	}
