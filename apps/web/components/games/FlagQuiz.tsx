@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Pause } from 'lucide-react';
+import { AIQuestion, aiApi } from '@/lib/api/ai';
 import { contentApi } from '@/lib/api/content';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
@@ -14,7 +15,7 @@ import { ScoreBoard } from '@/components/ui/ScoreBoard';
 
 interface FlagItem {
   country: string;
-  code: string; // ISO 2-letter code for SVG filename (lowercase)
+  code: string;
 }
 
 const FALLBACK_FLAGS: FlagItem[] = [
@@ -45,8 +46,15 @@ function generateQuestion(FLAGS: FlagItem[]) {
     const opt = FLAGS[Math.floor(Math.random() * FLAGS.length)].country;
     options.add(opt);
   }
-  const shuffled = [...options].sort(() => Math.random() - 0.5);
-  return { correct, options: shuffled };
+  return { correct, options: [...options].sort(() => Math.random() - 0.5) };
+}
+
+function convertAIQuestion(q: AIQuestion) {
+  const options = q.options?.map(String) || [];
+  return {
+    country: String(q.answer),
+    options: options.length === 4 ? options : undefined,
+  };
 }
 
 export default function FlagQuiz() {
@@ -67,16 +75,47 @@ export default function FlagQuiz() {
   const [count, setCount] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
+  const [useAI, setUseAI] = useState(false);
+  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const next = useCallback(() => {
+    if (useAI && aiQuestions.length > 0) {
+      const q = aiQuestions.shift();
+      if (q) {
+        const converted = convertAIQuestion(q);
+        const flag = FLAGS.find(
+          (f) => f.country.toLowerCase() === converted.country.toLowerCase()
+        );
+        if (flag && converted.options) {
+          setQuestion({ correct: flag, options: converted.options });
+          setAiQuestions([...aiQuestions]);
+          setFeedback(null);
+          return;
+        }
+      }
+    }
     setQuestion(generateQuestion(FLAGS));
     setFeedback(null);
-  }, [FLAGS]);
+  }, [FLAGS, useAI, aiQuestions]);
 
-  const handleStart = () => {
+  const fetchAIQuestions = async () => {
+    setAiLoading(true);
+    try {
+      const q = await aiApi.getQuestions('flag-quiz', 'medium', 12);
+      if (q && q.length > 0) setAiQuestions(q);
+    } catch {
+      console.error('Failed to fetch AI questions');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleStart = async () => {
     setCount(0);
     setGameOver(false);
     setResult(null);
+    if (useAI) await fetchAIQuestions();
     next();
     startGame('easy');
   };
@@ -117,17 +156,27 @@ export default function FlagQuiz() {
           steps={[
             { emoji: '🏳️', text: 'Bendera negara ditampilkan dalam bentuk visual geometri' },
             { emoji: '🔤', text: 'Pilih nama negara yang benar dari 4 pilihan yang tersedia' },
-            {
-              emoji: '⚡',
-              text: 'Setiap jawaban benar menambah skor, jawaban salah mengurangi waktu!',
-            },
+            { emoji: '⚡', text: 'Setiap jawaban benar menambah skor, jawaban salah mengurangi waktu!' },
           ]}
         />
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="useAI"
+            checked={useAI}
+            onChange={(e) => setUseAI(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <label htmlFor="useAI" className="text-sm font-medium text-gray-700 dark:text-slate-300">
+            Generate bendera langka dengan AI ✨
+          </label>
+        </div>
         <button
           onClick={handleStart}
-          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+          disabled={aiLoading}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
         >
-          {t('game.start')}
+          {aiLoading ? t('common.loading') : t('game.start')}
         </button>
       </div>
     );
@@ -188,8 +237,7 @@ export default function FlagQuiz() {
             feedback === 'correct' ? 'text-emerald-500' : 'text-red-500'
           )}
         >
-          {' '}
-          {feedback === 'correct' ? 'Benar!' : 'Salah!'}{' '}
+          {feedback === 'correct' ? 'Benar!' : 'Salah!'}
         </p>
       )}
 

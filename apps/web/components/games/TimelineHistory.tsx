@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Pause } from 'lucide-react';
+import { AIQuestion, aiApi } from '@/lib/api/ai';
 import { contentApi } from '@/lib/api/content';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
@@ -35,6 +36,20 @@ const FALLBACK_EVENTS: TimelineEvent[] = [
   { year: 2020, event: 'Pandemi COVID-19 Melanda Dunia' },
 ];
 
+function generateOptions(correctYear: number): number[] {
+  const opts = new Set<number>([correctYear]);
+  while (opts.size < 4) {
+    const offset = (Math.floor(Math.random() * 10) + 1) * (Math.random() > 0.5 ? 1 : -1);
+    opts.add(correctYear + offset);
+  }
+  return [...opts].sort((a, b) => a - b);
+}
+
+function generateLocalQuestion(EVENTS: TimelineEvent[]): { event: TimelineEvent; options: number[] } {
+  const target = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+  return { event: target, options: generateOptions(target.year) };
+}
+
 export default function TimelineHistory() {
   const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
     useGame('timeline-history');
@@ -54,24 +69,49 @@ export default function TimelineHistory() {
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
   const [count, setCount] = useState(0);
+  const [useAI, setUseAI] = useState(false);
+  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const nextQuestion = useCallback(() => {
-    const target = EVENTS[Math.floor(Math.random() * EVENTS.length)];
-    setCurrentEvent(target);
-
-    const opts = new Set<number>([target.year]);
-    while (opts.size < 4) {
-      const offset = (Math.floor(Math.random() * 10) + 1) * (Math.random() > 0.5 ? 1 : -1);
-      opts.add(target.year + offset);
+    if (useAI && aiQuestions.length > 0) {
+      const q = aiQuestions.shift();
+      if (q) {
+        const eventText = q.question;
+        const year = Number(q.answer);
+        const opts = q.options?.map(Number).filter((n) => !isNaN(n));
+        if (opts && opts.length >= 4 && !isNaN(year)) {
+          setCurrentEvent({ year, event: eventText });
+          setOptions(opts.sort((a, b) => a - b));
+          setAiQuestions([...aiQuestions]);
+          setFeedback(null);
+          return;
+        }
+      }
     }
-    setOptions([...opts].sort((a, b) => a - b));
+    const local = generateLocalQuestion(EVENTS);
+    setCurrentEvent(local.event);
+    setOptions(local.options);
     setFeedback(null);
-  }, [EVENTS]);
+  }, [EVENTS, useAI, aiQuestions]);
 
-  const handleStart = () => {
+  const fetchAIQuestions = async () => {
+    setAiLoading(true);
+    try {
+      const q = await aiApi.getQuestions('timeline-history', 'medium', 10);
+      if (q && q.length > 0) setAiQuestions(q);
+    } catch {
+      console.error('Failed to fetch AI questions');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleStart = async () => {
     setCount(0);
     setGameOver(false);
     setResult(null);
+    if (useAI) await fetchAIQuestions();
     nextQuestion();
     startGame('medium');
   };
@@ -112,18 +152,28 @@ export default function TimelineHistory() {
         <HowToPlay
           steps={[
             { emoji: '📜', text: 'Sebuah peristiwa sejarah Indonesia atau dunia ditampilkan' },
-            { emoji: '📅', text: 'Geser slider untuk menebak tahun kejadian peristiwa tersebut' },
-            {
-              emoji: '🎯',
-              text: 'Semakin dekat tebakanmu dengan tahun yang benar, semakin besar skormu!',
-            },
+            { emoji: '📅', text: 'Tebak tahun kejadian peristiwa tersebut dari 4 pilihan' },
+            { emoji: '🎯', text: 'Jawab benar untuk skor maksimal!' },
           ]}
         />
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="useAI"
+            checked={useAI}
+            onChange={(e) => setUseAI(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <label htmlFor="useAI" className="text-sm font-medium text-gray-700 dark:text-slate-300">
+            Generate soal sejarah dunia dengan AI ✨
+          </label>
+        </div>
         <button
           onClick={handleStart}
-          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+          disabled={aiLoading}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
         >
-          {t('game.start')}
+          {aiLoading ? t('common.loading') : t('game.start')}
         </button>
       </div>
     );
@@ -154,7 +204,7 @@ export default function TimelineHistory() {
       </div>
 
       {currentEvent && !gameOver && (
-        <div className="animate-in fade-in zoom-in w-full max-w-lg space-y-8 duration-300">
+        <div className="w-full max-w-lg space-y-8">
           <div className="rounded-3xl border-2 border-indigo-100 bg-white p-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
             <p className="text-2xl font-bold leading-tight text-gray-900 dark:text-white">
               Kapan terjadi peristiwa:

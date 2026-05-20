@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Pause } from 'lucide-react';
+import { AIQuestion, aiApi } from '@/lib/api/ai';
 import { contentApi } from '@/lib/api/content';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
@@ -61,6 +62,16 @@ function generateQuestion(ELEMENTS: { symbol: string; name: string }[]): Element
   };
 }
 
+function convertAIQuestion(q: AIQuestion): { symbol: string; name: string; options: string[] } | null {
+  const options = q.options?.map(String);
+  if (!options || options.length < 4) return null;
+  return {
+    symbol: String(q.question).includes(' simbol ') ? q.question.split('simbol ')[1]?.trim() || '?': '?',
+    name: String(q.answer),
+    options,
+  };
+}
+
 export default function ElementQuiz() {
   const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
     useGame('element-quiz');
@@ -79,16 +90,53 @@ export default function ElementQuiz() {
   const [questionCount, setQuestionCount] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
+  const [useAI, setUseAI] = useState(false);
+  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const nextQuestion = useCallback(() => {
+    if (useAI && aiQuestions.length > 0) {
+      const q = aiQuestions.shift();
+      if (q) {
+        const converted = convertAIQuestion(q);
+        if (converted) {
+          const element = ELEMENTS.find(
+            (e) => e.name.toLowerCase() === converted.name.toLowerCase()
+          );
+          if (element) {
+            setQuestion({
+              symbol: element.symbol,
+              name: element.name,
+              options: converted.options,
+            });
+            setAiQuestions([...aiQuestions]);
+            setFeedback(null);
+            return;
+          }
+        }
+      }
+    }
     setQuestion(generateQuestion(ELEMENTS));
     setFeedback(null);
-  }, [ELEMENTS]);
+  }, [ELEMENTS, useAI, aiQuestions]);
 
-  const handleStart = () => {
+  const fetchAIQuestions = async () => {
+    setAiLoading(true);
+    try {
+      const q = await aiApi.getQuestions('element-quiz', 'medium', 10);
+      if (q && q.length > 0) setAiQuestions(q);
+    } catch {
+      console.error('Failed to fetch AI questions');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleStart = async () => {
     setQuestionCount(0);
     setGameOver(false);
     setResult(null);
+    if (useAI) await fetchAIQuestions();
     nextQuestion();
     startGame('medium');
   };
@@ -141,11 +189,24 @@ export default function ElementQuiz() {
             { emoji: '⏱️', text: 'Jawab sebanyak mungkin sebelum waktu 60 detik habis!' },
           ]}
         />
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="useAI"
+            checked={useAI}
+            onChange={(e) => setUseAI(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <label htmlFor="useAI" className="text-sm font-medium text-gray-700 dark:text-slate-300">
+            Generate soal unsur kimia dengan AI ✨
+          </label>
+        </div>
         <button
           onClick={handleStart}
-          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
+          disabled={aiLoading}
+          className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
         >
-          {t('game.start')}
+          {aiLoading ? t('common.loading') : t('game.start')}
         </button>
       </div>
     );

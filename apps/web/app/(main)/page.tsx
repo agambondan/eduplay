@@ -14,6 +14,7 @@ import {
   Globe,
   Layers,
   Sparkles,
+  TrendingUp,
   Trophy,
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
@@ -184,6 +185,36 @@ export default function DashboardPage() {
               <div className="text-xs font-medium text-gray-500 dark:text-slate-400">{s.label}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {stats && stats.history && stats.history.length > 0 && (
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+            <TrendingUp className="h-5 w-5 text-indigo-500" /> {t('profile.7day_xp')}
+          </h2>
+          <div className="flex items-end justify-between gap-2 pl-2">
+            {(() => {
+              const maxXP = Math.max(...stats.history.map((p) => p.xp), 1);
+              return stats.history.map((pt, i) => {
+                const heightPct = (pt.xp / maxXP) * 100;
+                return (
+                  <div key={i} className="group flex flex-1 flex-col items-center">
+                    <div className="mb-1 text-[10px] font-bold text-indigo-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-indigo-400">
+                      +{pt.xp}
+                    </div>
+                    <div
+                      className="min-h-[4px] w-full rounded-t-md bg-gradient-to-t from-indigo-400 to-indigo-500 transition-all group-hover:from-indigo-500 group-hover:to-indigo-600 dark:from-indigo-600 dark:to-indigo-500"
+                      style={{ height: `${Math.max(heightPct, 4)}%`, maxHeight: '120px' }}
+                    />
+                    <div className="mt-2 text-[9px] font-bold text-gray-400 dark:text-slate-500">
+                      {new Date(pt.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' })}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
         </div>
       )}
 

@@ -33,8 +33,13 @@ export interface Stats {
 export interface UserStats {
   total_games: number;
   total_xp: number;
+  total_play_time: number;
+  achievements_unlocked: number;
+  level: number;
+  streak: number;
   highscores: GameHighscore[];
   recent_sessions: GameSession[];
+  history: HistoryPoint[];
 }
 
 export interface GameHighscore {
