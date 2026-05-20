@@ -25,7 +25,6 @@ export function Timer({ initialSeconds, onTimeUp, isRunning = true }: TimerProps
       if (isPaused) return;
       setSeconds((prev) => {
         const next = prev - 1;
-        useGameStore.getState().setTimeLeft(next);
         if (next <= 0 && !firedRef.current) {
           firedRef.current = true;
           setTimeout(() => onTimeUpRef.current?.(), 0);
@@ -35,6 +34,10 @@ export function Timer({ initialSeconds, onTimeUp, isRunning = true }: TimerProps
     }, 1000);
     return () => clearInterval(id);
   }, [isRunning, seconds]);
+
+  useEffect(() => {
+    useGameStore.getState().setTimeLeft(seconds);
+  }, [seconds]);
 
   const isPaused = useGameStore((s) => s.isPaused);
 
