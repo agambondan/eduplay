@@ -157,6 +157,7 @@ func main() {
 
 	// WebSocket
 	roomMgr := ws.NewRoomManager()
+	roomMgr.StartCleanup(5 * time.Minute)
 	hub := ws.NewHub(cfg, roomMgr)
 	go hub.Run()
 	mmSvc := ws.NewMatchmakingService(hub)

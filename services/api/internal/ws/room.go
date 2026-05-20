@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"encoding/json"
 	"log"
 	"math/rand"
 	"sync"
@@ -12,7 +11,29 @@ import (
 )
 
 type RoomManager struct {
-	rooms sync.Map
+	rooms           sync.Map
+	reconnectTimers sync.Map
+}
+
+func (rm *RoomManager) StartCleanup(interval time.Duration) {
+	go func() {
+		for {
+			time.Sleep(interval)
+			rm.rooms.Range(func(key, value interface{}) bool {
+				room := value.(*GameRoom)
+				room.mu.Lock()
+				if room.State == "waiting" && time.Since(room.CreatedAt) > 5*time.Minute {
+					rm.rooms.Delete(key)
+					log.Printf("room cleanup: deleted stale room %s", key)
+				} else if room.State == "finished" && room.FinishedAt != nil && time.Since(*room.FinishedAt) > 5*time.Minute {
+					rm.rooms.Delete(key)
+					log.Printf("room cleanup: deleted finished room %s", key)
+				}
+				room.mu.Unlock()
+				return true
+			})
+		}
+	}()
 }
 
 func NewRoomManager() *RoomManager {
@@ -86,6 +107,63 @@ func (rm *RoomManager) LeaveRoom(roomID, userID string) {
 	}
 }
 
+func (rm *RoomManager) StartReconnectTimer(roomID, userID string, timeout time.Duration, hub *Hub) {
+	timerKey := roomID + ":" + userID
+	rm.reconnectTimers.Store(timerKey, time.Now())
+
+	go func() {
+		time.Sleep(timeout)
+
+		rm.reconnectTimers.Delete(timerKey)
+
+		room, ok := rm.Get(roomID)
+		if !ok {
+			return
+		}
+
+		room.mu.Lock()
+		player, exists := room.Players[userID]
+		if !exists {
+			room.mu.Unlock()
+			return
+		}
+
+		delete(room.Players, userID)
+		remaining := len(room.Players)
+		room.mu.Unlock()
+
+		log.Printf("reconnect timeout: %s left room %s (remaining: %d)", userID, roomID, remaining)
+
+		if remaining > 0 && room.State == "playing" {
+			var winnerID string
+			for _, p := range room.Players {
+				winnerID = p.ID
+				break
+			}
+			room.Broadcast("game_over", GameOverPayload{
+				Results: []PlayerResult{
+					{PlayerID: winnerID, IsWinner: true, Score: room.Players[winnerID].Score, Correct: room.Players[winnerID].Correct, Wrong: room.Players[winnerID].Wrong},
+					{PlayerID: userID, IsWinner: false, Score: player.Score, Correct: player.Correct, Wrong: player.Wrong},
+				},
+				WinnerID: winnerID,
+				XPEarned: 25,
+			})
+			room.mu.Lock()
+			room.State = "finished"
+			room.mu.Unlock()
+		}
+
+		if remaining == 0 {
+			rm.rooms.Delete(roomID)
+		}
+	}()
+}
+
+func (rm *RoomManager) CancelReconnectTimer(roomID, userID string) {
+	timerKey := roomID + ":" + userID
+	rm.reconnectTimers.Delete(timerKey)
+}
+
 type Player struct {
 	ID       string
 	Username string
@@ -139,31 +217,17 @@ func (r *GameRoom) GetPlayers() []PlayerInfo {
 }
 
 func (r *GameRoom) Broadcast(msgType string, payload interface{}) {
-	data, _ := json.Marshal(map[string]interface{}{
-		"type":    msgType,
-		"payload": payload,
-	})
 	for _, p := range r.Players {
 		if p.Client != nil {
-			select {
-			case p.Client.Send <- data:
-			default:
-			}
+			p.Client.SendMessage(msgType, payload)
 		}
 	}
 }
 
 func (r *GameRoom) BroadcastExcept(userID string, msgType string, payload interface{}) {
-	data, _ := json.Marshal(map[string]interface{}{
-		"type":    msgType,
-		"payload": payload,
-	})
 	for _, p := range r.Players {
 		if p.ID != userID && p.Client != nil {
-			select {
-			case p.Client.Send <- data:
-			default:
-			}
+			p.Client.SendMessage(msgType, payload)
 		}
 	}
 }
@@ -327,6 +391,11 @@ func (r *GameRoom) findQuestion(id string) *QuestionPayload {
 }
 
 func (r *GameRoom) getCorrectAnswer(questionID string) string {
+	for _, q := range r.Questions {
+		if q.ID == questionID {
+			return q.CorrectAnswer
+		}
+	}
 	return ""
 }
 
@@ -345,6 +414,7 @@ func (r *GameRoom) generateQuestions(cfg *config.Config) []QuestionPayload {
 			Text:           r.buildQuestion(a, b, op),
 			QuestionNumber: i + 1,
 			Total:          totalQ,
+			CorrectAnswer:  itoa(correct),
 		}
 
 		options := r.generateOptions(correct)

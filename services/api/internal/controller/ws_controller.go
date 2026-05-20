@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/agambondan/eduplay/services/api/internal/ws"
 	"github.com/agambondan/eduplay/services/api/pkg/response"
+	"github.com/agambondan/eduplay/services/api/pkg/validator"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -34,6 +35,9 @@ func (h *WSController) QuickMatch(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request")
 	}
+	if err := validator.Validate.Struct(&req); err != nil {
+		return response.ValidationError(c, err.Error())
+	}
 
 	result, err := h.matchmaking.JoinQueue(userID, req.GameSlug, req.Difficulty)
 	if err != nil {
@@ -57,6 +61,9 @@ func (h *WSController) QuickMatchBot(c *fiber.Ctx) error {
 	var req QuickMatchBotInput
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request")
+	}
+	if err := validator.Validate.Struct(&req); err != nil {
+		return response.ValidationError(c, err.Error())
 	}
 
 	roomID := "math_battle:" + req.BotDifficulty

@@ -39,22 +39,44 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.Register:
 			h.mu.Lock()
-			h.Clients[client.UserID] = client
-			h.mu.Unlock()
-			log.Printf("ws client connected: %s", client.UserID)
+			if oldClient, ok := h.Clients[client.UserID]; ok && oldClient.RoomID != "" {
+				client.RoomID = oldClient.RoomID
+				oldClient.Conn = nil
+				h.Rooms.CancelReconnectTimer(oldClient.RoomID, client.UserID)
+				h.Clients[client.UserID] = client
+				h.mu.Unlock()
+				log.Printf("ws client RECONNECTED: %s (room: %s)", client.UserID, client.RoomID)
+				if room, ok := h.Rooms.Get(client.RoomID); ok {
+					room.BroadcastExcept(client.UserID, "player_reconnected", map[string]string{
+						"player_id": client.UserID,
+					})
+				}
+				client.SendMessage("room_joined", map[string]interface{}{
+					"room_id": client.RoomID,
+					"reconnected": true,
+				})
+			} else {
+				h.Clients[client.UserID] = client
+				h.mu.Unlock()
+				log.Printf("ws client connected: %s", client.UserID)
+			}
 
 		case client := <-h.Unregister:
 			h.mu.Lock()
 			if _, ok := h.Clients[client.UserID]; ok {
 				delete(h.Clients, client.UserID)
-				close(client.Send)
 			}
 			h.mu.Unlock()
 
 			if client.RoomID != "" {
-				h.Rooms.LeaveRoom(client.RoomID, client.UserID)
+				log.Printf("ws client disconnected, reconnect window: %s (room: %s)", client.UserID, client.RoomID)
+				if room, ok := h.Rooms.Get(client.RoomID); ok {
+					room.BroadcastExcept(client.UserID, "player_disconnected", map[string]string{
+						"player_id": client.UserID,
+					})
+				}
+				h.Rooms.StartReconnectTimer(client.RoomID, client.UserID, 30*time.Second, h)
 			}
-			log.Printf("ws client disconnected: %s", client.UserID)
 		}
 	}
 }
@@ -160,6 +182,18 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 		database.DB.First(&u, "id = ?", client.UserID)
 
 		h.Rooms.JoinRoom(roomID, client.UserID, u.Username, u.Level)
+
+		if room, ok := h.Rooms.Get(roomID); ok {
+			room.mu.Lock()
+			if room.ClientMap == nil {
+				room.ClientMap = make(map[string]*Client)
+			}
+			room.ClientMap[client.UserID] = client
+			if p, exists := room.Players[client.UserID]; exists {
+				p.Client = client
+			}
+			room.mu.Unlock()
+		}
 
 		oldRoomID := client.RoomID
 		if oldRoomID != "" && oldRoomID != roomID {

@@ -70,3 +70,45 @@ export interface CreateWordChainRequest {
 export interface SubmitWordRequest {
   word: string
 }
+
+export interface QuickMatchResult {
+  match_id: string
+  room_id: string
+  opponent_id?: string
+  opponent_name?: string
+  status?: string
+  bot_options?: string[]
+}
+
+export interface QuickMatchBotResult {
+  match_id: string
+  room_id: string
+  bot: { name: string; difficulty: string }
+}
+
+export interface RealtimeQuestion {
+  id: string
+  text: string
+  options: string[]
+  question_number: number
+  total: number
+}
+
+export interface AnswerResult {
+  player_id: string
+  is_correct: boolean
+  score_delta: number
+  new_score: number
+}
+
+export interface OpponentProgress {
+  player_id: string
+  questions_answered: number
+  current_score: number
+}
+
+export interface GameOverResult {
+  results: { player_id: string; username: string; score: number; correct: number; wrong: number; is_winner: boolean }[]
+  winner_id: string
+  xp_earned: number
+}

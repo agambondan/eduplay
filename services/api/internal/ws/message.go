@@ -38,6 +38,7 @@ type QuestionPayload struct {
 	Options        []string `json:"options"`
 	QuestionNumber int      `json:"question_number"`
 	Total          int      `json:"total"`
+	CorrectAnswer  string   `json:"-"` // only used server-side, never sent to client
 }
 
 type AnswerResultPayload struct {

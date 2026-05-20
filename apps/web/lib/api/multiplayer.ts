@@ -36,6 +36,20 @@ export const challengesApi = {
   },
 }
 
+export const multiplayerApi = {
+  quickMatch: async (gameSlug: string, difficulty: string) => {
+    const res = await api.post<ApiResponse<QuickMatchResult>>('/multiplayer/quickmatch', { game_slug: gameSlug, difficulty })
+    return res.data.data
+  },
+  quickMatchBot: async (gameSlug: string, botDifficulty: string) => {
+    const res = await api.post<ApiResponse<QuickMatchBotResult>>('/multiplayer/quickmatch/bot', { game_slug: gameSlug, bot_difficulty: botDifficulty })
+    return res.data.data
+  },
+  cancelQuickMatch: async (gameSlug: string) => {
+    await api.delete('/multiplayer/quickmatch', { data: { game_slug: gameSlug } })
+  },
+}
+
 export const wordChainApi = {
   list: async () => {
     const res = await api.get<ApiResponse<WordChainGame[]>>('/wordchain')
