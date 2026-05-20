@@ -44,7 +44,7 @@ func getTestConfig() *config.Config {
 
 func TestAuthService_Register(t *testing.T) {
 	setupTestDB()
-	svc := NewAuthService(getTestConfig(), repository.NewUserRepository(), &mockAchievement{})
+	svc := NewAuthService(getTestConfig(), repository.NewUserRepository(), nil, &mockAchievement{})
 
 	req := RegisterRequest{
 		Username: "testuser",
@@ -66,7 +66,7 @@ func TestAuthService_Register(t *testing.T) {
 
 func TestAuthService_Login(t *testing.T) {
 	setupTestDB()
-	svc := NewAuthService(getTestConfig(), repository.NewUserRepository(), &mockAchievement{})
+	svc := NewAuthService(getTestConfig(), repository.NewUserRepository(), nil, &mockAchievement{})
 
 	req := RegisterRequest{
 		Username: "loginuser",
@@ -96,7 +96,7 @@ func TestAuthService_Login(t *testing.T) {
 
 func TestAuthService_Logout(t *testing.T) {
 	setupTestDB()
-	svc := NewAuthService(getTestConfig(), repository.NewUserRepository(), &mockAchievement{})
+	svc := NewAuthService(getTestConfig(), repository.NewUserRepository(), nil, &mockAchievement{})
 
 	err := svc.Logout("test-jti-123", 1000)
 	require.NoError(t, err)

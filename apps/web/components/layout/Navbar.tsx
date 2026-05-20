@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { authApi } from '@/lib/api/auth';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -52,14 +53,21 @@ export default function Navbar() {
               ))}
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <LanguageSwitcher />
             {user ? (
               <>
                 <Link
                   href="/profile"
-                  className="text-sm font-medium text-gray-700 hover:text-indigo-600"
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-indigo-600"
                 >
-                  {user.username} (Lvl {user.level || 1})
+                  <span
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+                    style={{ backgroundColor: user.avatar_color || '#4F46E5' }}
+                  >
+                    {user.username.charAt(0).toUpperCase()}
+                  </span>
+                  {user.username} (Lv.{user.level || 1})
                 </Link>
                 <button
                   onClick={handleLogout}

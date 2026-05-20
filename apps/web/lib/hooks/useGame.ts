@@ -3,14 +3,14 @@ import { gamesApi } from '@/lib/api/games';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { Difficulty, ScoreSubmitResponse } from '@/types/game';
 import { useCallback } from 'react';
+import { analytics } from '@/lib/utils/analytics';
 
-export function useGame(gameSlug: string) {
+export function useGame(gameSlug: string, gameName?: string, category?: string) {
   const store = useGameStore();
   const { accessToken } = useAuthStore();
 
   const submitScore = useCallback(async (): Promise<ScoreSubmitResponse | null> => {
     if (!accessToken) {
-      console.log('Guest mode: Skipping score submission');
       return null;
     }
     try {
@@ -19,6 +19,12 @@ export function useGame(gameSlug: string) {
         duration: 60 - store.timeLeft,
         difficulty: store.difficulty,
       });
+      if (result) {
+        analytics.gameCompleted(gameSlug, store.score, 60 - store.timeLeft, store.difficulty, result.xp_earned);
+        if (result.new_highscore) {
+          analytics.newHighscore(gameSlug, store.score);
+        }
+      }
       return result;
     } catch {
       return null;
@@ -30,8 +36,9 @@ export function useGame(gameSlug: string) {
       store.resetGame();
       store.setDifficulty(difficulty);
       store.setPlaying(true);
+      analytics.gameStarted(gameSlug, gameName || '', category || '', difficulty);
     },
-    [store]
+    [store, gameSlug, gameName, category]
   );
 
   const endGame = useCallback(() => {

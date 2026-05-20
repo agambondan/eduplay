@@ -11,6 +11,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/internal/repository"
 	"github.com/agambondan/eduplay/services/api/internal/service"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
+	"github.com/agambondan/eduplay/services/api/pkg/email"
 	"github.com/agambondan/eduplay/services/api/pkg/logger"
 	"github.com/getsentry/sentry-go"
 	"github.com/gofiber/fiber/v2"
@@ -43,6 +44,12 @@ func main() {
 	database.ConnectPostgres(cfg)
 	database.ConnectRedis(cfg)
 
+	var emailCl *email.ResendClient
+	if cfg.Resend.APIKey != "" {
+		emailCl = email.NewResendClient(cfg.Resend.APIKey, cfg.Resend.From, logger.Log)
+		logger.Log.Info("email service initialized")
+	}
+
 	// Auto Migration
 	database.DB.AutoMigrate(
 		&model.User{},
@@ -53,6 +60,7 @@ func main() {
 		&model.DailySubmission{},
 		&model.Achievement{},
 		&model.UserAchievement{},
+		&model.PushSubscription{},
 	)
 
 	app := fiber.New(fiber.Config{
@@ -81,12 +89,13 @@ func main() {
 
 	// Services
 	achSvc := service.NewAchievementService(achRepo)
-	authSvc := service.NewAuthService(cfg, userRepo, achSvc)
+	authSvc := service.NewAuthService(cfg, userRepo, emailCl, achSvc)
 	userSvc := service.NewUserService(userRepo)
 	leadSvc := service.NewLeaderboardService(leadRepo, gameRepo)
 	gameSvc := service.NewGameService(gameRepo, achSvc, leadSvc)
 	dailySvc := service.NewDailyService(gameRepo, achSvc)
 	aiSvc := service.NewAIService(cfg)
+	pushSvc := service.NewPushService(cfg)
 
 	// Controllers
 	authHandler := controller.NewAuthController(authSvc)
@@ -96,13 +105,21 @@ func main() {
 	dailyHandler := controller.NewDailyController(dailySvc)
 	achHandler := controller.NewAchievementController(achSvc)
 	aiHandler := controller.NewAIController(aiSvc)
+	adminSvc := service.NewAdminService()
+	adminHandler := controller.NewAdminController(adminSvc)
+	pushHandler := controller.NewPushController(pushSvc, cfg)
 
 	// Routes
 	authGroup := apiV1.Group("/auth")
 	authGroup.Post("/register", authHandler.Register)
 	authGroup.Post("/login", authHandler.Login)
+	authGroup.Post("/google", authHandler.GoogleLogin)
 	authGroup.Post("/refresh", authHandler.Refresh)
 	authGroup.Post("/logout", middleware.AuthMiddleware(cfg), authHandler.Logout)
+	authGroup.Post("/forgot-password", authHandler.ForgotPassword)
+	authGroup.Post("/reset-password", authHandler.ResetPassword)
+	authGroup.Get("/verify-email", authHandler.VerifyEmail)
+	authGroup.Post("/request-verification", middleware.AuthMiddleware(cfg), authHandler.RequestVerification)
 
 	userGroup := apiV1.Group("/user", middleware.AuthMiddleware(cfg))
 	userGroup.Get("/me", userHandler.GetMe)
@@ -128,6 +145,22 @@ func main() {
 		Expiration: 1 * time.Minute,
 	}))
 	aiGroup.Post("/questions", aiHandler.GenerateQuestions)
+
+	adminGroup := apiV1.Group("/admin", middleware.AuthMiddleware(cfg), middleware.AdminMiddleware())
+	adminGroup.Get("/dashboard", adminHandler.GetDashboard)
+	adminGroup.Get("/users", adminHandler.ListUsers)
+	adminGroup.Post("/users/:id/ban", adminHandler.BanUser)
+	adminGroup.Post("/users/:id/unban", adminHandler.UnbanUser)
+	adminGroup.Get("/games", adminHandler.ListGames)
+	adminGroup.Post("/games/:id/toggle", adminHandler.ToggleGame)
+	adminGroup.Post("/leaderboard/reset", adminHandler.ResetLeaderboard)
+	adminGroup.Get("/feature-flags", adminHandler.GetFeatureFlags)
+	adminGroup.Post("/feature-flags/:key", adminHandler.SetFeatureFlag)
+
+	pushGroup := apiV1.Group("/push", middleware.AuthMiddleware(cfg))
+	pushGroup.Post("/subscribe", pushHandler.Subscribe)
+	pushGroup.Post("/unsubscribe", pushHandler.Unsubscribe)
+	apiV1.Get("/push/vapid-public-key", pushHandler.VapidPublicKey)
 
 	// Start schedulers
 	service.StartDailyScheduler(gameRepo, aiSvc)

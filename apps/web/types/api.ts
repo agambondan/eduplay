@@ -13,6 +13,8 @@ export interface AuthResponse {
     xp: number;
     level: number;
     streak: number;
+    avatar_color: string;
+    email_verified: boolean;
   };
   access_token: string;
   refresh_token: string;

@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { authApi } from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/stores/authStore';
+import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 
 const loginSchema = z.object({
   email: z.string().email('Email tidak valid'),
@@ -79,12 +80,28 @@ export default function LoginPage() {
               {isSubmitting ? 'Loading...' : 'Masuk'}
             </button>
           </div>
-          <div className="text-center text-sm">
+          <div className="flex items-center justify-between text-sm">
+            <a href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Lupa password?
+            </a>
             <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Belum punya akun? Daftar
+              Daftar
             </a>
           </div>
         </form>
+        {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
+          <>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">atau</span>
+              </div>
+            </div>
+            <GoogleLoginButton />
+          </>
+        )}
       </div>
     </div>
   );

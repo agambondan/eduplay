@@ -131,3 +131,86 @@ func (h *AuthController) Logout(c *fiber.Ctx) error {
 
 	return response.Success(c, fiber.Map{"message": "Logged out successfully"})
 }
+
+func (h *AuthController) RequestVerification(c *fiber.Ctx) error {
+	userId, _ := c.Locals("user_id").(string)
+	if userId == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
+
+	if err := h.svc.RequestVerificationEmail(userId); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	return response.Success(c, fiber.Map{"message": "Verification email sent"})
+}
+
+func (h *AuthController) VerifyEmail(c *fiber.Ctx) error {
+	token := c.Query("token")
+	if token == "" {
+		return response.Error(c, fiber.StatusBadRequest, "Missing verification token")
+	}
+
+	if err := h.svc.VerifyEmail(token); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	return response.Success(c, fiber.Map{"message": "Email verified successfully"})
+}
+
+func (h *AuthController) ForgotPassword(c *fiber.Ctx) error {
+	var req service.ForgotPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if err := validator.Validate.Struct(&req); err != nil {
+		return response.ValidationError(c, err.Error())
+	}
+
+	if err := h.svc.ForgotPassword(req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	return response.Success(c, fiber.Map{"message": "If the email exists, a reset link has been sent"})
+}
+
+func (h *AuthController) GoogleLogin(c *fiber.Ctx) error {
+	var req service.GoogleLoginRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if err := validator.Validate.Struct(&req); err != nil {
+		return response.ValidationError(c, err.Error())
+	}
+
+	res, err := h.svc.GoogleLogin(req)
+	if err != nil {
+		return response.Error(c, fiber.StatusUnauthorized, err.Error())
+	}
+
+	h.setRefreshCookie(c, res.RefreshToken, 7*24*time.Hour)
+
+	return response.Success(c, fiber.Map{
+		"user":         res.User,
+		"access_token": res.AccessToken,
+	})
+}
+
+func (h *AuthController) ResetPassword(c *fiber.Ctx) error {
+	var req service.ResetPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if err := validator.Validate.Struct(&req); err != nil {
+		return response.ValidationError(c, err.Error())
+	}
+
+	if err := h.svc.ResetPassword(req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	return response.Success(c, fiber.Map{"message": "Password reset successfully"})
+}

@@ -29,6 +29,17 @@ type Config struct {
         APIKey string
         Model  string
     }
+    Resend struct {
+        APIKey string
+        From   string
+    }
+    Google struct {
+        ClientID string
+    }
+    VAPID struct {
+        PublicKey  string
+        PrivateKey string
+    }
     FrontendURL string
 }
 
@@ -57,6 +68,11 @@ func Load() (*Config, error) {
     cfg.JWT.RefreshExpiry = v.GetString("JWT_REFRESH_EXPIRY")
     cfg.Anthropic.APIKey = v.GetString("ANTHROPIC_API_KEY")
     cfg.Anthropic.Model = v.GetString("ANTHROPIC_MODEL")
+    cfg.Resend.APIKey = v.GetString("RESEND_API_KEY")
+    cfg.Resend.From = v.GetString("RESEND_FROM")
+    cfg.Google.ClientID = v.GetString("GOOGLE_CLIENT_ID")
+    cfg.VAPID.PublicKey = v.GetString("VAPID_PUBLIC_KEY")
+    cfg.VAPID.PrivateKey = v.GetString("VAPID_PRIVATE_KEY")
     cfg.FrontendURL = v.GetString("FRONTEND_URL")
     return &cfg, nil
 }

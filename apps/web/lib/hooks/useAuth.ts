@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 import { authApi } from '@/lib/api/auth';
 import { LoginRequest, RegisterRequest } from '@/types/api';
+import { analytics } from '@/lib/utils/analytics';
 
 export function useAuth() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export function useAuth() {
     async (data: LoginRequest) => {
       const res = await authApi.login(data);
       setAuth(res.user as any, res.access_token, res.refresh_token);
+      analytics.userLoggedIn('email');
       router.push('/');
     },
     [setAuth, router]
@@ -23,6 +25,7 @@ export function useAuth() {
     async (data: RegisterRequest) => {
       const res = await authApi.register(data);
       setAuth(res.user as any, res.access_token, res.refresh_token);
+      analytics.userRegistered('email');
       router.push('/');
     },
     [setAuth, router]

@@ -5,7 +5,11 @@ export interface User {
   xp: number;
   level: number;
   streak: number;
+  streak_freeze: number;
   last_active: string | null;
+  email_verified_at: string | null;
+  avatar_color: string;
+  role: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
