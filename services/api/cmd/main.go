@@ -210,6 +210,13 @@ func main() {
 
 	gameGroup := apiV1.Group("/games")
 	gameGroup.Get("/", gameHandler.ListGames)
+	gameGroup.Get("/onet/config", func(c *fiber.Ctx) error {
+		cfg, err := adminSvc.GetOnetConfig()
+		if err != nil {
+			return c.JSON(fiber.Map{"success": true, "data": struct{}{}})
+		}
+		return c.JSON(fiber.Map{"success": true, "data": cfg})
+	})
 	gameGroup.Get("/:slug", gameHandler.GetGame)
 	gameGroup.Post("/:slug/score", middleware.AuthMiddleware(cfg), gameHandler.SubmitScore)
 
@@ -450,6 +457,8 @@ func seedUsers() {
 		var count int64
 		database.DB.Model(&model.User{}).Where("email = ?", u.Email).Count(&count)
 		if count > 0 {
+			// Ensure existing seed users always have admin role
+			database.DB.Model(&model.User{}).Where("email = ?", u.Email).Update("role", "admin")
 			continue
 		}
 		hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), 12)
@@ -461,6 +470,7 @@ func seedUsers() {
 			Username: u.Username,
 			Email:    u.Email,
 			Password: string(hash),
+			Role:     "admin",
 		}
 		database.DB.Create(&user)
 	}
