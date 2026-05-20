@@ -1,131 +1,113 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from '@playwright/test';
 
-test.describe("Auth — login page", () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto("/login");
-    });
+test.describe('Auth — login page', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/login');
+  });
 
-    test("renders the EduPlay heading", async ({ page }) => {
-        await expect(
-            page.getByRole("heading", { name: /eduplay/i }),
-        ).toBeVisible();
-    });
+  test('renders the EduPlay heading', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: /eduplay/i })).toBeVisible();
+  });
 
-    test("shows login subtitle", async ({ page }) => {
-        // t('auth.login_title') = 'Login ke akun Anda'
-        await expect(page.getByText(/login ke akun/i)).toBeVisible();
-    });
+  test('shows login subtitle', async ({ page }) => {
+    // t('auth.login_title') = 'Login ke akun Anda'
+    await expect(page.getByText(/login ke akun/i)).toBeVisible();
+  });
 
-    test("has an email input field", async ({ page }) => {
-        await expect(page.getByPlaceholder(/email/i)).toBeVisible();
-    });
+  test('has an email input field', async ({ page }) => {
+    await expect(page.getByPlaceholder(/email/i)).toBeVisible();
+  });
 
-    test("has a password input field", async ({ page }) => {
-        await expect(page.getByPlaceholder(/kata sandi|password/i)).toBeVisible();
-    });
+  test('has a password input field', async ({ page }) => {
+    await expect(page.getByPlaceholder(/kata sandi|password/i)).toBeVisible();
+  });
 
-    test("has a submit / login button", async ({ page }) => {
-        // t('auth.login') = 'Masuk'
-        await expect(
-            page.getByRole("button", { name: /masuk|login/i }),
-        ).toBeVisible();
-    });
+  test('has a submit / login button', async ({ page }) => {
+    // t('auth.login') = 'Masuk'
+    await expect(page.getByRole('button', { name: /masuk|login/i })).toBeVisible();
+  });
 
-    test("shows validation error when submitting empty email", async ({
-        page,
-    }) => {
-        await page.getByRole("button", { name: /masuk|login/i }).click();
+  test('shows validation error when submitting empty email', async ({ page }) => {
+    await page.getByRole('button', { name: /masuk|login/i }).click();
 
-        // Zod schema: email must be valid, password min 6
-        await expect(page.getByText(/email tidak valid/i)).toBeVisible();
-    });
+    // Zod schema: email must be valid, password min 6
+    await expect(page.getByText(/email tidak valid/i)).toBeVisible();
+  });
 
-    test("shows validation error when submitting empty password", async ({
-        page,
-    }) => {
-        await page.getByPlaceholder(/email/i).fill("test@example.com");
-        await page.getByRole("button", { name: /masuk|login/i }).click();
+  test('shows validation error when submitting empty password', async ({ page }) => {
+    await page.getByPlaceholder(/email/i).fill('test@example.com');
+    await page.getByRole('button', { name: /masuk|login/i }).click();
 
-        // Zod schema: password minimal 6 karakter
-        await expect(page.getByText(/minimal 6/i)).toBeVisible();
-    });
+    // Zod schema: password minimal 6 karakter
+    await expect(page.getByText(/minimal 6/i)).toBeVisible();
+  });
 
-    test("has a guest play button", async ({ page }) => {
-        // t('auth.guest') = 'Main sebagai Tamu'
-        await expect(
-            page.getByRole("button", { name: /main sebagai tamu|tamu/i }),
-        ).toBeVisible();
-    });
+  test('has a guest play button', async ({ page }) => {
+    // t('auth.guest') = 'Main sebagai Tamu'
+    await expect(page.getByRole('button', { name: /main sebagai tamu|tamu/i })).toBeVisible();
+  });
 
-    test("has a link to the register page", async ({ page }) => {
-        await expect(page.getByRole("link", { name: /daftar/i })).toBeVisible();
-    });
+  test('has a link to the register page', async ({ page }) => {
+    await expect(page.getByRole('link', { name: /daftar/i })).toBeVisible();
+  });
 
-    test("has a forgot password link", async ({ page }) => {
-        // t('auth.forgot_password') = 'Lupa kata sandi?'
-        await expect(page.getByRole("link", { name: /lupa kata sandi/i })).toBeVisible();
-    });
+  test('has a forgot password link', async ({ page }) => {
+    // t('auth.forgot_password') = 'Lupa kata sandi?'
+    await expect(page.getByRole('link', { name: /lupa kata sandi/i })).toBeVisible();
+  });
 });
 
-test.describe("Auth — register page", () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto("/register");
-    });
+test.describe('Auth — register page', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/register');
+  });
 
-    test("renders the app name heading", async ({ page }) => {
-        // t('app.name') = 'EduPlay'
-        await expect(
-            page.getByRole("heading", { name: /eduplay/i }),
-        ).toBeVisible();
-    });
+  test('renders the app name heading', async ({ page }) => {
+    // t('app.name') = 'EduPlay'
+    await expect(page.getByRole('heading', { name: /eduplay/i })).toBeVisible();
+  });
 
-    test("shows register subtitle", async ({ page }) => {
-        // t('auth.register_title') = 'Buat akun baru'
-        await expect(page.getByText(/buat akun baru/i)).toBeVisible();
-    });
+  test('shows register subtitle', async ({ page }) => {
+    // t('auth.register_title') = 'Buat akun baru'
+    await expect(page.getByText(/buat akun baru/i)).toBeVisible();
+  });
 
-    test("has username, email, and password inputs", async ({ page }) => {
-        await expect(page.getByPlaceholder("Username")).toBeVisible();
-        await expect(page.getByPlaceholder("Email")).toBeVisible();
-        await expect(page.getByPlaceholder("Password")).toBeVisible();
-    });
+  test('has username, email, and password inputs', async ({ page }) => {
+    await expect(page.getByPlaceholder('Username')).toBeVisible();
+    await expect(page.getByPlaceholder('Email')).toBeVisible();
+    await expect(page.getByPlaceholder('Password')).toBeVisible();
+  });
 
-    test("has a register submit button", async ({ page }) => {
-        // t('auth.register') = 'Daftar'
-        await expect(
-            page.getByRole("button", { name: /daftar/i }),
-        ).toBeVisible();
-    });
+  test('has a register submit button', async ({ page }) => {
+    // t('auth.register') = 'Daftar'
+    await expect(page.getByRole('button', { name: /daftar/i })).toBeVisible();
+  });
 
-    test("shows validation error on empty form submit", async ({ page }) => {
-        await page.getByRole("button", { name: /daftar/i }).click();
+  test('shows validation error on empty form submit', async ({ page }) => {
+    await page.getByRole('button', { name: /daftar/i }).click();
 
-        // Zod: username min 3 — react-hook-form shows an error message
-        // The error text for username min is auto-generated by Zod
-        const errorMessages = page.locator("p.text-red-500, [class*='text-red']");
-        await expect(errorMessages.first()).toBeVisible();
-    });
+    // Zod: username min 3 — react-hook-form shows an error message
+    // The error text for username min is auto-generated by Zod
+    const errorMessages = page.locator("p.text-red-500, [class*='text-red']");
+    await expect(errorMessages.first()).toBeVisible();
+  });
 
-    test("has a link back to login page", async ({ page }) => {
-        // t('auth.have_account') = 'Sudah punya akun? Masuk'
-        await expect(
-            page.getByRole("link", { name: /sudah punya akun|masuk/i }),
-        ).toBeVisible();
-    });
+  test('has a link back to login page', async ({ page }) => {
+    // t('auth.have_account') = 'Sudah punya akun? Masuk'
+    await expect(page.getByRole('link', { name: /sudah punya akun|masuk/i })).toBeVisible();
+  });
 });
 
-test.describe("Auth — navigation between auth pages", () => {
-    test("register link on login page navigates to /register", async ({
-        page,
-    }) => {
-        await page.goto("/login");
-        await page.getByRole("link", { name: /daftar/i }).click();
-        await expect(page).toHaveURL(/\/register/);
-    });
+test.describe('Auth — navigation between auth pages', () => {
+  test('register link on login page navigates to /register', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByRole('link', { name: /daftar/i }).click();
+    await expect(page).toHaveURL(/\/register/);
+  });
 
-    test("login link on register page navigates to /login", async ({ page }) => {
-        await page.goto("/register");
-        await page.getByRole("link", { name: /sudah punya akun|masuk/i }).click();
-        await expect(page).toHaveURL(/\/login/);
-    });
+  test('login link on register page navigates to /login', async ({ page }) => {
+    await page.goto('/register');
+    await page.getByRole('link', { name: /sudah punya akun|masuk/i }).click();
+    await expect(page).toHaveURL(/\/login/);
+  });
 });

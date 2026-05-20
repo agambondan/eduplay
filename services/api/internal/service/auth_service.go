@@ -54,14 +54,14 @@ type GoogleLoginRequest struct {
 
 type AuthResponse struct {
 	User struct {
-		ID            uuid.UUID  `json:"id"`
-		Username      string     `json:"username"`
-		Email         string     `json:"email"`
-		XP            int        `json:"xp"`
-		Level         int        `json:"level"`
-		Streak        int        `json:"streak"`
-		AvatarColor   string     `json:"avatar_color"`
-		EmailVerified bool       `json:"email_verified"`
+		ID            uuid.UUID `json:"id"`
+		Username      string    `json:"username"`
+		Email         string    `json:"email"`
+		XP            int       `json:"xp"`
+		Level         int       `json:"level"`
+		Streak        int       `json:"streak"`
+		AvatarColor   string    `json:"avatar_color"`
+		EmailVerified bool      `json:"email_verified"`
 	} `json:"user"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -86,10 +86,10 @@ type AuthService interface {
 }
 
 type authService struct {
-	cfg        *config.Config
-	userRepo   repository.UserRepository
-	emailCl    *email.ResendClient
-	achSvc     interface {
+	cfg      *config.Config
+	userRepo repository.UserRepository
+	emailCl  *email.ResendClient
+	achSvc   interface {
 		CheckAndUnlock(userID string, slug string) (bool, error)
 	}
 }

@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/authStore';
-import WelcomeStep from './WelcomeStep';
-import InterestSelector from './InterestSelector';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import DailyPrompt from './DailyPrompt';
+import InterestSelector from './InterestSelector';
 import PushPrompt from './PushPrompt';
+import WelcomeStep from './WelcomeStep';
 
 const STEPS = ['welcome', 'interests', 'daily', 'push'] as const;
 const STORAGE_KEY = 'eduplay-onboarding-done';
@@ -63,7 +63,9 @@ export default function OnboardingFlow() {
           ))}
         </div>
 
-        {stepName === 'welcome' && <WelcomeStep username={user?.username || 'Player'} onNext={next} onSkip={skip} />}
+        {stepName === 'welcome' && (
+          <WelcomeStep username={user?.username || 'Player'} onNext={next} onSkip={skip} />
+        )}
         {stepName === 'interests' && <InterestSelector onNext={next} onSkip={skip} />}
         {stepName === 'daily' && <DailyPrompt onNext={next} onSkip={skip} />}
         {stepName === 'push' && <PushPrompt onDone={completeOnboarding} onSkip={skip} />}

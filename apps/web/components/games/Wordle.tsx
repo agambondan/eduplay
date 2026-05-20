@@ -1,15 +1,15 @@
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Pause, Share2 } from 'lucide-react';
+import { contentApi } from '@/lib/api/content';
+import { useGame } from '@/lib/hooks/useGame';
+import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import { useGame } from '@/lib/hooks/useGame';
-import { useLocale } from '@/lib/i18n';
-import { contentApi } from '@/lib/api/content';
-import { cn } from '@/lib/utils/cn';
-import { Pause, Share2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 
 const FALLBACK_WORD_LIST = [
   'bunga',

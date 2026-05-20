@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useGame } from '@/lib/hooks/useGame';
-import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { HowToPlay } from '@/components/ui/HowToPlay';
-import { cn } from '@/lib/utils/cn';
+import { useCallback, useEffect, useState } from 'react';
 import { Pause } from 'lucide-react';
+import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { ScoreBoard } from '@/components/ui/ScoreBoard';
 
 type Board = number[][];
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -98,7 +98,8 @@ const TILE_COLORS: Record<number, string> = {
 
 export default function Game2048() {
   const { t } = useLocale();
-  const { score, isPlaying, addScore, setScore, startGame, endGame, submitScore, pauseGame } = useGame('2048');
+  const { score, isPlaying, addScore, setScore, startGame, endGame, submitScore, pauseGame } =
+    useGame('2048');
   const [board, setBoard] = useState<Board>(createEmptyBoard);
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
@@ -181,9 +182,9 @@ export default function Game2048() {
         </p>
         <HowToPlay
           steps={[
-            { emoji: "👆", text: "Swipe atau gunakan tombol panah untuk menggeser semua tile" },
-            { emoji: "🔢", text: "Dua tile dengan angka sama akan bergabung menjadi 2× lipat" },
-            { emoji: "🏆", text: "Gabungkan terus hingga mencapai tile 2048!" },
+            { emoji: '👆', text: 'Swipe atau gunakan tombol panah untuk menggeser semua tile' },
+            { emoji: '🔢', text: 'Dua tile dengan angka sama akan bergabung menjadi 2× lipat' },
+            { emoji: '🏆', text: 'Gabungkan terus hingga mencapai tile 2048!' },
           ]}
         />
         <button
@@ -200,8 +201,12 @@ export default function Game2048() {
     <div className="flex flex-col items-center gap-4 py-6">
       <div className="flex items-center gap-4">
         <ScoreBoard score={score} />
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
-          <Pause className='h-4 w-4' />
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label={t('game.pause_label')}
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function MathQuizPage() {
   return (
     <>
-      <GameJsonLd name="Math Quiz Blitz" description="Uji kecepatan berhitungmu dalam 60 detik!" gameSlug="math-quiz" />
+      <GameJsonLd
+        name="Math Quiz Blitz"
+        description="Uji kecepatan berhitungmu dalam 60 detik!"
+        gameSlug="math-quiz"
+      />
       <div className="container max-w-2xl py-8">
         <MathQuiz />
       </div>

@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { friendsApi, FriendResponse } from '@/lib/api/friends';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Check, Loader2, Mail, UserPlus, UserX, Users, X } from 'lucide-react';
+import { FriendResponse, friendsApi } from '@/lib/api/friends';
+import { useLocale } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { cn } from '@/lib/utils/cn';
-import { Loader2, UserPlus, UserX, Check, X, Users, Mail } from 'lucide-react';
-import { useLocale } from '@/lib/i18n';
 
 export default function FriendsPage() {
   const { t } = useLocale();
@@ -63,10 +63,10 @@ export default function FriendsPage() {
     return (
       <div className="container max-w-md py-20 text-center">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{t('friends.title')}</h1>
-          <p className="text-gray-500 dark:text-slate-400">
-            {t('friends.login_prompt')}
-          </p>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+            {t('friends.title')}
+          </h1>
+          <p className="text-gray-500 dark:text-slate-400">{t('friends.login_prompt')}</p>
         </div>
       </div>
     );
@@ -76,8 +76,12 @@ export default function FriendsPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{t('friends.title')}</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">Terhubung dengan teman dan sesama pemain</p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            {t('friends.title')}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            Terhubung dengan teman dan sesama pemain
+          </p>
         </div>
         <button
           onClick={() => setShowAdd(!showAdd)}
@@ -109,7 +113,11 @@ export default function FriendsPage() {
               disabled={sendMutation.isPending || !username.trim()}
               className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
             >
-              {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('friends.send_request')}
+              {sendMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t('friends.send_request')
+              )}
             </button>
           </form>
           {sendMutation.isError && (

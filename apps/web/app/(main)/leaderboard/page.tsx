@@ -1,14 +1,14 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { leaderboardApi } from '@/lib/api/leaderboard';
-import { gamesApi } from '@/lib/api/games';
 import { useState } from 'react';
-import { LeaderboardTable } from '@/components/ui/LeaderboardTable';
+import { useQuery } from '@tanstack/react-query';
+import { Globe, Loader2, Trophy } from 'lucide-react';
+import { gamesApi } from '@/lib/api/games';
+import { leaderboardApi } from '@/lib/api/leaderboard';
+import { useLocale } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { cn } from '@/lib/utils/cn';
-import { Loader2, Trophy, Globe } from 'lucide-react';
-import { useLocale } from '@/lib/i18n';
+import { LeaderboardTable } from '@/components/ui/LeaderboardTable';
 
 export default function LeaderboardPage() {
   const { user } = useAuthStore();
@@ -32,10 +32,10 @@ export default function LeaderboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('leaderboard.title')}</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
-            {t('leaderboard.global')}
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            {t('leaderboard.title')}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400">{t('leaderboard.global')}</p>
         </div>
 
         <div className="flex w-fit rounded-xl bg-gray-100 p-1 dark:bg-slate-800">

@@ -8,8 +8,8 @@ import (
 )
 
 type PushController struct {
-	svc  *service.PushService
-	cfg  *config.Config
+	svc *service.PushService
+	cfg *config.Config
 }
 
 func NewPushController(svc *service.PushService, cfg *config.Config) *PushController {

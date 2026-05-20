@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useGame } from '@/lib/hooks/useGame';
-import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { Timer } from '@/components/ui/Timer';
-import { cn } from '@/lib/utils/cn';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
-import { HowToPlay } from '@/components/ui/HowToPlay';
+import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { Timer } from '@/components/ui/Timer';
 
 interface Question {
   text: string;
@@ -32,7 +32,8 @@ function generateMathQuestion(): Question {
 }
 
 export default function BrickBreaker() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('brick-breaker');
+  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
+    useGame('brick-breaker');
   const { t } = useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameOver, setGameOver] = useState(false);
@@ -142,8 +143,15 @@ export default function BrickBreaker() {
             gameState.current.brickOffsetTop;
           b.x = brickX;
           b.y = brickY;
-          const [g1, g2] = b.isSpecial ? ['#f59e0b', '#b45309'] : brickGradients[br % brickGradients.length];
-          const brickGrad = ctx.createLinearGradient(brickX, brickY, brickX, brickY + gameState.current.brickHeight);
+          const [g1, g2] = b.isSpecial
+            ? ['#f59e0b', '#b45309']
+            : brickGradients[br % brickGradients.length];
+          const brickGrad = ctx.createLinearGradient(
+            brickX,
+            brickY,
+            brickX,
+            brickY + gameState.current.brickHeight
+          );
           brickGrad.addColorStop(0, g1);
           brickGrad.addColorStop(1, g2);
 
@@ -152,11 +160,29 @@ export default function BrickBreaker() {
           ctx.beginPath();
           ctx.moveTo(brickX + r, brickY);
           ctx.lineTo(brickX + gameState.current.brickWidth - r, brickY);
-          ctx.quadraticCurveTo(brickX + gameState.current.brickWidth, brickY, brickX + gameState.current.brickWidth, brickY + r);
-          ctx.lineTo(brickX + gameState.current.brickWidth, brickY + gameState.current.brickHeight - r);
-          ctx.quadraticCurveTo(brickX + gameState.current.brickWidth, brickY + gameState.current.brickHeight, brickX + gameState.current.brickWidth - r, brickY + gameState.current.brickHeight);
+          ctx.quadraticCurveTo(
+            brickX + gameState.current.brickWidth,
+            brickY,
+            brickX + gameState.current.brickWidth,
+            brickY + r
+          );
+          ctx.lineTo(
+            brickX + gameState.current.brickWidth,
+            brickY + gameState.current.brickHeight - r
+          );
+          ctx.quadraticCurveTo(
+            brickX + gameState.current.brickWidth,
+            brickY + gameState.current.brickHeight,
+            brickX + gameState.current.brickWidth - r,
+            brickY + gameState.current.brickHeight
+          );
           ctx.lineTo(brickX + r, brickY + gameState.current.brickHeight);
-          ctx.quadraticCurveTo(brickX, brickY + gameState.current.brickHeight, brickX, brickY + gameState.current.brickHeight - r);
+          ctx.quadraticCurveTo(
+            brickX,
+            brickY + gameState.current.brickHeight,
+            brickX,
+            brickY + gameState.current.brickHeight - r
+          );
           ctx.lineTo(brickX, brickY + r);
           ctx.quadraticCurveTo(brickX, brickY, brickX + r, brickY);
           ctx.closePath();
@@ -169,13 +195,21 @@ export default function BrickBreaker() {
             ctx.font = 'bold 14px Inter';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('?', brickX + gameState.current.brickWidth / 2, brickY + gameState.current.brickHeight / 2);
+            ctx.fillText(
+              '?',
+              brickX + gameState.current.brickWidth / 2,
+              brickY + gameState.current.brickHeight / 2
+            );
           }
         }
       });
 
       // Draw ball trail
-      gameState.current.trail.push({ x: gameState.current.ball.x, y: gameState.current.ball.y, life: 1 });
+      gameState.current.trail.push({
+        x: gameState.current.ball.x,
+        y: gameState.current.ball.y,
+        life: 1,
+      });
       if (gameState.current.trail.length > 8) gameState.current.trail.shift();
       gameState.current.trail.forEach((t, i) => {
         t.life -= 0.12;
@@ -190,7 +224,13 @@ export default function BrickBreaker() {
 
       // Draw Ball with glow
       ctx.beginPath();
-      ctx.arc(gameState.current.ball.x, gameState.current.ball.y, gameState.current.ball.radius + 4, 0, Math.PI * 2);
+      ctx.arc(
+        gameState.current.ball.x,
+        gameState.current.ball.y,
+        gameState.current.ball.radius + 4,
+        0,
+        Math.PI * 2
+      );
       ctx.fillStyle = 'rgba(239,68,68,0.2)';
       ctx.fill();
       ctx.closePath();
@@ -203,8 +243,12 @@ export default function BrickBreaker() {
         Math.PI * 2
       );
       const ballGrad = ctx.createRadialGradient(
-        gameState.current.ball.x - 2, gameState.current.ball.y - 2, 0,
-        gameState.current.ball.x, gameState.current.ball.y, gameState.current.ball.radius
+        gameState.current.ball.x - 2,
+        gameState.current.ball.y - 2,
+        0,
+        gameState.current.ball.x,
+        gameState.current.ball.y,
+        gameState.current.ball.radius
       );
       ballGrad.addColorStop(0, '#fca5a5');
       ballGrad.addColorStop(1, '#dc2626');
@@ -214,20 +258,35 @@ export default function BrickBreaker() {
 
       // Draw Paddle with gradient
       const paddleGrad = ctx.createLinearGradient(
-        gameState.current.paddle.x, 0,
-        gameState.current.paddle.x + gameState.current.paddle.width, 0
+        gameState.current.paddle.x,
+        0,
+        gameState.current.paddle.x + gameState.current.paddle.width,
+        0
       );
       paddleGrad.addColorStop(0, '#34d399');
       paddleGrad.addColorStop(1, '#059669');
       const pr = 6;
       ctx.beginPath();
       ctx.moveTo(gameState.current.paddle.x + pr, canvas.height - gameState.current.paddle.height);
-      ctx.lineTo(gameState.current.paddle.x + gameState.current.paddle.width - pr, canvas.height - gameState.current.paddle.height);
-      ctx.quadraticCurveTo(gameState.current.paddle.x + gameState.current.paddle.width, canvas.height - gameState.current.paddle.height, gameState.current.paddle.x + gameState.current.paddle.width, canvas.height - gameState.current.paddle.height + pr);
+      ctx.lineTo(
+        gameState.current.paddle.x + gameState.current.paddle.width - pr,
+        canvas.height - gameState.current.paddle.height
+      );
+      ctx.quadraticCurveTo(
+        gameState.current.paddle.x + gameState.current.paddle.width,
+        canvas.height - gameState.current.paddle.height,
+        gameState.current.paddle.x + gameState.current.paddle.width,
+        canvas.height - gameState.current.paddle.height + pr
+      );
       ctx.lineTo(gameState.current.paddle.x + gameState.current.paddle.width, canvas.height);
       ctx.lineTo(gameState.current.paddle.x, canvas.height);
       ctx.lineTo(gameState.current.paddle.x, canvas.height - gameState.current.paddle.height + pr);
-      ctx.quadraticCurveTo(gameState.current.paddle.x, canvas.height - gameState.current.paddle.height, gameState.current.paddle.x + pr, canvas.height - gameState.current.paddle.height);
+      ctx.quadraticCurveTo(
+        gameState.current.paddle.x,
+        canvas.height - gameState.current.paddle.height,
+        gameState.current.paddle.x + pr,
+        canvas.height - gameState.current.paddle.height
+      );
       ctx.closePath();
       ctx.fillStyle = paddleGrad;
       ctx.fill();
@@ -315,15 +374,20 @@ export default function BrickBreaker() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.brick_breaker.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('game.brick_breaker.title')}
+        </h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           {t('game.brick_breaker.desc')}
         </p>
         <HowToPlay
           steps={[
-            { emoji: "🎮", text: "Tap kiri/kanan layar untuk menggerakkan paddle" },
-            { emoji: "🧱", text: "Pantulkan bola untuk menghancurkan semua brick" },
-            { emoji: "➕", text: "Brick berwarna menyimpan soal matematika — jawab untuk bonus poin!" },
+            { emoji: '🎮', text: 'Tap kiri/kanan layar untuk menggerakkan paddle' },
+            { emoji: '🧱', text: 'Pantulkan bola untuk menghancurkan semua brick' },
+            {
+              emoji: '➕',
+              text: 'Brick berwarna menyimpan soal matematika — jawab untuk bonus poin!',
+            },
           ]}
         />
         <button
@@ -341,8 +405,12 @@ export default function BrickBreaker() {
       <div className="flex w-full max-w-md items-center justify-between">
         <div className="text-sm font-bold text-gray-500">Brick Breaker</div>
         <ScoreBoard score={score} />
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
-          <Pause className='h-4 w-4' />
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label={t('game.pause_label')}
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

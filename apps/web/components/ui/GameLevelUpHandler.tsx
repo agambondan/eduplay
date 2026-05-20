@@ -9,10 +9,5 @@ export function GameLevelUpHandler() {
 
   if (!levelUp) return null;
 
-  return (
-    <LevelUpModal
-      newLevel={levelUp.newLevel}
-      onClose={() => setLevelUp(null)}
-    />
-  );
+  return <LevelUpModal newLevel={levelUp.newLevel} onClose={() => setLevelUp(null)} />;
 }

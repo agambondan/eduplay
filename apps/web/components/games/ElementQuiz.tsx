@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useGame } from '@/lib/hooks/useGame';
+import { Pause } from 'lucide-react';
 import { contentApi } from '@/lib/api/content';
+import { useGame } from '@/lib/hooks/useGame';
+import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { HowToPlay } from '@/components/ui/HowToPlay';
-import { cn } from '@/lib/utils/cn';
-import { Pause } from 'lucide-react';
-import { useLocale } from '@/lib/i18n';
 
 interface ElementQuestion {
   symbol: string;
@@ -19,32 +19,32 @@ interface ElementQuestion {
 }
 
 const FALLBACK_ELEMENTS = [
-    { symbol: 'H', name: 'Hidrogen' },
-    { symbol: 'He', name: 'Helium' },
-    { symbol: 'Li', name: 'Litium' },
-    { symbol: 'Be', name: 'Berilium' },
-    { symbol: 'B', name: 'Boron' },
-    { symbol: 'C', name: 'Karbon' },
-    { symbol: 'N', name: 'Nitrogen' },
-    { symbol: 'O', name: 'Oksigen' },
-    { symbol: 'F', name: 'Fluorin' },
-    { symbol: 'Ne', name: 'Neon' },
-    { symbol: 'Na', name: 'Natrium' },
-    { symbol: 'Mg', name: 'Magnesium' },
-    { symbol: 'Al', name: 'Aluminium' },
-    { symbol: 'Si', name: 'Silikon' },
-    { symbol: 'P', name: 'Fosfor' },
-    { symbol: 'S', name: 'Belerang' },
-    { symbol: 'Cl', name: 'Klorin' },
-    { symbol: 'Ar', name: 'Argon' },
-    { symbol: 'K', name: 'Kalium' },
-    { symbol: 'Ca', name: 'Kalsium' },
-    { symbol: 'Fe', name: 'Besi' },
-    { symbol: 'Cu', name: 'Tembaga' },
-    { symbol: 'Zn', name: 'Seng' },
-    { symbol: 'Ag', name: 'Perak' },
-    { symbol: 'Au', name: 'Emas' },
-    { symbol: 'Hg', name: 'Air Raksa' },
+  { symbol: 'H', name: 'Hidrogen' },
+  { symbol: 'He', name: 'Helium' },
+  { symbol: 'Li', name: 'Litium' },
+  { symbol: 'Be', name: 'Berilium' },
+  { symbol: 'B', name: 'Boron' },
+  { symbol: 'C', name: 'Karbon' },
+  { symbol: 'N', name: 'Nitrogen' },
+  { symbol: 'O', name: 'Oksigen' },
+  { symbol: 'F', name: 'Fluorin' },
+  { symbol: 'Ne', name: 'Neon' },
+  { symbol: 'Na', name: 'Natrium' },
+  { symbol: 'Mg', name: 'Magnesium' },
+  { symbol: 'Al', name: 'Aluminium' },
+  { symbol: 'Si', name: 'Silikon' },
+  { symbol: 'P', name: 'Fosfor' },
+  { symbol: 'S', name: 'Belerang' },
+  { symbol: 'Cl', name: 'Klorin' },
+  { symbol: 'Ar', name: 'Argon' },
+  { symbol: 'K', name: 'Kalium' },
+  { symbol: 'Ca', name: 'Kalsium' },
+  { symbol: 'Fe', name: 'Besi' },
+  { symbol: 'Cu', name: 'Tembaga' },
+  { symbol: 'Zn', name: 'Seng' },
+  { symbol: 'Ag', name: 'Perak' },
+  { symbol: 'Au', name: 'Emas' },
+  { symbol: 'Hg', name: 'Air Raksa' },
 ];
 
 function generateQuestion(ELEMENTS: { symbol: string; name: string }[]): ElementQuestion {
@@ -62,7 +62,8 @@ function generateQuestion(ELEMENTS: { symbol: string; name: string }[]): Element
 }
 
 export default function ElementQuiz() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('element-quiz');
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
+    useGame('element-quiz');
   const { t } = useLocale();
 
   const { data: elementsData } = useQuery({
@@ -127,15 +128,17 @@ export default function ElementQuiz() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.element_quiz.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('game.element_quiz.title')}
+        </h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           {t('game.element_quiz.desc')}
         </p>
         <HowToPlay
           steps={[
-            { emoji: "⚗️", text: "Simbol unsur kimia ditampilkan (contoh: Au, Fe, O)" },
-            { emoji: "✏️", text: "Ketik nama unsur tersebut dalam Bahasa Indonesia" },
-            { emoji: "⏱️", text: "Jawab sebanyak mungkin sebelum waktu 60 detik habis!" },
+            { emoji: '⚗️', text: 'Simbol unsur kimia ditampilkan (contoh: Au, Fe, O)' },
+            { emoji: '✏️', text: 'Ketik nama unsur tersebut dalam Bahasa Indonesia' },
+            { emoji: '⏱️', text: 'Jawab sebanyak mungkin sebelum waktu 60 detik habis!' },
           ]}
         />
         <button
@@ -153,9 +156,15 @@ export default function ElementQuiz() {
       <div className="flex items-center gap-4">
         <Timer initialSeconds={60} onTimeUp={handleTimeUp} isRunning={isPlaying && !gameOver} />
         <ScoreBoard score={score} />
-        <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.questions', { n: questionCount, total: 10 })}</span>
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
-          <Pause className='h-4 w-4' />
+        <span className="text-sm text-gray-500 dark:text-slate-400">
+          {t('game.questions', { n: questionCount, total: 10 })}
+        </span>
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label="Jeda permainan"
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

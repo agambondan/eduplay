@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useLocale } from '@/lib/i18n';
 import { Sun, Zap } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 interface Props {
   onNext: () => void;
@@ -25,9 +25,7 @@ export default function DailyPrompt({ onNext, onSkip }: Props) {
       <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
         {t('daily.prompt_title')}
       </h2>
-      <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">
-        {t('daily.prompt_desc')}
-      </p>
+      <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">{t('daily.prompt_desc')}</p>
 
       <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
         <Zap size={16} />

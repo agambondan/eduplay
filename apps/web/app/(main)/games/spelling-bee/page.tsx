@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function SpellingBeePage() {
   return (
     <>
-      <GameJsonLd name="Spelling Bee" description="Susun huruf acak menjadi kata yang benar!" gameSlug="spelling-bee" />
+      <GameJsonLd
+        name="Spelling Bee"
+        description="Susun huruf acak menjadi kata yang benar!"
+        gameSlug="spelling-bee"
+      />
       <div className="container max-w-2xl py-8">
         <SpellingBee />
       </div>

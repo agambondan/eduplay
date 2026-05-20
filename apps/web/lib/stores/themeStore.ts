@@ -35,7 +35,8 @@ export function initTheme() {
   if (stored) {
     try {
       const { theme } = JSON.parse(stored) as { theme: Theme };
-      const isDark = theme === 'dark' ||
+      const isDark =
+        theme === 'dark' ||
         (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
       document.documentElement.classList.toggle('dark', isDark);
       return;

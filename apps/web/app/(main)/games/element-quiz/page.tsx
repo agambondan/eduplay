@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function ElementQuizPage() {
   return (
     <>
-      <GameJsonLd name="Element Quiz" description="Tebak nama unsur kimia dari simbolnya!" gameSlug="element-quiz" />
+      <GameJsonLd
+        name="Element Quiz"
+        description="Tebak nama unsur kimia dari simbolnya!"
+        gameSlug="element-quiz"
+      />
       <div className="container max-w-2xl py-8">
         <ElementQuiz />
       </div>

@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { authApi } from '@/lib/api/auth';
-import { useAuthStore } from '@/lib/stores/authStore';
 import { useLocale } from '@/lib/i18n';
+import { useAuthStore } from '@/lib/stores/authStore';
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 
 const loginSchema = z.object({
@@ -92,7 +92,10 @@ export default function LoginPage() {
             </button>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <a href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <a
+              href="/forgot-password"
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
               {t('auth.forgot_password')}
             </a>
             <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
@@ -118,7 +121,9 @@ export default function LoginPage() {
             <div className="w-full border-t border-gray-200" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-500">{t('common.or')} {t('auth.guest').toLowerCase()}</span>
+            <span className="bg-white px-2 text-gray-500">
+              {t('common.or')} {t('auth.guest').toLowerCase()}
+            </span>
           </div>
         </div>
         <button
@@ -137,18 +142,28 @@ export default function LoginPage() {
           disabled={guestLoading}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
         >
-          {guestLoading ? t('common.loading') : (
+          {guestLoading ? (
+            t('common.loading')
+          ) : (
             <>
-              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              <svg
+                className="h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
               </svg>
               {t('auth.guest')}
             </>
           )}
         </button>
-        <p className="mt-2 text-center text-xs text-gray-400">
-          {t('auth.guest_desc')}
-        </p>
+        <p className="mt-2 text-center text-xs text-gray-400">{t('auth.guest_desc')}</p>
       </div>
     </div>
   );

@@ -24,22 +24,22 @@ type UserListItem struct {
 }
 
 type GameListItem struct {
-	ID          uuid.UUID `json:"id"`
-	Slug        string    `json:"slug"`
-	Name        string    `json:"name"`
-	Category    string    `json:"category"`
-	IsActive    bool      `json:"is_active"`
-	TotalPlays  int64     `json:"total_plays"`
-	CreatedAt   string    `json:"created_at"`
+	ID         uuid.UUID `json:"id"`
+	Slug       string    `json:"slug"`
+	Name       string    `json:"name"`
+	Category   string    `json:"category"`
+	IsActive   bool      `json:"is_active"`
+	TotalPlays int64     `json:"total_plays"`
+	CreatedAt  string    `json:"created_at"`
 }
 
 type AdminDashboardStats struct {
-	TotalUsers       int64               `json:"total_users"`
-	TotalGames       int64               `json:"total_games"`
-	TotalSessions    int64               `json:"total_sessions"`
-	ActiveToday      int64               `json:"active_today"`
-	DAU              []DailyCount        `json:"dau"`
-	GamePopularity   []GamePlayCount     `json:"game_popularity"`
+	TotalUsers     int64           `json:"total_users"`
+	TotalGames     int64           `json:"total_games"`
+	TotalSessions  int64           `json:"total_sessions"`
+	ActiveToday    int64           `json:"active_today"`
+	DAU            []DailyCount    `json:"dau"`
+	GamePopularity []GamePlayCount `json:"game_popularity"`
 }
 
 type DailyCount struct {

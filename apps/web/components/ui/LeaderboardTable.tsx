@@ -1,8 +1,8 @@
 'use client';
 
 import { LeaderboardEntry } from '@/types/game';
-import { cn } from '@/lib/utils/cn';
 import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
@@ -12,9 +12,20 @@ interface LeaderboardTableProps {
   nearbyEntries?: LeaderboardEntry[];
 }
 
-export function LeaderboardTable({ entries, currentUserId, isXP = false, userRank, nearbyEntries }: LeaderboardTableProps) {
+export function LeaderboardTable({
+  entries,
+  currentUserId,
+  isXP = false,
+  userRank,
+  nearbyEntries,
+}: LeaderboardTableProps) {
   const { t } = useLocale();
-  const displayEntries = entries.length >= 20 ? entries : nearbyEntries && nearbyEntries.length > 0 ? nearbyEntries : entries;
+  const displayEntries =
+    entries.length >= 20
+      ? entries
+      : nearbyEntries && nearbyEntries.length > 0
+        ? nearbyEntries
+        : entries;
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">

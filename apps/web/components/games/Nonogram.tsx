@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
+import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { HowToPlay } from '@/components/ui/HowToPlay';
-import { cn } from '@/lib/utils/cn';
-import { Pause } from 'lucide-react';
-import { useLocale } from '@/lib/i18n';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type CellState = 'empty' | 'filled' | 'crossed';
@@ -134,7 +134,8 @@ function selectPuzzle(diff: Difficulty): NonogramPuzzle {
 }
 
 export default function Nonogram() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('nonogram');
+  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
+    useGame('nonogram');
   const { t } = useLocale();
 
   const [puzzle, setPuzzle] = useState<NonogramPuzzle | null>(null);
@@ -277,15 +278,26 @@ export default function Nonogram() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.nonogram.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('game.nonogram.title')}
+        </h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           {t('game.nonogram.desc')}
         </p>
         <HowToPlay
           steps={[
-            { emoji: "🔢", text: "Angka di tepi = blok berisi berurutan (contoh: '3 2' = blok 3 lalu blok 2 terpisah)" },
-            { emoji: "👆", text: "Tap cell untuk mengisi (hitam), tap lagi untuk tandai × (kosong)" },
-            { emoji: "🎨", text: "Isi semua cell dengan benar untuk mengungkap gambar tersembunyi!" },
+            {
+              emoji: '🔢',
+              text: "Angka di tepi = blok berisi berurutan (contoh: '3 2' = blok 3 lalu blok 2 terpisah)",
+            },
+            {
+              emoji: '👆',
+              text: 'Tap cell untuk mengisi (hitam), tap lagi untuk tandai × (kosong)',
+            },
+            {
+              emoji: '🎨',
+              text: 'Isi semua cell dengan benar untuk mengungkap gambar tersembunyi!',
+            },
           ]}
         />
         <div className="flex gap-2">
@@ -352,8 +364,12 @@ export default function Nonogram() {
         </div>
 
         <ScoreBoard score={score} />
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
-          <Pause className='h-4 w-4' />
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label={t('game.pause_label')}
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

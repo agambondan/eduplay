@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function BubbleShooterPage() {
   return (
     <>
-      <GameJsonLd name="Bubble Shooter Math" description="Tembak bubble dan jumlahkan angka dengan tepat!" gameSlug="bubble-shooter" />
+      <GameJsonLd
+        name="Bubble Shooter Math"
+        description="Tembak bubble dan jumlahkan angka dengan tepat!"
+        gameSlug="bubble-shooter"
+      />
       <div className="container max-w-4xl py-8">
         <BubbleShooter />
       </div>

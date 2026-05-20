@@ -7,13 +7,33 @@ import { useLocale } from '@/lib/i18n';
 const DEFAULT_FLAGS = [
   { key: 'ENABLE_DARK_MODE', label: 'Dark Mode', description: 'Toggle dark mode untuk semua user' },
   { key: 'ENABLE_SOUNDS', label: 'Sound Effects', description: 'Toggle sound effects' },
-  { key: 'ENABLE_AI_QUESTIONS', label: 'AI Questions', description: 'Jika nonaktif, gunakan fallback questions' },
-  { key: 'ENABLE_PUSH_NOTIFICATIONS', label: 'Push Notifications', description: 'Toggle push notification system' },
-  { key: 'ENABLE_DAILY_CHALLENGE', label: 'Daily Challenge', description: 'Toggle daily challenge section' },
+  {
+    key: 'ENABLE_AI_QUESTIONS',
+    label: 'AI Questions',
+    description: 'Jika nonaktif, gunakan fallback questions',
+  },
+  {
+    key: 'ENABLE_PUSH_NOTIFICATIONS',
+    label: 'Push Notifications',
+    description: 'Toggle push notification system',
+  },
+  {
+    key: 'ENABLE_DAILY_CHALLENGE',
+    label: 'Daily Challenge',
+    description: 'Toggle daily challenge section',
+  },
   { key: 'ENABLE_ACHIEVEMENTS', label: 'Achievements', description: 'Toggle achievement system' },
-  { key: 'MAINTENANCE_MODE', label: 'Maintenance Mode', description: 'Tampilkan halaman maintenance' },
+  {
+    key: 'MAINTENANCE_MODE',
+    label: 'Maintenance Mode',
+    description: 'Tampilkan halaman maintenance',
+  },
   { key: 'SHOW_BANNER_ADS', label: 'Banner Ads', description: 'Toggle banner ads' },
-  { key: 'SHOW_INTERSTITIAL_ADS', label: 'Interstitial Ads', description: 'Toggle interstitial ads' },
+  {
+    key: 'SHOW_INTERSTITIAL_ADS',
+    label: 'Interstitial Ads',
+    description: 'Toggle interstitial ads',
+  },
 ];
 
 export default function AdminFeaturesPage() {
@@ -23,13 +43,16 @@ export default function AdminFeaturesPage() {
 
   const fetchFlags = () => {
     setLoading(true);
-    api.get('/admin/feature-flags')
+    api
+      .get('/admin/feature-flags')
       .then((r) => setFlags(r.data.data || {}))
       .catch(() => {})
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchFlags(); }, []);
+  useEffect(() => {
+    fetchFlags();
+  }, []);
 
   const toggleFlag = async (key: string, current: string) => {
     const newValue = current === 'enabled' ? 'disabled' : 'enabled';
@@ -54,10 +77,17 @@ export default function AdminFeaturesPage() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin.feature_flags')}</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">Toggle fitur on/off tanpa redeploy</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {t('admin.feature_flags')}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            Toggle fitur on/off tanpa redeploy
+          </p>
         </div>
-        <button onClick={fetchFlags} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+        <button
+          onClick={fetchFlags}
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        >
           {t('admin.refresh')}
         </button>
       </div>
@@ -81,7 +111,9 @@ export default function AdminFeaturesPage() {
                 </div>
                 <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">{description}</p>
                 {value && (
-                  <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">{t('admin.flag_current')}: <span className="font-mono">{value}</span></p>
+                  <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
+                    {t('admin.flag_current')}: <span className="font-mono">{value}</span>
+                  </p>
                 )}
               </div>
               <button
@@ -109,9 +141,7 @@ export default function AdminFeaturesPage() {
 
       <div className="mt-8 rounded-xl border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-900 dark:bg-indigo-900/10">
         <h3 className="mb-1 text-sm font-semibold text-indigo-700 dark:text-indigo-400">Info</h3>
-        <p className="text-xs text-indigo-600 dark:text-indigo-300">
-          {t('admin.flag_info')}
-        </p>
+        <p className="text-xs text-indigo-600 dark:text-indigo-300">{t('admin.flag_info')}</p>
       </div>
     </div>
   );

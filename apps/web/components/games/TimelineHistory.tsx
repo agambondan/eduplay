@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useGame } from '@/lib/hooks/useGame';
+import { Pause } from 'lucide-react';
 import { contentApi } from '@/lib/api/content';
+import { useGame } from '@/lib/hooks/useGame';
+import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { HowToPlay } from '@/components/ui/HowToPlay';
-import { cn } from '@/lib/utils/cn';
-import { Pause } from 'lucide-react';
-import { useLocale } from '@/lib/i18n';
 
 interface TimelineEvent {
   year: number;
@@ -18,21 +18,21 @@ interface TimelineEvent {
 }
 
 const FALLBACK_EVENTS: TimelineEvent[] = [
-    { year: 1945, event: 'Proklamasi Kemerdekaan Indonesia' },
-    { year: 1928, event: 'Sumpah Pemuda' },
-    { year: 1908, event: 'Kebangkitan Nasional (Budi Utomo)' },
-    { year: 1949, event: 'Pengakuan Kedaulatan oleh Belanda' },
-    { year: 1966, event: 'Supersemar' },
-    { year: 1998, event: 'Era Reformasi Dimulai' },
-    { year: 1955, event: 'Konferensi Asia Afrika (KAA)' },
-    { year: 2004, event: 'Pemilu Presiden Langsung Pertama' },
-    { year: 1942, event: 'Pendaratan Tentara Jepang di Indonesia' },
-    { year: 1917, event: 'Revolusi Rusia' },
-    { year: 1914, event: 'Awal Perang Dunia I' },
-    { year: 1939, event: 'Awal Perang Dunia II' },
-    { year: 1969, event: 'Manusia Pertama Mendarat di Bulan' },
-    { year: 1989, event: 'Runtuhnya Tembok Berlin' },
-    { year: 2020, event: 'Pandemi COVID-19 Melanda Dunia' },
+  { year: 1945, event: 'Proklamasi Kemerdekaan Indonesia' },
+  { year: 1928, event: 'Sumpah Pemuda' },
+  { year: 1908, event: 'Kebangkitan Nasional (Budi Utomo)' },
+  { year: 1949, event: 'Pengakuan Kedaulatan oleh Belanda' },
+  { year: 1966, event: 'Supersemar' },
+  { year: 1998, event: 'Era Reformasi Dimulai' },
+  { year: 1955, event: 'Konferensi Asia Afrika (KAA)' },
+  { year: 2004, event: 'Pemilu Presiden Langsung Pertama' },
+  { year: 1942, event: 'Pendaratan Tentara Jepang di Indonesia' },
+  { year: 1917, event: 'Revolusi Rusia' },
+  { year: 1914, event: 'Awal Perang Dunia I' },
+  { year: 1939, event: 'Awal Perang Dunia II' },
+  { year: 1969, event: 'Manusia Pertama Mendarat di Bulan' },
+  { year: 1989, event: 'Runtuhnya Tembok Berlin' },
+  { year: 2020, event: 'Pandemi COVID-19 Melanda Dunia' },
 ];
 
 export default function TimelineHistory() {
@@ -103,15 +103,20 @@ export default function TimelineHistory() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.timeline_history.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('game.timeline_history.title')}
+        </h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           {t('game.timeline_history.desc')}
         </p>
         <HowToPlay
           steps={[
-            { emoji: "📜", text: "Sebuah peristiwa sejarah Indonesia atau dunia ditampilkan" },
-            { emoji: "📅", text: "Geser slider untuk menebak tahun kejadian peristiwa tersebut" },
-            { emoji: "🎯", text: "Semakin dekat tebakanmu dengan tahun yang benar, semakin besar skormu!" },
+            { emoji: '📜', text: 'Sebuah peristiwa sejarah Indonesia atau dunia ditampilkan' },
+            { emoji: '📅', text: 'Geser slider untuk menebak tahun kejadian peristiwa tersebut' },
+            {
+              emoji: '🎯',
+              text: 'Semakin dekat tebakanmu dengan tahun yang benar, semakin besar skormu!',
+            },
           ]}
         />
         <button
@@ -136,9 +141,15 @@ export default function TimelineHistory() {
           isRunning={isPlaying && !gameOver}
         />
         <ScoreBoard score={score} />
-        <span className="text-sm font-bold text-gray-500">{t('game.questions', { n: count, total: 10 })}</span>
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
-          <Pause className='h-4 w-4' />
+        <span className="text-sm font-bold text-gray-500">
+          {t('game.questions', { n: count, total: 10 })}
+        </span>
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label={t('game.pause_label')}
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

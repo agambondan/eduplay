@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Trophy, X } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
 import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
 
 interface ToastData {
   id: string;

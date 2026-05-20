@@ -1,33 +1,33 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/api/client';
-import { useAuthStore } from '@/lib/stores/authStore';
 import { UserStats } from '@/types/user';
-import { DailyChallengeCard } from '@/components/ui/DailyChallengeCard';
-import { XPBadge } from '@/components/ui/XPBadge';
-import { StreakCounter } from '@/components/ui/StreakCounter';
-import { ProgressBar } from '@/components/ui/ProgressBar';
-import { GameCard } from '@/components/ui/GameCard';
-import { xpUtils } from '@/lib/utils/xp';
-import { useLocale } from '@/lib/i18n';
-import { gamesApi } from '@/lib/api/games';
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
-  Trophy,
-  Gamepad2,
-  Calculator,
   BookOpen,
+  Calculator,
+  ChevronRight,
+  Clock,
+  FlaskConical,
+  Gamepad2,
   Globe,
   Layers,
-  FlaskConical,
-  Clock,
-  ChevronRight,
   Sparkles,
+  Trophy,
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
+import api from '@/lib/api/client';
+import { gamesApi } from '@/lib/api/games';
+import { useLocale } from '@/lib/i18n';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { xpUtils } from '@/lib/utils/xp';
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow';
+import { DailyChallengeCard } from '@/components/ui/DailyChallengeCard';
+import { GameCard } from '@/components/ui/GameCard';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import { StreakCounter } from '@/components/ui/StreakCounter';
+import { XPBadge } from '@/components/ui/XPBadge';
 
 interface CategoryChip {
   id: string;
@@ -80,7 +80,12 @@ export default function DashboardPage() {
       counts[g.category] = (counts[g.category] || 0) + 1;
     });
     return Object.entries(CATEGORY_CONFIG)
-      .map(([id, config]) => ({ id, icon: config.icon, gradient: config.gradient, count: counts[id] || 0 }))
+      .map(([id, config]) => ({
+        id,
+        icon: config.icon,
+        gradient: config.gradient,
+        count: counts[id] || 0,
+      }))
       .filter((c) => c.count > 0);
   }, [games]);
 
@@ -135,7 +140,7 @@ export default function DashboardPage() {
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
             {t('game.category')}
           </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+          <div className="scrollbar-none flex gap-3 overflow-x-auto pb-2">
             {categoryChips.map((cat) => {
               const Icon = cat.icon;
               return (
@@ -188,7 +193,9 @@ export default function DashboardPage() {
           <div>
             <div className="mb-4 flex items-center gap-2">
               <Trophy className="h-5 w-5 text-amber-500" />
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('leaderboard.title')}</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                {t('leaderboard.title')}
+              </h3>
             </div>
             <p className="text-sm text-gray-500 dark:text-slate-400">
               Lihat posisi kamu di antara pemain lain dan raih podium!
@@ -241,7 +248,9 @@ export default function DashboardPage() {
                 <span className="font-medium capitalize text-gray-900 dark:text-white">
                   {session.game_slug?.replace('-', ' ')}
                 </span>
-                <span className="text-gray-500">{t('game.score')}: {session.score}</span>
+                <span className="text-gray-500">
+                  {t('game.score')}: {session.score}
+                </span>
                 <span className="font-bold text-indigo-600 dark:text-indigo-400">
                   +{session.xp_earned} XP
                 </span>
@@ -254,7 +263,9 @@ export default function DashboardPage() {
       {games && games.length > 0 && (
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('game.all_games')}</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              {t('game.all_games')}
+            </h2>
             <Link
               href="/games"
               className="flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"

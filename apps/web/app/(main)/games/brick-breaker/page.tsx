@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function BrickBreakerPage() {
   return (
     <>
-      <GameJsonLd name="Brick Breaker Soal" description="Hancurkan block dan jawab soal matematika dadakan untuk bonus skor!" gameSlug="brick-breaker" />
+      <GameJsonLd
+        name="Brick Breaker Soal"
+        description="Hancurkan block dan jawab soal matematika dadakan untuk bonus skor!"
+        gameSlug="brick-breaker"
+      />
       <div className="container max-w-4xl py-8">
         <BrickBreaker />
       </div>

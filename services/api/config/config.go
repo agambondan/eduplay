@@ -7,45 +7,45 @@ import (
 )
 
 type Config struct {
-    App struct {
-        Env   string
-        Port  string
-        Secret string
-    }
-    AvatarUploadPath string
-    DB struct {
-        Host     string
-        Port     string
-        Name     string
-        User     string
-        Password string
-    }
-    Redis struct {
-        URL string
-    }
-    JWT struct {
-        Secret        string
-        AccessExpiry  string
-        RefreshExpiry string
-    }
+	App struct {
+		Env    string
+		Port   string
+		Secret string
+	}
+	AvatarUploadPath string
+	DB               struct {
+		Host     string
+		Port     string
+		Name     string
+		User     string
+		Password string
+	}
+	Redis struct {
+		URL string
+	}
+	JWT struct {
+		Secret        string
+		AccessExpiry  string
+		RefreshExpiry string
+	}
 	AI struct {
 		Provider string
 		APIKey   string
 		Model    string
 		BaseURL  string
 	}
-    Resend struct {
-        APIKey string
-        From   string
-    }
-    Google struct {
-        ClientID string
-    }
-    VAPID struct {
-        PublicKey  string
-        PrivateKey string
-    }
-    FrontendURL string
+	Resend struct {
+		APIKey string
+		From   string
+	}
+	Google struct {
+		ClientID string
+	}
+	VAPID struct {
+		PublicKey  string
+		PrivateKey string
+	}
+	FrontendURL string
 }
 
 func Load() (*Config, error) {

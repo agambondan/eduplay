@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useGame } from '@/lib/hooks/useGame';
-import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { HowToPlay } from '@/components/ui/HowToPlay';
-import { cn } from '@/lib/utils/cn';
+import { useCallback, useState } from 'react';
 import { Pause } from 'lucide-react';
+import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { ScoreBoard } from '@/components/ui/ScoreBoard';
 
 export default function TimesTable() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('times-table');
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
+    useGame('times-table');
   const { t } = useLocale();
   const [selectedTable, setSelectedTable] = useState<number | 'mix'>(1);
   const [numA, setNumA] = useState(1);
@@ -70,15 +71,20 @@ export default function TimesTable() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.times_table.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('game.times_table.title')}
+        </h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           {t('game.times_table.desc')}
         </p>
         <HowToPlay
           steps={[
-            { emoji: "🔢", text: "Pilih tabel perkalian yang ingin dilatih (1–12)" },
-            { emoji: "❓", text: "Soal perkalian muncul satu per satu" },
-            { emoji: "⚡", text: "Ketik jawaban secepat mungkin — skor dipengaruhi kecepatan dan akurasi!" },
+            { emoji: '🔢', text: 'Pilih tabel perkalian yang ingin dilatih (1–12)' },
+            { emoji: '❓', text: 'Soal perkalian muncul satu per satu' },
+            {
+              emoji: '⚡',
+              text: 'Ketik jawaban secepat mungkin — skor dipengaruhi kecepatan dan akurasi!',
+            },
           ]}
         />
         <div className="grid grid-cols-4 gap-2">
@@ -122,9 +128,15 @@ export default function TimesTable() {
     <div className="flex flex-col items-center gap-4 py-6">
       <div className="flex items-center gap-4">
         <ScoreBoard score={score} />
-        <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.questions', { n: questionCount, total: 10 })}</span>
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
-          <Pause className='h-4 w-4' />
+        <span className="text-sm text-gray-500 dark:text-slate-400">
+          {t('game.questions', { n: questionCount, total: 10 })}
+        </span>
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label={t('game.pause_label')}
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

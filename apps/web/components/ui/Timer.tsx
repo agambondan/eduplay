@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocale } from '@/lib/i18n';
 import { useGameStore } from '@/lib/stores/gameStore';
 import { cn } from '@/lib/utils/cn';
-import { useLocale } from '@/lib/i18n';
 
 interface TimerProps {
   initialSeconds: number;
@@ -52,7 +52,9 @@ export function Timer({ initialSeconds, onTimeUp, isRunning = true }: TimerProps
       <span
         className={cn(
           'font-mono text-xl font-bold',
-          seconds <= 10 && !isPaused ? 'animate-pulse text-rose-600' : 'text-gray-900 dark:text-white'
+          seconds <= 10 && !isPaused
+            ? 'animate-pulse text-rose-600'
+            : 'text-gray-900 dark:text-white'
         )}
       >
         {isPaused ? `${seconds}s` : `${seconds}s`}

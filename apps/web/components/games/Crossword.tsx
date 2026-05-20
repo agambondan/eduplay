@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
+import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { HowToPlay } from '@/components/ui/HowToPlay';
-import { cn } from '@/lib/utils/cn';
-import { Pause } from 'lucide-react';
-import { useLocale } from '@/lib/i18n';
 
 interface CrosswordCell {
   r: number;
@@ -76,7 +76,8 @@ const PUZZLE_DATA = {
 };
 
 export default function Crossword() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('crossword');
+  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
+    useGame('crossword');
   const { t } = useLocale();
   const [grid, setGrid] = useState<CrosswordCell[][]>([]);
   const [selected, setSelected] = useState<[number, number] | null>(null);
@@ -133,15 +134,17 @@ export default function Crossword() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.crossword.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('game.crossword.title')}
+        </h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           {t('game.crossword.desc')}
         </p>
         <HowToPlay
           steps={[
-            { emoji: "👆", text: "Ketuk kotak di grid untuk memilih arah kata (mendatar/menurun)" },
-            { emoji: "💡", text: "Baca petunjuk yang muncul, lalu ketik jawabannya" },
-            { emoji: "⌨️", text: "Kursor otomatis berpindah ke huruf berikutnya setelah diisi" },
+            { emoji: '👆', text: 'Ketuk kotak di grid untuk memilih arah kata (mendatar/menurun)' },
+            { emoji: '💡', text: 'Baca petunjuk yang muncul, lalu ketik jawabannya' },
+            { emoji: '⌨️', text: 'Kursor otomatis berpindah ke huruf berikutnya setelah diisi' },
           ]}
         />
         <button
@@ -166,8 +169,12 @@ export default function Crossword() {
           isRunning={isPlaying && !gameOver}
         />
         <ScoreBoard score={score} />
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
-          <Pause className='h-4 w-4' />
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label={t('game.pause_label')}
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

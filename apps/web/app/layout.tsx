@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
-import './globals.css';
-import { Providers } from '@/components/layout/Providers';
-import { AchievementToast } from '@/components/ui/AchievementToast';
-import { WebAppJsonLd } from '@/components/seo/JsonLd';
-import { SkipLink } from '@/components/layout/SkipLink';
-import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { CookieBanner } from '@/components/layout/CookieBanner';
+import { Providers } from '@/components/layout/Providers';
+import { SkipLink } from '@/components/layout/SkipLink';
+import { WebAppJsonLd } from '@/components/seo/JsonLd';
+import { AchievementToast } from '@/components/ui/AchievementToast';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -60,17 +60,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
       </head>
-        <body className={inter.className}>
-          <SkipLink />
-          <Providers>
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
-            <AchievementToast />
-            <CookieBanner />
-          </Providers>
-          <WebAppJsonLd />
-        </body>
+      <body className={inter.className}>
+        <SkipLink />
+        <Providers>
+          <ErrorBoundary>{children}</ErrorBoundary>
+          <AchievementToast />
+          <CookieBanner />
+        </Providers>
+        <WebAppJsonLd />
+      </body>
     </html>
   );
 }

@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function MentalMathPage() {
   return (
     <>
-      <GameJsonLd name="Mental Math Speed" description="Uji kecepatan berhitungmu dengan mengetik jawaban secepat mungkin!" gameSlug="mental-math" />
+      <GameJsonLd
+        name="Mental Math Speed"
+        description="Uji kecepatan berhitungmu dengan mengetik jawaban secepat mungkin!"
+        gameSlug="mental-math"
+      />
       <div className="container max-w-2xl py-8">
         <MentalMath />
       </div>

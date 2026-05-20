@@ -1,44 +1,71 @@
 'use client';
 
-import { useAuthStore } from '@/lib/stores/authStore';
-import { userApi } from '@/lib/api/user';
-import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import api from '@/lib/api/client';
-import { Stats } from '@/types/user';
 import { Achievement } from '@/types/game';
-import { XPBadge } from '@/components/ui/XPBadge';
-import { StreakCounter } from '@/components/ui/StreakCounter';
-import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Trophy, Gamepad2, TrendingUp, ShieldCheck, Crown, Loader2, Upload, Settings } from 'lucide-react';
+import { Stats } from '@/types/user';
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Crown,
+  Gamepad2,
+  Loader2,
+  Settings,
+  ShieldCheck,
+  TrendingUp,
+  Trophy,
+  Upload,
+} from 'lucide-react';
+import api from '@/lib/api/client';
+import { userApi } from '@/lib/api/user';
 import { useLocale } from '@/lib/i18n';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { StreakCounter } from '@/components/ui/StreakCounter';
+import { XPBadge } from '@/components/ui/XPBadge';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
   const { t } = useLocale();
   const [stats, setStats] = useState<Stats | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [subscription, setSubscription] = useState<{ id: string; plan: string; status: string; started_at: string; expires_at: string } | null>(null);
+  const [subscription, setSubscription] = useState<{
+    id: string;
+    plan: string;
+    status: string;
+    started_at: string;
+    expires_at: string;
+  } | null>(null);
   const [subLoading, setSubLoading] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let count = 0;
-    const tick = () => { count++; if (count === 3) setLoading(false); };
+    const tick = () => {
+      count++;
+      if (count === 3) setLoading(false);
+    };
 
     api
       .get('/user/stats')
-      .then((res) => { setStats(res.data.data); tick(); })
+      .then((res) => {
+        setStats(res.data.data);
+        tick();
+      })
       .catch(() => tick());
     api
       .get('/user/achievements')
-      .then((res) => { setAchievements(res.data.data || []); tick(); })
+      .then((res) => {
+        setAchievements(res.data.data || []);
+        tick();
+      })
       .catch(() => tick());
     api
       .get('/subscribe/status')
-      .then((res) => { setSubscription(res.data.data); tick(); })
+      .then((res) => {
+        setSubscription(res.data.data);
+        tick();
+      })
       .catch(() => tick());
   }, []);
 
@@ -60,7 +87,9 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isAvatarUrl = user?.avatar_color && (user.avatar_color.startsWith('http') || user.avatar_color.startsWith('/uploads'));
+  const isAvatarUrl =
+    user?.avatar_color &&
+    (user.avatar_color.startsWith('http') || user.avatar_color.startsWith('/uploads'));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -97,7 +126,9 @@ export default function ProfilePage() {
     return (
       <div className="container max-w-md py-20 text-center">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{t('profile.title')}</h1>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+            {t('profile.title')}
+          </h1>
           <p className="mb-6 text-gray-500 dark:text-slate-400">
             Login untuk melihat progress, level, dan achievement kamu!
           </p>
@@ -115,7 +146,9 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{t('profile.title')}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          {t('profile.title')}
+        </h1>
         <Link
           href="/profile/settings"
           className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
@@ -128,7 +161,11 @@ export default function ProfilePage() {
       <div className="space-y-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div className="flex items-center gap-4">
           {isAvatarUrl ? (
-            <img src={user.avatar_color} alt="avatar" className="h-16 w-16 rounded-full object-cover shadow-inner" />
+            <img
+              src={user.avatar_color}
+              alt="avatar"
+              className="h-16 w-16 rounded-full object-cover shadow-inner"
+            />
           ) : (
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-2xl font-bold text-white shadow-inner">
               {user?.username?.[0]?.toUpperCase()}
@@ -153,12 +190,22 @@ export default function ProfilePage() {
         />
 
         <div className="border-t border-gray-100 pt-4 dark:border-slate-700">
-          <h3 className="mb-3 text-sm font-bold text-gray-700 dark:text-slate-300">{t('profile.change_avatar')}</h3>
+          <h3 className="mb-3 text-sm font-bold text-gray-700 dark:text-slate-300">
+            {t('profile.change_avatar')}
+          </h3>
           <div className="flex items-center gap-4">
             {avatarPreview ? (
-              <img src={avatarPreview} alt="preview" className="h-14 w-14 rounded-full object-cover shadow-inner" />
+              <img
+                src={avatarPreview}
+                alt="preview"
+                className="h-14 w-14 rounded-full object-cover shadow-inner"
+              />
             ) : isAvatarUrl ? (
-              <img src={user.avatar_color} alt="avatar" className="h-14 w-14 rounded-full object-cover shadow-inner" />
+              <img
+                src={user.avatar_color}
+                alt="avatar"
+                className="h-14 w-14 rounded-full object-cover shadow-inner"
+              />
             ) : (
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-xl font-bold text-white shadow-inner">
                 {user?.username?.[0]?.toUpperCase()}
@@ -217,13 +264,17 @@ export default function ProfilePage() {
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {stats.total_games || 0}
               </div>
-              <div className="text-sm text-gray-500 dark:text-slate-400">{t('profile.games_played')}</div>
+              <div className="text-sm text-gray-500 dark:text-slate-400">
+                {t('profile.games_played')}
+              </div>
             </div>
             <div className="rounded-xl bg-gray-50 p-4 text-center dark:bg-slate-700">
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {stats.total_xp || 0}
               </div>
-              <div className="text-sm text-gray-500 dark:text-slate-400">{t('profile.total_xp')}</div>
+              <div className="text-sm text-gray-500 dark:text-slate-400">
+                {t('profile.total_xp')}
+              </div>
             </div>
           </div>
         </div>
@@ -265,7 +316,10 @@ export default function ProfilePage() {
         {loading ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {[1, 2].map((i) => (
-              <div key={i} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50 p-3 dark:border-amber-900/20 dark:bg-amber-900/10">
+              <div
+                key={i}
+                className="flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50 p-3 dark:border-amber-900/20 dark:bg-amber-900/10"
+              >
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="min-w-0 flex-1">
                   <Skeleton className="mb-1 h-4 w-28" />
@@ -276,9 +330,7 @@ export default function ProfilePage() {
             ))}
           </div>
         ) : achievements.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-slate-400">
-            {t('achievement.empty')}
-          </p>
+          <p className="text-sm text-gray-500 dark:text-slate-400">{t('achievement.empty')}</p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {achievements.map((ach) => (
@@ -320,10 +372,12 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3 rounded-xl bg-indigo-50 p-4 dark:bg-indigo-900/10">
               <Crown className="h-8 w-8 text-indigo-600" />
               <div>
-                <div className="font-bold text-gray-900 dark:text-white capitalize">{subscription.plan}</div>
+                <div className="font-bold capitalize text-gray-900 dark:text-white">
+                  {subscription.plan}
+                </div>
                 <div className="text-sm text-gray-500 dark:text-slate-400">
                   {subscription.status === 'active' ? (
-                    <span className="text-emerald-600 font-bold">Aktif</span>
+                    <span className="font-bold text-emerald-600">Aktif</span>
                   ) : (
                     <span className="text-gray-400">{subscription.status}</span>
                   )}
@@ -333,7 +387,8 @@ export default function ProfilePage() {
             </div>
             <p className="text-xs text-gray-400">
               Langganan dimulai {new Date(subscription.started_at).toLocaleDateString('id-ID')}
-              {subscription.expires_at && `, berakhir ${new Date(subscription.expires_at).toLocaleDateString('id-ID')}`}
+              {subscription.expires_at &&
+                `, berakhir ${new Date(subscription.expires_at).toLocaleDateString('id-ID')}`}
             </p>
           </div>
         ) : (

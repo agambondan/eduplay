@@ -1,13 +1,13 @@
-"use client";
-import dynamic from "next/dynamic";
+'use client';
+import dynamic from 'next/dynamic';
 
-const Crossword = dynamic(() => import("@/components/games/Crossword"), {
-    loading: () => (
-        <div className='flex h-64 items-center justify-center'>
-            <div className='h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent' />
-        </div>
-    ),
-    ssr: false,
+const Crossword = dynamic(() => import('@/components/games/Crossword'), {
+  loading: () => (
+    <div className="flex h-64 items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+    </div>
+  ),
+  ssr: false,
 });
 
 export default Crossword;

@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function FlagQuizPage() {
   return (
     <>
-      <GameJsonLd name="Flag Quiz" description="Tebak nama negara dari gambar benderanya!" gameSlug="flag-quiz" />
+      <GameJsonLd
+        name="Flag Quiz"
+        description="Tebak nama negara dari gambar benderanya!"
+        gameSlug="flag-quiz"
+      />
       <div className="container max-w-2xl py-8">
         <FlagQuiz />
       </div>

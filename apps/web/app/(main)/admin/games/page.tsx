@@ -21,17 +21,20 @@ export default function AdminGamesPage() {
 
   const fetchGames = () => {
     setLoading(true);
-    api.get('/admin/games')
+    api
+      .get('/admin/games')
       .then((r) => setGames(r.data.data))
       .catch(() => {})
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchGames(); }, []);
+  useEffect(() => {
+    fetchGames();
+  }, []);
 
   const toggleGame = async (id: string) => {
     await api.post(`/admin/games/${id}/toggle`);
-    setGames((prev) => prev.map((g) => g.id === id ? { ...g, is_active: !g.is_active } : g));
+    setGames((prev) => prev.map((g) => (g.id === id ? { ...g, is_active: !g.is_active } : g)));
   };
 
   if (loading) {
@@ -50,8 +53,13 @@ export default function AdminGamesPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin.game_mgmt')} ({games.length})</h1>
-        <button onClick={fetchGames} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          {t('admin.game_mgmt')} ({games.length})
+        </h1>
+        <button
+          onClick={fetchGames}
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        >
           {t('admin.refresh')}
         </button>
       </div>
@@ -60,7 +68,12 @@ export default function AdminGamesPage() {
           <thead className="bg-gray-50 dark:bg-slate-800">
             <tr>
               {['Name', 'Slug', t('game.category'), 'Total Plays', 'Status', 'Actions'].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-slate-400">{h}</th>
+                <th
+                  key={h}
+                  className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+                >
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
@@ -76,7 +89,9 @@ export default function AdminGamesPage() {
                 </td>
                 <td className="px-4 py-3">{g.total_plays}</td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${g.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${g.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                  >
                     {g.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </td>

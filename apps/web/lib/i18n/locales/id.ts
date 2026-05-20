@@ -118,7 +118,8 @@ const id: Record<string, string> = {
   'game.spelling_bee.title': 'Spelling Bee',
   'game.spelling_bee.desc': 'Susun kembali huruf acak menjadi kata yang benar!',
   'game.bubble_shooter.title': 'Bubble Shooter Math',
-  'game.bubble_shooter.desc': 'Tembak bubble dengan angka yang jika dijumlahkan dengan bubble target hasilnya pas!',
+  'game.bubble_shooter.desc':
+    'Tembak bubble dengan angka yang jika dijumlahkan dengan bubble target hasilnya pas!',
   'game.brick_breaker.title': 'Brick Breaker Soal',
   'game.brick_breaker.desc': 'Hancurkan brick dan jawab tantangan matematika untuk bonus poin!',
   'game.flag_quiz.title': 'Flag Quiz',
@@ -132,9 +133,11 @@ const id: Record<string, string> = {
   'game.mental_math.title': 'Mental Math Speed',
   'game.mental_math.desc': 'Ketik jawabannya langsung secepat kilat!',
   'game.timeline_history.title': 'Timeline History',
-  'game.timeline_history.desc': 'Uji pengetahuan sejarahmu! Tebak tahun kejadian penting di Indonesia dan Dunia!',
+  'game.timeline_history.desc':
+    'Uji pengetahuan sejarahmu! Tebak tahun kejadian penting di Indonesia dan Dunia!',
   'game.nonogram.title': 'Nonogram',
-  'game.nonogram.desc': 'Isi grid berdasarkan petunjuk angka untuk mengungkapkan gambar tersembunyi!',
+  'game.nonogram.desc':
+    'Isi grid berdasarkan petunjuk angka untuk mengungkapkan gambar tersembunyi!',
 
   'game.start': 'Mulai!',
   'game.correct': 'Benar!',
@@ -316,7 +319,8 @@ const id: Record<string, string> = {
   'streak.days': 'hari streak',
   'streak.keep_alive': 'Ayo main sekarang!',
   'level.up': 'Naik Level!',
-  'level.up_desc': 'Selamat! Kamu telah mencapai Level {level}. Terus bermain untuk unlock achievement baru!',
+  'level.up_desc':
+    'Selamat! Kamu telah mencapai Level {level}. Terus bermain untuk unlock achievement baru!',
   'level.up_share': 'Aku baru dapat skor {score} di {game} di EduPlay!',
 
   'guest.prompt': 'Login/Daftar untuk simpan progres & XP!',

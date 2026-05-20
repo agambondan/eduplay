@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function SudokuPage() {
   return (
     <>
-      <GameJsonLd name="Sudoku" description="Asah logika dengan teka-teki Sudoku!" gameSlug="sudoku" />
+      <GameJsonLd
+        name="Sudoku"
+        description="Asah logika dengan teka-teki Sudoku!"
+        gameSlug="sudoku"
+      />
       <div className="container max-w-2xl py-8">
         <Sudoku />
       </div>

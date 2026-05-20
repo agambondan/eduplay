@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils/cn';
-import { PlayCircle, Gift } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Gift, PlayCircle } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
 
 interface RewardedAdProps {
   isOpen: boolean;
@@ -101,7 +101,7 @@ export function RewardedAd({
               onClick={onClose}
               className="mt-4 w-full rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white transition-colors hover:bg-indigo-700"
             >
-                {t('game.resume')}
+              {t('game.resume')}
             </button>
           </div>
         )}

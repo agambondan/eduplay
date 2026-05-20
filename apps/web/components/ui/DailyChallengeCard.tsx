@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Calendar, Timer } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
 
@@ -47,7 +47,8 @@ export function DailyChallengeCard() {
         </div>
         <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">{t('daily.title')}</h3>
         <p className="text-sm text-gray-500 dark:text-slate-400">
-          Selesaikan satu set soal spesial hari ini dan dapatkan bonus <strong>{t('daily.bonus')}</strong>!
+          Selesaikan satu set soal spesial hari ini dan dapatkan bonus{' '}
+          <strong>{t('daily.bonus')}</strong>!
         </p>
       </div>
       <Link

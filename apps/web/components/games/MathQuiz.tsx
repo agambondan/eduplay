@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Difficulty } from '@/types/game';
+import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Pause } from 'lucide-react';
+import { AIQuestion, aiApi } from '@/lib/api/ai';
 import { useGame } from '@/lib/hooks/useGame';
+import { useLocale } from '@/lib/i18n';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { useSoundStore } from '@/lib/stores/soundStore';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { Pause } from 'lucide-react';
-import { HowToPlay } from '@/components/ui/HowToPlay';
-import { Difficulty } from '@/types/game';
-import { cn } from '@/lib/utils/cn';
-import { aiApi, AIQuestion } from '@/lib/api/ai';
-import { useSoundStore } from '@/lib/stores/soundStore';
-import { useAuthStore } from '@/lib/stores/authStore';
-import { useLocale } from '@/lib/i18n';
 
 interface Question {
   text: string;
@@ -170,9 +170,12 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
         </p>
         <HowToPlay
           steps={[
-            { emoji: "➕", text: "Soal matematika (tambah, kurang, kali) muncul bergantian" },
-            { emoji: "⌨️", text: "Ketik jawabannya langsung — tidak perlu tekan Enter, otomatis lanjut" },
-            { emoji: "⏱️", text: "Selesaikan sebanyak mungkin soal dalam 60 detik!" },
+            { emoji: '➕', text: 'Soal matematika (tambah, kurang, kali) muncul bergantian' },
+            {
+              emoji: '⌨️',
+              text: 'Ketik jawabannya langsung — tidak perlu tekan Enter, otomatis lanjut',
+            },
+            { emoji: '⏱️', text: 'Selesaikan sebanyak mungkin soal dalam 60 detik!' },
           ]}
         />
 
@@ -239,8 +242,12 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
       <div className="flex items-center gap-4">
         <Timer initialSeconds={60} onTimeUp={handleTimeUp} isRunning={isPlaying} />
         <ScoreBoard score={score} />
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
-          <Pause className='h-4 w-4' />
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label="Jeda permainan"
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

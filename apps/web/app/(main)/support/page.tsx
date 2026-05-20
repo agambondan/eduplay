@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { supportApi } from '@/lib/api/support';
-import { cn } from '@/lib/utils/cn';
 import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
 
 const supportSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi').max(100),
@@ -45,24 +45,29 @@ export default function SupportPage() {
     return (
       <div className="mx-auto max-w-lg py-20 text-center">
         <div className="mb-4 text-5xl">✓</div>
-        <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{t('support.title')}</h1>
-        <p className="text-gray-500 dark:text-slate-400">
-          {t('support.success')}
-        </p>
+        <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+          {t('support.title')}
+        </h1>
+        <p className="text-gray-500 dark:text-slate-400">{t('support.success')}</p>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-lg py-8">
-      <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{t('support.title')}</h1>
+      <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+        {t('support.title')}
+      </h1>
       <p className="mb-8 text-gray-500 dark:text-slate-400">
         Laporkan bug, berikan feedback, atau ajukan saran.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
-          <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+          <label
+            htmlFor="name"
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
+          >
             {t('support.name')}
           </label>
           <input
@@ -77,7 +82,10 @@ export default function SupportPage() {
         </div>
 
         <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+          <label
+            htmlFor="email"
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
+          >
             {t('support.email')}
           </label>
           <input
@@ -93,7 +101,10 @@ export default function SupportPage() {
         </div>
 
         <div>
-          <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+          <label
+            htmlFor="category"
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
+          >
             {t('support.category')}
           </label>
           <select
@@ -108,7 +119,10 @@ export default function SupportPage() {
         </div>
 
         <div>
-          <label htmlFor="message" className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+          <label
+            htmlFor="message"
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
+          >
             {t('support.message')}
           </label>
           <textarea
@@ -124,7 +138,10 @@ export default function SupportPage() {
         </div>
 
         {error && (
-          <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          <div
+            role="alert"
+            className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400"
+          >
             {error}
           </div>
         )}

@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function CrosswordPage() {
   return (
     <>
-      <GameJsonLd name="Crossword Indonesia" description="Uji wawasan kosakata dengan Teka-Teki Silang!" gameSlug="crossword" />
+      <GameJsonLd
+        name="Crossword Indonesia"
+        description="Uji wawasan kosakata dengan Teka-Teki Silang!"
+        gameSlug="crossword"
+      />
       <div className="container max-w-4xl py-8">
         <Crossword />
       </div>

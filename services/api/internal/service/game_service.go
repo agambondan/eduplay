@@ -48,8 +48,8 @@ type GameService interface {
 }
 
 type gameService struct {
-	repo    repository.GameRepository
-	achSvc  interface {
+	repo   repository.GameRepository
+	achSvc interface {
 		CheckAndUnlock(userID string, slug string) (bool, error)
 		CheckFirstGame(userID string) error
 		CheckAllGames(userID string) error

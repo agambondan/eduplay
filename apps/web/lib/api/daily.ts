@@ -1,6 +1,6 @@
-import api from './client';
 import { ApiResponse } from '@/types/api';
 import { DailyChallenge } from '@/types/game';
+import api from './client';
 
 export interface DailyHistoryItem {
   date: string;

@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useGame } from '@/lib/hooks/useGame';
-import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { cn } from '@/lib/utils/cn';
+import { useCallback, useState } from 'react';
 import { Pause } from 'lucide-react';
-import { aiApi, AIQuestion } from '@/lib/api/ai';
-import { HowToPlay } from '@/components/ui/HowToPlay';
+import { AIQuestion, aiApi } from '@/lib/api/ai';
+import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { ScoreBoard } from '@/components/ui/ScoreBoard';
 
 interface SpellQuestion {
   word: string;
@@ -35,7 +35,8 @@ function generateQuestion(): SpellQuestion {
 }
 
 export default function SpellingBee() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('spelling-bee');
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
+    useGame('spelling-bee');
   const { t } = useLocale();
   const [question, setQuestion] = useState<SpellQuestion | null>(null);
   const [userLetters, setUserLetters] = useState<string[]>([]);
@@ -141,15 +142,23 @@ export default function SpellingBee() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.spelling_bee.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('game.spelling_bee.title')}
+        </h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           {t('game.spelling_bee.desc')}
         </p>
         <HowToPlay
           steps={[
-            { emoji: "🔤", text: "Huruf-huruf acak sebuah kata ditampilkan di layar" },
-            { emoji: "👆", text: "Ketuk huruf satu per satu atau ketik langsung untuk menyusun kata" },
-            { emoji: "✅", text: "Tekan Submit atau Enter setelah kata tersusun sebelum waktu habis!" },
+            { emoji: '🔤', text: 'Huruf-huruf acak sebuah kata ditampilkan di layar' },
+            {
+              emoji: '👆',
+              text: 'Ketuk huruf satu per satu atau ketik langsung untuk menyusun kata',
+            },
+            {
+              emoji: '✅',
+              text: 'Tekan Submit atau Enter setelah kata tersusun sebelum waktu habis!',
+            },
           ]}
         />
         <div className="mb-2 flex items-center gap-2">
@@ -179,9 +188,15 @@ export default function SpellingBee() {
     <div className="flex flex-col items-center gap-4 py-6">
       <div className="flex items-center gap-4">
         <ScoreBoard score={score} />
-        <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.questions', { n: questionCount, total: 5 })}</span>
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
-          <Pause className='h-4 w-4' />
+        <span className="text-sm text-gray-500 dark:text-slate-400">
+          {t('game.questions', { n: questionCount, total: 5 })}
+        </span>
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label={t('game.pause_label')}
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

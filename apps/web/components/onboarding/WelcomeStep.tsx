@@ -1,7 +1,7 @@
 'use client';
 
-import { useLocale } from '@/lib/i18n';
 import { Sparkles } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
 
 interface Props {
   username: string;

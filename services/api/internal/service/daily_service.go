@@ -14,11 +14,11 @@ import (
 )
 
 type DailyChallengeResponse struct {
-	ChallengeID   string           `json:"challenge_id"`
-	Game          *model.Game      `json:"game"`
+	ChallengeID   string                   `json:"challenge_id"`
+	Game          *model.Game              `json:"game"`
 	Questions     []map[string]interface{} `json:"questions"`
-	ExpiresAt     time.Time        `json:"expires_at"`
-	UserSubmitted bool             `json:"user_submitted"`
+	ExpiresAt     time.Time                `json:"expires_at"`
+	UserSubmitted bool                     `json:"user_submitted"`
 }
 
 type DailySubmitResponse struct {
@@ -174,8 +174,8 @@ func (s *dailyService) SubmitChallenge(userID string, challengeID string, score 
 	}
 
 	return &DailySubmitResponse{
-		XPEarned:            xp,
-		StreakUpdated:       streakUpdated,
+		XPEarned:             xp,
+		StreakUpdated:        streakUpdated,
 		AchievementsUnlocked: achievementsUnlocked,
 	}, nil
 }

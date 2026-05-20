@@ -1,17 +1,22 @@
 'use client';
 
-import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { authApi } from '@/lib/api/auth';
 import { useLocale } from '@/lib/i18n';
 
-const schema = z.object({
-  new_password: z.string().min(6),
-  confirm: z.string(),
-}).refine((d) => d.new_password === d.confirm, { message: 'konfirmasi password tidak cocok', path: ['confirm'] });
+const schema = z
+  .object({
+    new_password: z.string().min(6),
+    confirm: z.string(),
+  })
+  .refine((d) => d.new_password === d.confirm, {
+    message: 'konfirmasi password tidak cocok',
+    path: ['confirm'],
+  });
 
 function ResetForm() {
   const { t } = useLocale();
@@ -51,7 +56,7 @@ function ResetForm() {
           href="/login"
           className="block text-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
         >
-{t('auth.login')}
+          {t('auth.login')}
         </a>
       </div>
     );

@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/stores/authStore';
 import { authApi } from '@/lib/api/auth';
+import { useLocale } from '@/lib/i18n';
+import { useAuthStore } from '@/lib/stores/authStore';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { useLocale } from '@/lib/i18n';
 
 export default function Navbar() {
   const pathname = usePathname();

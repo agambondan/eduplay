@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function Game2048Page() {
   return (
     <>
-      <GameJsonLd name="2048" description="Gabungkan angka-angka hingga mencapai 2048!" gameSlug="2048" />
+      <GameJsonLd
+        name="2048"
+        description="Gabungkan angka-angka hingga mencapai 2048!"
+        gameSlug="2048"
+      />
       <div className="container max-w-2xl py-8">
         <Game2048 />
       </div>

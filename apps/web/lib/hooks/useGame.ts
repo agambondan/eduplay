@@ -1,8 +1,8 @@
-import { useGameStore } from '@/lib/stores/gameStore';
-import { gamesApi } from '@/lib/api/games';
-import { useAuthStore } from '@/lib/stores/authStore';
 import { Difficulty, ScoreSubmitResponse } from '@/types/game';
 import { useCallback } from 'react';
+import { gamesApi } from '@/lib/api/games';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { useGameStore } from '@/lib/stores/gameStore';
 import { analytics } from '@/lib/utils/analytics';
 
 export function useGame(gameSlug: string, gameName?: string, category?: string) {
@@ -20,7 +20,13 @@ export function useGame(gameSlug: string, gameName?: string, category?: string) 
         difficulty: store.difficulty,
       });
       if (result) {
-        analytics.gameCompleted(gameSlug, store.score, 60 - store.timeLeft, store.difficulty, result.xp_earned);
+        analytics.gameCompleted(
+          gameSlug,
+          store.score,
+          60 - store.timeLeft,
+          store.difficulty,
+          result.xp_earned
+        );
         if (result.new_highscore) {
           analytics.newHighscore(gameSlug, store.score);
         }

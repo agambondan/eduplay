@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 import { authApi } from '@/lib/api/auth';
 import { useLocale } from '@/lib/i18n';
 
@@ -18,7 +18,8 @@ function VerifyContent() {
       setMessage(t('auth.verify_error'));
       return;
     }
-    authApi.verifyEmail(token)
+    authApi
+      .verifyEmail(token)
       .then(() => {
         setStatus('success');
         setMessage(t('auth.verify_success'));
@@ -41,18 +42,15 @@ function VerifyContent() {
               href="/login"
               className="block text-sm font-medium text-indigo-600 hover:text-indigo-500"
             >
-{t('auth.login')}
+              {t('auth.login')}
             </a>
           </div>
         )}
         {status === 'error' && (
           <div className="space-y-4">
             <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">{message}</div>
-            <a
-              href="/"
-              className="block text-sm font-medium text-indigo-600 hover:text-indigo-500"
-            >
-{t('common.back')}
+            <a href="/" className="block text-sm font-medium text-indigo-600 hover:text-indigo-500">
+              {t('common.back')}
             </a>
           </div>
         )}
@@ -64,7 +62,13 @@ function VerifyContent() {
 export default function VerifyEmailPage() {
   const { t } = useLocale();
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><p>{t('common.loading')}</p></div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <p>{t('common.loading')}</p>
+        </div>
+      }
+    >
       <VerifyContent />
     </Suspense>
   );

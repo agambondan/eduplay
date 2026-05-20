@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { Game } from '@/types/game';
+import Link from 'next/link';
 
 interface GameCardProps {
   game: Game;

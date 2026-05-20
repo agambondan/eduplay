@@ -1,10 +1,10 @@
 'use client';
 
-import { useAuthStore } from '@/lib/stores/authStore';
+import { LoginRequest, RegisterRequest } from '@/types/api';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 import { authApi } from '@/lib/api/auth';
-import { LoginRequest, RegisterRequest } from '@/types/api';
+import { useAuthStore } from '@/lib/stores/authStore';
 import { analytics } from '@/lib/utils/analytics';
 
 export function useAuth() {

@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function TimesTablePage() {
   return (
     <>
-      <GameJsonLd name="Times Table Challenge" description="Latih perkalian 1-12 dengan cara seru!" gameSlug="times-table" />
+      <GameJsonLd
+        name="Times Table Challenge"
+        description="Latih perkalian 1-12 dengan cara seru!"
+        gameSlug="times-table"
+      />
       <div className="container max-w-2xl py-8">
         <TimesTable />
       </div>

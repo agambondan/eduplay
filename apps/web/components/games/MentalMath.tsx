@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
+import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { HowToPlay } from '@/components/ui/HowToPlay';
-import { cn } from '@/lib/utils/cn';
-import { Pause } from 'lucide-react';
-import { useLocale } from '@/lib/i18n';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -79,7 +79,8 @@ function generateEquation(difficulty: Difficulty): Equation {
 }
 
 export default function MentalMath() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } = useGame('mental-math');
+  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
+    useGame('mental-math');
   const { t } = useLocale();
 
   const [eq, setEq] = useState<Equation | null>(null);
@@ -132,15 +133,20 @@ export default function MentalMath() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.mental_math.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('game.mental_math.title')}
+        </h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           {t('game.mental_math.desc')}
         </p>
         <HowToPlay
           steps={[
-            { emoji: "🧮", text: "Soal hitung cepat ditampilkan satu per satu" },
-            { emoji: "⌨️", text: "Ketik jawaban langsung — otomatis lanjut ke soal berikutnya setelah benar" },
-            { emoji: "📈", text: "Mode Hard = soal lebih kompleks dengan skor lebih besar" },
+            { emoji: '🧮', text: 'Soal hitung cepat ditampilkan satu per satu' },
+            {
+              emoji: '⌨️',
+              text: 'Ketik jawaban langsung — otomatis lanjut ke soal berikutnya setelah benar',
+            },
+            { emoji: '📈', text: 'Mode Hard = soal lebih kompleks dengan skor lebih besar' },
           ]}
         />
         <div className="flex gap-2">
@@ -174,8 +180,12 @@ export default function MentalMath() {
       <div className="flex w-full max-w-md items-center justify-between">
         <Timer initialSeconds={60} onTimeUp={handleTimeUp} isRunning={isPlaying && !gameOver} />
         <ScoreBoard score={score} />
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label='Jeda permainan'>
-          <Pause className='h-4 w-4' />
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label="Jeda permainan"
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

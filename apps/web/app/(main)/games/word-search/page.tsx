@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function WordSearchPage() {
   return (
     <>
-      <GameJsonLd name="Word Search" description="Asah ketelitianmu dengan mencari kata-kata tersembunyi!" gameSlug="word-search" />
+      <GameJsonLd
+        name="Word Search"
+        description="Asah ketelitianmu dengan mencari kata-kata tersembunyi!"
+        gameSlug="word-search"
+      />
       <div className="container max-w-4xl py-8">
         <WordSearch />
       </div>

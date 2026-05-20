@@ -1,43 +1,43 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useGame } from '@/lib/hooks/useGame';
-import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { cn } from '@/lib/utils/cn';
 import { Pause } from 'lucide-react';
-import { aiApi, AIQuestion } from '@/lib/api/ai';
-import { HowToPlay } from '@/components/ui/HowToPlay';
-import { useLocale } from '@/lib/i18n';
+import { AIQuestion, aiApi } from '@/lib/api/ai';
 import { contentApi } from '@/lib/api/content';
+import { useGame } from '@/lib/hooks/useGame';
+import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { ScoreBoard } from '@/components/ui/ScoreBoard';
 
 interface CapitalQuestion {
-    question: string;
-    answer: string;
-    options: string[];
-    type?: 'country-to-capital' | 'capital-to-country';
+  question: string;
+  answer: string;
+  options: string[];
+  type?: 'country-to-capital' | 'capital-to-country';
 }
 
 const FALLBACK_CAPITAL_DATA = [
-    { country: 'Indonesia', capital: 'Jakarta' },
-    { country: 'Malaysia', capital: 'Kuala Lumpur' },
-    { country: 'Singapore', capital: 'Singapura' },
-    { country: 'Japan', capital: 'Tokyo' },
-    { country: 'South Korea', capital: 'Seoul' },
-    { country: 'Germany', capital: 'Berlin' },
-    { country: 'France', capital: 'Paris' },
-    { country: 'Italy', capital: 'Roma' },
-    { country: 'United Kingdom', capital: 'London' },
-    { country: 'United States', capital: 'Washington DC' },
-    { country: 'Brazil', capital: 'Brasilia' },
-    { country: 'Argentina', capital: 'Buenos Aires' },
-    { country: 'Australia', capital: 'Canberra' },
-    { country: 'Canada', capital: 'Ottawa' },
-    { country: 'India', capital: 'New Delhi' },
-    { country: 'China', capital: 'Beijing' },
-    { country: 'Thailand', capital: 'Bangkok' },
-    { country: 'Vietnam', capital: 'Hanoi' },
+  { country: 'Indonesia', capital: 'Jakarta' },
+  { country: 'Malaysia', capital: 'Kuala Lumpur' },
+  { country: 'Singapore', capital: 'Singapura' },
+  { country: 'Japan', capital: 'Tokyo' },
+  { country: 'South Korea', capital: 'Seoul' },
+  { country: 'Germany', capital: 'Berlin' },
+  { country: 'France', capital: 'Paris' },
+  { country: 'Italy', capital: 'Roma' },
+  { country: 'United Kingdom', capital: 'London' },
+  { country: 'United States', capital: 'Washington DC' },
+  { country: 'Brazil', capital: 'Brasilia' },
+  { country: 'Argentina', capital: 'Buenos Aires' },
+  { country: 'Australia', capital: 'Canberra' },
+  { country: 'Canada', capital: 'Ottawa' },
+  { country: 'India', capital: 'New Delhi' },
+  { country: 'China', capital: 'Beijing' },
+  { country: 'Thailand', capital: 'Bangkok' },
+  { country: 'Vietnam', capital: 'Hanoi' },
 ];
 
 function generateQuestion(CAPITAL_DATA: { country: string; capital: string }[]): CapitalQuestion {
@@ -64,7 +64,8 @@ function generateQuestion(CAPITAL_DATA: { country: string; capital: string }[]):
 }
 
 export default function CapitalQuiz() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('capital-quiz');
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
+    useGame('capital-quiz');
   const { t } = useLocale();
 
   const { data: capitalsData } = useQuery({
@@ -160,15 +161,17 @@ export default function CapitalQuiz() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.capital_quiz.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('game.capital_quiz.title')}
+        </h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           {t('game.capital_quiz.desc')}
         </p>
         <HowToPlay
           steps={[
-            { emoji: "🌍", text: "Nama sebuah negara ditampilkan di layar" },
-            { emoji: "✏️", text: "Ketik nama ibukotanya lalu tekan Enter" },
-            { emoji: "🔥", text: "Jawab 3x berturut-turut untuk mendapatkan poin 2x lipat!" },
+            { emoji: '🌍', text: 'Nama sebuah negara ditampilkan di layar' },
+            { emoji: '✏️', text: 'Ketik nama ibukotanya lalu tekan Enter' },
+            { emoji: '🔥', text: 'Jawab 3x berturut-turut untuk mendapatkan poin 2x lipat!' },
           ]}
         />
         <div className="mb-2 flex items-center gap-2">
@@ -202,9 +205,15 @@ export default function CapitalQuiz() {
           <span className="text-xs font-bold uppercase text-orange-500">Streak</span>
           <span className="text-lg font-bold text-orange-600 dark:text-orange-400">{streak}x</span>
         </div>
-        <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.questions', { n: questionCount, total: 15 })}</span>
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
-          <Pause className='h-4 w-4' />
+        <span className="text-sm text-gray-500 dark:text-slate-400">
+          {t('game.questions', { n: questionCount, total: 15 })}
+        </span>
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label={t('game.pause_label')}
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

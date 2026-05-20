@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import id from './locales/id';
+import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 import en from './locales/en';
+import id from './locales/id';
 
 type Locale = 'id' | 'en';
 

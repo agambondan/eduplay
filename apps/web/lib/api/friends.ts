@@ -1,5 +1,5 @@
-import api from './client';
 import { ApiResponse } from '@/types/api';
+import api from './client';
 
 export interface FriendResponse {
   id: string;

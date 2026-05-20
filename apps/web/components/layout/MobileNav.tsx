@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Trophy, Gamepad2, User as UserIcon, CalendarCheck } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import { CalendarCheck, Gamepad2, Home, Trophy, User as UserIcon } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
 
 export default function MobileNav() {
   const pathname = usePathname();

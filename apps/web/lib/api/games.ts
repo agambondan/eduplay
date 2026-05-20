@@ -1,6 +1,6 @@
-import api from './client';
 import { ApiResponse } from '@/types/api';
 import { Game, ScoreSubmitRequest, ScoreSubmitResponse } from '@/types/game';
+import api from './client';
 
 export const gamesApi = {
   list: async () => {

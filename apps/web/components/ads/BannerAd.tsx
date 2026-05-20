@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 import { useLocale } from '@/lib/i18n';
 
 interface BannerAdProps {

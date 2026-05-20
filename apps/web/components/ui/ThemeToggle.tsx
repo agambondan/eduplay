@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useThemeStore, applyTheme } from '@/lib/stores/themeStore';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Monitor, Moon, Sun } from 'lucide-react';
+import { applyTheme, useThemeStore } from '@/lib/stores/themeStore';
 import { cn } from '@/lib/utils/cn';
 
 const modes = [

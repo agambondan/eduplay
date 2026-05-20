@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function NonogramPage() {
   return (
     <>
-      <GameJsonLd name="Nonogram" description="Asah logika dengan mengungkapkan gambar tersembunyi lewat Nonogram!" gameSlug="nonogram" />
+      <GameJsonLd
+        name="Nonogram"
+        description="Asah logika dengan mengungkapkan gambar tersembunyi lewat Nonogram!"
+        gameSlug="nonogram"
+      />
       <div className="container max-w-2xl py-8">
         <Nonogram />
       </div>

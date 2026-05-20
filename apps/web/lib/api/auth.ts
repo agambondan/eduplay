@@ -1,5 +1,5 @@
+import { ApiResponse, AuthResponse, LoginRequest, RegisterRequest } from '@/types/api';
 import api from './client';
-import { RegisterRequest, LoginRequest, AuthResponse, ApiResponse } from '@/types/api';
 
 export const authApi = {
   register: async (data: RegisterRequest) => {
@@ -18,15 +18,22 @@ export const authApi = {
     return res.data.data;
   },
   forgotPassword: async (email: string) => {
-    const res = await api.post<ApiResponse<{ message: string }>>('/auth/forgot-password', { email });
+    const res = await api.post<ApiResponse<{ message: string }>>('/auth/forgot-password', {
+      email,
+    });
     return res.data;
   },
   resetPassword: async (token: string, new_password: string) => {
-    const res = await api.post<ApiResponse<{ message: string }>>('/auth/reset-password', { token, new_password });
+    const res = await api.post<ApiResponse<{ message: string }>>('/auth/reset-password', {
+      token,
+      new_password,
+    });
     return res.data;
   },
   verifyEmail: async (token: string) => {
-    const res = await api.get<ApiResponse<{ message: string }>>('/auth/verify-email', { params: { token } });
+    const res = await api.get<ApiResponse<{ message: string }>>('/auth/verify-email', {
+      params: { token },
+    });
     return res.data;
   },
   requestVerification: async () => {

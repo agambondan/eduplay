@@ -1,14 +1,34 @@
 'use client';
 
 import { useState } from 'react';
+import { Brain, Calculator, Globe2, Languages } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
-import { Calculator, Languages, Globe2, Brain } from 'lucide-react';
 
 const CATEGORIES = [
-  { key: 'math', labelKey: 'category.math', icon: Calculator, color: 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400' },
-  { key: 'language', labelKey: 'category.language', icon: Languages, color: 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' },
-  { key: 'geography', labelKey: 'category.geography', icon: Globe2, color: 'bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-400' },
-  { key: 'logic', labelKey: 'category.logic', icon: Brain, color: 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400' },
+  {
+    key: 'math',
+    labelKey: 'category.math',
+    icon: Calculator,
+    color: 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400',
+  },
+  {
+    key: 'language',
+    labelKey: 'category.language',
+    icon: Languages,
+    color: 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400',
+  },
+  {
+    key: 'geography',
+    labelKey: 'category.geography',
+    icon: Globe2,
+    color: 'bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-400',
+  },
+  {
+    key: 'logic',
+    labelKey: 'category.logic',
+    icon: Brain,
+    color: 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400',
+  },
 ];
 
 interface Props {
@@ -21,9 +41,7 @@ export default function InterestSelector({ onNext, onSkip }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
 
   const toggle = (key: string) => {
-    setSelected((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    );
+    setSelected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
   };
 
   return (
@@ -49,7 +67,9 @@ export default function InterestSelector({ onNext, onSkip }: Props) {
             <div className={`rounded-lg p-2 ${color}`}>
               <Icon size={24} />
             </div>
-            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">{t(labelKey)}</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+              {t(labelKey)}
+            </span>
           </button>
         ))}
       </div>
@@ -59,7 +79,9 @@ export default function InterestSelector({ onNext, onSkip }: Props) {
           onClick={onNext}
           className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-indigo-700"
         >
-          {selected.length > 0 ? t('onboarding.interest_selected').replace('{n}', String(selected.length)) : t('onboarding.interest_continue')}
+          {selected.length > 0
+            ? t('onboarding.interest_selected').replace('{n}', String(selected.length))
+            : t('onboarding.interest_continue')}
         </button>
         <button
           onClick={onSkip}
@@ -70,9 +92,7 @@ export default function InterestSelector({ onNext, onSkip }: Props) {
       </div>
 
       {selected.length > 0 && (
-        <p className="mt-3 text-center text-xs text-gray-400">
-          {t('onboarding.interest_saved')}
-        </p>
+        <p className="mt-3 text-center text-xs text-gray-400">{t('onboarding.interest_saved')}</p>
       )}
     </div>
   );

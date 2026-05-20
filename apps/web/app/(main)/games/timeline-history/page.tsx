@@ -22,7 +22,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function TimelineHistoryPage() {
   return (
     <>
-      <GameJsonLd name="Timeline History" description="Tebak tahun kejadian penting di Indonesia dan Dunia!" gameSlug="timeline-history" />
+      <GameJsonLd
+        name="Timeline History"
+        description="Tebak tahun kejadian penting di Indonesia dan Dunia!"
+        gameSlug="timeline-history"
+      />
       <div className="container max-w-4xl py-8">
         <TimelineHistory />
       </div>

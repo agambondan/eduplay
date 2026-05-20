@@ -1,41 +1,41 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useGame } from '@/lib/hooks/useGame';
-import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import { ResultScreen } from '@/components/ui/ResultScreen';
-import { HowToPlay } from '@/components/ui/HowToPlay';
-import { cn } from '@/lib/utils/cn';
 import { Pause } from 'lucide-react';
-import { useLocale } from '@/lib/i18n';
 import { contentApi } from '@/lib/api/content';
+import { useGame } from '@/lib/hooks/useGame';
+import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
+import { HowToPlay } from '@/components/ui/HowToPlay';
+import { ResultScreen } from '@/components/ui/ResultScreen';
+import { ScoreBoard } from '@/components/ui/ScoreBoard';
 
 interface FlagItem {
-    country: string;
-    code: string; // ISO 2-letter code for SVG filename (lowercase)
+  country: string;
+  code: string; // ISO 2-letter code for SVG filename (lowercase)
 }
 
 const FALLBACK_FLAGS: FlagItem[] = [
-    { country: 'Indonesia', code: 'id' },
-    { country: 'Malaysia', code: 'my' },
-    { country: 'Singapore', code: 'sg' },
-    { country: 'Japan', code: 'jp' },
-    { country: 'South Korea', code: 'kr' },
-    { country: 'Germany', code: 'de' },
-    { country: 'France', code: 'fr' },
-    { country: 'Italy', code: 'it' },
-    { country: 'United Kingdom', code: 'gb' },
-    { country: 'United States', code: 'us' },
-    { country: 'Brazil', code: 'br' },
-    { country: 'Argentina', code: 'ar' },
-    { country: 'Australia', code: 'au' },
-    { country: 'Canada', code: 'ca' },
-    { country: 'India', code: 'in' },
-    { country: 'China', code: 'cn' },
-    { country: 'Thailand', code: 'th' },
-    { country: 'Vietnam', code: 'vn' },
+  { country: 'Indonesia', code: 'id' },
+  { country: 'Malaysia', code: 'my' },
+  { country: 'Singapore', code: 'sg' },
+  { country: 'Japan', code: 'jp' },
+  { country: 'South Korea', code: 'kr' },
+  { country: 'Germany', code: 'de' },
+  { country: 'France', code: 'fr' },
+  { country: 'Italy', code: 'it' },
+  { country: 'United Kingdom', code: 'gb' },
+  { country: 'United States', code: 'us' },
+  { country: 'Brazil', code: 'br' },
+  { country: 'Argentina', code: 'ar' },
+  { country: 'Australia', code: 'au' },
+  { country: 'Canada', code: 'ca' },
+  { country: 'India', code: 'in' },
+  { country: 'China', code: 'cn' },
+  { country: 'Thailand', code: 'th' },
+  { country: 'Vietnam', code: 'vn' },
 ];
 
 function generateQuestion(FLAGS: FlagItem[]) {
@@ -50,7 +50,8 @@ function generateQuestion(FLAGS: FlagItem[]) {
 }
 
 export default function FlagQuiz() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } = useGame('flag-quiz');
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
+    useGame('flag-quiz');
   const { t } = useLocale();
 
   const { data: flagsData } = useQuery({
@@ -58,7 +59,8 @@ export default function FlagQuiz() {
     queryFn: contentApi.getFlags,
     staleTime: 24 * 60 * 60 * 1000,
   });
-  const FLAGS = flagsData?.map((c) => ({ country: c.name, code: c.flag_code.toLowerCase() })) ?? FALLBACK_FLAGS;
+  const FLAGS =
+    flagsData?.map((c) => ({ country: c.name, code: c.flag_code.toLowerCase() })) ?? FALLBACK_FLAGS;
 
   const [question, setQuestion] = useState<{ correct: FlagItem; options: string[] } | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
@@ -105,15 +107,20 @@ export default function FlagQuiz() {
   if (!isPlaying && !gameOver) {
     return (
       <div className="flex flex-col items-center gap-6 py-10">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.flag_quiz.title')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('game.flag_quiz.title')}
+        </h1>
         <p className="max-w-md text-center text-gray-500 dark:text-slate-400">
           {t('game.flag_quiz.desc')}
         </p>
         <HowToPlay
           steps={[
-            { emoji: "🏳️", text: "Bendera negara ditampilkan dalam bentuk visual geometri" },
-            { emoji: "🔤", text: "Pilih nama negara yang benar dari 4 pilihan yang tersedia" },
-            { emoji: "⚡", text: "Setiap jawaban benar menambah skor, jawaban salah mengurangi waktu!" },
+            { emoji: '🏳️', text: 'Bendera negara ditampilkan dalam bentuk visual geometri' },
+            { emoji: '🔤', text: 'Pilih nama negara yang benar dari 4 pilihan yang tersedia' },
+            {
+              emoji: '⚡',
+              text: 'Setiap jawaban benar menambah skor, jawaban salah mengurangi waktu!',
+            },
           ]}
         />
         <button
@@ -130,9 +137,15 @@ export default function FlagQuiz() {
     <div className="flex flex-col items-center gap-4 py-6">
       <div className="flex items-center gap-4">
         <ScoreBoard score={score} />
-        <span className="text-sm text-gray-500 dark:text-slate-400">{t('game.questions', { n: count, total: 12 })}</span>
-        <button onClick={pauseGame} className='rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800' aria-label={t('game.pause_label')}>
-          <Pause className='h-4 w-4' />
+        <span className="text-sm text-gray-500 dark:text-slate-400">
+          {t('game.questions', { n: count, total: 12 })}
+        </span>
+        <button
+          onClick={pauseGame}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+          aria-label={t('game.pause_label')}
+        >
+          <Pause className="h-4 w-4" />
         </button>
       </div>
 

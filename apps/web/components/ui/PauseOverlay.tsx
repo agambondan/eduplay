@@ -1,8 +1,8 @@
 'use client';
 
-import { useGameStore } from '@/lib/stores/gameStore';
-import { useLocale } from '@/lib/i18n';
 import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
+import { useLocale } from '@/lib/i18n';
+import { useGameStore } from '@/lib/stores/gameStore';
 
 export function PauseOverlay() {
   const { t } = useLocale();

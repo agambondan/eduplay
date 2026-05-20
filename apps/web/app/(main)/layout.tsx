@@ -2,9 +2,9 @@
 
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import Navbar from '@/components/layout/Navbar';
-import MobileNav from '@/components/layout/MobileNav';
 import Footer from '@/components/layout/Footer';
+import MobileNav from '@/components/layout/MobileNav';
+import Navbar from '@/components/layout/Navbar';
 import { GameLevelUpHandler } from '@/components/ui/GameLevelUpHandler';
 import { PauseOverlay } from '@/components/ui/PauseOverlay';
 

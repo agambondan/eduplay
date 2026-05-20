@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { authApi } from '@/lib/api/auth';
-import { useAuthStore } from '@/lib/stores/authStore';
 import { useLocale } from '@/lib/i18n';
+import { useAuthStore } from '@/lib/stores/authStore';
 
 const registerSchema = z.object({
   username: z.string().min(3),
@@ -102,7 +102,7 @@ export default function RegisterPage() {
           </div>
           <div className="text-center text-sm">
             <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-{t('auth.have_account')}
+              {t('auth.have_account')}
             </a>
           </div>
         </form>

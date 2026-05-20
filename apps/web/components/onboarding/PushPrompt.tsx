@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useLocale } from '@/lib/i18n';
 import { Bell, BellOff } from 'lucide-react';
 import { usePushNotifications } from '@/lib/hooks/usePushNotifications';
+import { useLocale } from '@/lib/i18n';
 
 interface Props {
   onDone: () => void;
@@ -39,9 +39,7 @@ export default function PushPrompt({ onDone, onSkip }: Props) {
       <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
         {t('onboarding.push_title')}
       </h2>
-      <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">
-        {t('onboarding.push_desc')}
-      </p>
+      <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">{t('onboarding.push_desc')}</p>
 
       <div className="flex flex-col gap-3">
         <button
@@ -49,7 +47,11 @@ export default function PushPrompt({ onDone, onSkip }: Props) {
           disabled={loading || subscribed}
           className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
         >
-          {loading ? t('onboarding.push_processing') : subscribed ? t('onboarding.push_active') : t('onboarding.push_cta')}
+          {loading
+            ? t('onboarding.push_processing')
+            : subscribed
+              ? t('onboarding.push_active')
+              : t('onboarding.push_cta')}
         </button>
         <button
           onClick={onSkip}
@@ -58,9 +60,7 @@ export default function PushPrompt({ onDone, onSkip }: Props) {
           {subscribed ? t('onboarding.push_done') : t('onboarding.push_skip')}
         </button>
       </div>
-      {subscribed && (
-        <p className="mt-3 text-xs text-gray-400">{t('onboarding.push_info')}</p>
-      )}
+      {subscribed && <p className="mt-3 text-xs text-gray-400">{t('onboarding.push_info')}</p>}
     </div>
   );
 }

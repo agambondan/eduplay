@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { cn } from '@/lib/utils/cn';
 import { Loader2 } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils/cn';
 
 interface InterstitialAdProps {
   isOpen: boolean;

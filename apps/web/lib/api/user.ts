@@ -1,6 +1,6 @@
-import api from './client';
 import { ApiResponse } from '@/types/api';
 import { User, UserStats } from '@/types/user';
+import api from './client';
 
 export const userApi = {
   getMe: async () => {

@@ -20,7 +20,15 @@ export function WebAppJsonLd() {
   );
 }
 
-export function GameJsonLd({ name, description, gameSlug }: { name: string; description: string; gameSlug: string }) {
+export function GameJsonLd({
+  name,
+  description,
+  gameSlug,
+}: {
+  name: string;
+  description: string;
+  gameSlug: string;
+}) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Game',

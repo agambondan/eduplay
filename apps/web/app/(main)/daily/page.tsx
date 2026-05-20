@@ -1,18 +1,18 @@
 'use client';
 
-import { useQuery, useMutation } from '@tanstack/react-query';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Calendar, CheckCircle2, Flame, Loader2, Trophy, XCircle } from 'lucide-react';
 import { dailyApi } from '@/lib/api/daily';
 import { DailyHistoryItem } from '@/lib/api/daily';
-import { useState, useEffect } from 'react';
-import { Timer } from '@/components/ui/Timer';
-import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import { Loader2, Calendar, Trophy, CheckCircle2, XCircle, Flame } from 'lucide-react';
+import { useLocale } from '@/lib/i18n';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { cn } from '@/lib/utils/cn';
 import MathQuiz from '@/components/games/MathQuiz';
 import Wordle from '@/components/games/Wordle';
-import { useAuthStore } from '@/lib/stores/authStore';
-import Link from 'next/link';
-import { cn } from '@/lib/utils/cn';
-import { useLocale } from '@/lib/i18n';
+import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { Timer } from '@/components/ui/Timer';
 
 export default function DailyChallengePage() {
   const { user } = useAuthStore();
@@ -28,10 +28,7 @@ export default function DailyChallengePage() {
     queryFn: dailyApi.get,
   });
 
-  const {
-    data: history,
-    isLoading: historyLoading,
-  } = useQuery({
+  const { data: history, isLoading: historyLoading } = useQuery({
     queryKey: ['daily-history'],
     queryFn: dailyApi.history,
     enabled: !!user,
@@ -51,10 +48,10 @@ export default function DailyChallengePage() {
       <div className="container max-w-md py-20 text-center">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <Calendar className="mx-auto mb-4 h-12 w-12 text-indigo-500" />
-          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{t('daily.title')}</h1>
-          <p className="mb-6 text-gray-500 dark:text-slate-400">
-            {t('daily.bonus')}
-          </p>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+            {t('daily.title')}
+          </h1>
+          <p className="mb-6 text-gray-500 dark:text-slate-400">{t('daily.bonus')}</p>
           <Link
             href="/login"
             className="block w-full rounded-xl bg-indigo-600 py-3 font-bold text-white transition-colors hover:bg-indigo-700"
@@ -75,9 +72,7 @@ export default function DailyChallengePage() {
             <h1 className="mb-2 text-2xl font-bold text-emerald-900 dark:text-emerald-400">
               {t('daily.complete')}
             </h1>
-            <p className="mb-6 text-emerald-700 dark:text-emerald-500">
-              {t('daily.complete')}
-            </p>
+            <p className="mb-6 text-emerald-700 dark:text-emerald-500">{t('daily.complete')}</p>
             <Link
               href="/games"
               className="block w-full rounded-xl bg-emerald-500 py-3 font-bold text-white transition-colors hover:bg-emerald-600"

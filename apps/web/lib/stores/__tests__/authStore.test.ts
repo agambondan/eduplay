@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { useAuthStore } from '../authStore';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('authStore', () => {
   beforeEach(() => {
@@ -13,7 +13,22 @@ describe('authStore', () => {
     expect(state.refreshToken).toBeNull();
   });
 
-const mockUser = { id: '1', username: 'test', email: 'test@test.com', xp: 0, level: 1, streak: 0, streak_freeze: 0, last_active: null, email_verified_at: null, avatar_color: '#4F46E5', role: 'user', is_active: true, created_at: '', updated_at: '' };
+  const mockUser = {
+    id: '1',
+    username: 'test',
+    email: 'test@test.com',
+    xp: 0,
+    level: 1,
+    streak: 0,
+    streak_freeze: 0,
+    last_active: null,
+    email_verified_at: null,
+    avatar_color: '#4F46E5',
+    role: 'user',
+    is_active: true,
+    created_at: '',
+    updated_at: '',
+  };
 
   it('setAuth stores user and tokens', () => {
     useAuthStore.getState().setAuth(mockUser, 'abc', 'xyz');

@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import { Difficulty } from '@/types/game';
+import { create } from 'zustand';
 
 interface LevelUpData {
   newLevel: number;
@@ -42,5 +42,13 @@ export const useGameStore = create<GameState>((set) => ({
   setDifficulty: (difficulty) => set({ difficulty }),
   setNoTimer: (noTimer) => set({ noTimer }),
   setLevelUp: (levelUp) => set({ levelUp }),
-  resetGame: () => set({ score: 0, isPlaying: false, isPaused: false, timeLeft: 60, noTimer: false, levelUp: null }),
+  resetGame: () =>
+    set({
+      score: 0,
+      isPlaying: false,
+      isPaused: false,
+      timeLeft: 60,
+      noTimer: false,
+      levelUp: null,
+    }),
 }));

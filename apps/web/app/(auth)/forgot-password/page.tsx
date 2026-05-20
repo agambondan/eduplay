@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
               href="/login"
               className="block text-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
             >
-{t('common.back')}
+              {t('common.back')}
             </a>
           </div>
         ) : (
@@ -64,7 +64,9 @@ export default function ForgotPasswordPage() {
                 <p className="mt-1 text-xs text-red-500">{errors.email.message as string}</p>
               )}
             </div>
-            {status === 'error' && <div className="text-center text-sm text-red-500">{message}</div>}
+            {status === 'error' && (
+              <div className="text-center text-sm text-red-500">{message}</div>
+            )}
             <button
               type="submit"
               disabled={isSubmitting}
@@ -74,7 +76,7 @@ export default function ForgotPasswordPage() {
             </button>
             <div className="text-center text-sm">
               <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-{t('common.back')}
+                {t('common.back')}
               </a>
             </div>
           </form>

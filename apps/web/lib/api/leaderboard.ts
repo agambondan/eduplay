@@ -1,6 +1,6 @@
-import api from './client';
 import { ApiResponse } from '@/types/api';
 import { LeaderboardEntry } from '@/types/game';
+import api from './client';
 
 interface LeaderboardResponse {
   entries: LeaderboardEntry[];
