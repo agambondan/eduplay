@@ -27,6 +27,7 @@ export default function Navbar() {
     { name: t('nav.games'), path: '/games' },
     { name: t('nav.leaderboard'), path: '/leaderboard' },
     { name: t('nav.daily'), path: '/daily' },
+    { name: t('nav.friends'), path: '/friends' },
     { name: t('nav.support'), path: '/support' },
   ];
 

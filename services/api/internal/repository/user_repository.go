@@ -12,6 +12,14 @@ type HistoryPoint struct {
 	XP   int    `json:"xp"`
 }
 
+type TopGame struct {
+	Slug      string `json:"slug"`
+	Name      string `json:"name"`
+	BestScore int    `json:"best_score"`
+	PlayCount int    `json:"play_count"`
+	Category  string `json:"category"`
+}
+
 type Stats struct {
 	TotalGames           int            `json:"total_games"`
 	TotalXP              int            `json:"total_xp"`
@@ -20,6 +28,7 @@ type Stats struct {
 	Level                int            `json:"level"`
 	Streak               int            `json:"streak"`
 	History              []HistoryPoint `json:"history"`
+	TopGames             []TopGame      `json:"top_games"`
 }
 
 type UserRepository interface {
@@ -82,6 +91,21 @@ func (r *userRepository) GetStats(id string) (*Stats, error) {
 		ORDER BY date ASC
 	`, id).Scan(&history)
 	stats.History = history
+
+	// Top 5 games by best score
+	var topGames []TopGame
+	database.DB.Raw(`
+		SELECT g.slug, g.name, g.category,
+			MAX(gs.score) as best_score,
+			COUNT(gs.id) as play_count
+		FROM game_sessions gs
+		JOIN games g ON g.id = gs.game_id
+		WHERE gs.user_id = ?
+		GROUP BY g.slug, g.name, g.category
+		ORDER BY best_score DESC
+		LIMIT 5
+	`, id).Scan(&topGames)
+	stats.TopGames = topGames
 
 	return &stats, nil
 }

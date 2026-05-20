@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarCheck, Gamepad2, Home, Trophy, User as UserIcon } from 'lucide-react';
+import { CalendarCheck, Gamepad2, Home, Trophy, User as UserIcon, Users } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
 import { cn } from '@/lib/utils/cn';
 
@@ -14,13 +14,14 @@ export default function MobileNav() {
     { name: t('nav.home'), path: '/', icon: Home },
     { name: t('nav.games'), path: '/games', icon: Gamepad2 },
     { name: t('nav.daily'), path: '/daily', icon: CalendarCheck },
+    { name: t('nav.friends'), path: '/friends', icon: Users },
     { name: t('nav.leaderboard'), path: '/leaderboard', icon: Trophy },
     { name: t('nav.profile'), path: '/profile', icon: UserIcon },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/80 backdrop-blur-lg md:hidden dark:border-slate-700 dark:bg-slate-900/80">
-      <div className="mx-auto grid h-16 max-w-lg grid-cols-5">
+      <div className="mx-auto grid h-16 max-w-lg grid-cols-6">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =

@@ -20,6 +20,14 @@ export interface HistoryPoint {
   xp: number;
 }
 
+export interface TopGame {
+  slug: string;
+  name: string;
+  best_score: number;
+  play_count: number;
+  category: string;
+}
+
 export interface Stats {
   total_games: number;
   total_xp: number;
@@ -28,6 +36,7 @@ export interface Stats {
   level: number;
   streak: number;
   history: HistoryPoint[];
+  top_games: TopGame[];
 }
 
 export interface UserStats {

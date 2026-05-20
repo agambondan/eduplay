@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Globe, Loader2, Trophy } from 'lucide-react';
+import { Globe, Loader2, Radio, Trophy } from 'lucide-react';
 import { gamesApi } from '@/lib/api/games';
 import { leaderboardApi } from '@/lib/api/leaderboard';
 import { useLocale } from '@/lib/i18n';
@@ -19,13 +19,14 @@ export default function LeaderboardPage() {
 
   const { data: games } = useQuery({ queryKey: ['games'], queryFn: gamesApi.list });
 
-  const { data: leadData, isLoading } = useQuery({
+  const { data: leadData, isLoading, dataUpdatedAt } = useQuery({
     queryKey: ['leaderboard', tab, selectedGame, period],
     queryFn: () => {
       if (tab === 'global') return leaderboardApi.getGlobalLeaderboard(period);
       return leaderboardApi.getGameLeaderboard(selectedGame, period);
     },
     enabled: tab === 'global' || !!selectedGame,
+    refetchInterval: 30_000,
   });
 
   return (
@@ -35,7 +36,15 @@ export default function LeaderboardPage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             {t('leaderboard.title')}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400">{t('leaderboard.global')}</p>
+          <p className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-slate-400">
+            <Radio className="h-3.5 w-3.5 animate-pulse text-emerald-500" />
+            <span className="text-emerald-600 dark:text-emerald-400">Live</span>
+            {dataUpdatedAt > 0 && (
+              <span className="text-xs text-gray-400">
+                · diperbarui {new Date(dataUpdatedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            )}
+          </p>
         </div>
 
         <div className="flex w-fit rounded-xl bg-gray-100 p-1 dark:bg-slate-800">

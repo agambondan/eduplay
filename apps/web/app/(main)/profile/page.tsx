@@ -317,6 +317,45 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {stats?.top_games && stats.top_games.length > 0 && (
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+                  <Gamepad2 className="h-5 w-5 text-indigo-500" /> Top Games
+              </h2>
+              <div className="space-y-3">
+                  {stats.top_games.map((game, i) => (
+                      <Link
+                          key={game.slug}
+                          href={`/games/${game.slug}`}
+                          className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 transition-colors hover:border-indigo-200 hover:bg-indigo-50 dark:border-slate-700 dark:bg-slate-900/50 dark:hover:border-indigo-800 dark:hover:bg-indigo-900/10"
+                      >
+                          <div className="flex items-center gap-3">
+                              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-black text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+                                  #{i + 1}
+                              </span>
+                              <div>
+                                  <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                      {game.name}
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                                      {game.play_count}x played
+                                  </p>
+                              </div>
+                          </div>
+                          <div className="text-right">
+                              <p className="text-sm font-black text-indigo-600 dark:text-indigo-400">
+                                  {game.best_score.toLocaleString()}
+                              </p>
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                  Best Score
+                              </p>
+                          </div>
+                      </Link>
+                  ))}
+              </div>
+          </div>
+      )}
+
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <Trophy className="h-5 w-5" /> {t('achievement.title')}
