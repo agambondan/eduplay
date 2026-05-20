@@ -1,14 +1,23 @@
 .PHONY: up down build rebuild deploy logs ps clean load-test load-test-local format format-api format-web dev dev-api dev-web
 
+dev:
+	@bash dev.sh
+
 dev-api:
-	cd services/api && go run ./cmd/main.go
+	@for port in 8080; do \
+		pid=$$(lsof -ti tcp:$$port 2>/dev/null) && kill $$pid 2>/dev/null && sleep 0.5 || true; \
+	done
+	@if command -v air >/dev/null 2>&1; then \
+		cd services/api && air; \
+	else \
+		cd services/api && go run ./cmd/main.go; \
+	fi
 
 dev-web:
+	@for port in 3000; do \
+		pid=$$(lsof -ti tcp:$$port 2>/dev/null) && kill $$pid 2>/dev/null && sleep 0.5 || true; \
+	done
 	cd apps/web && npm run dev
-
-dev:
-	@echo "Starting API on :8080 and Web on :3000..."
-	$(MAKE) dev-api & $(MAKE) dev-web
 
 up:
 	docker compose up -d
