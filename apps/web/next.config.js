@@ -10,10 +10,8 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   transpilePackages: ['framer-motion'],
-  experimental: {
-    turbo: {
-      root: __dirname,
-    },
+  turbopack: {
+    root: __dirname,
   },
 };
 

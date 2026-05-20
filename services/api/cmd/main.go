@@ -126,7 +126,7 @@ func main() {
 	aiSvc := service.NewAIService(cfg)
 	pushSvc := service.NewPushService(cfg)
 	supportSvc := service.NewSupportService(emailCl)
-	subSvc := service.NewSubscriptionService()
+	subSvc := service.NewSubscriptionService(cfg)
 	friendSvc := service.NewFriendService()
 
 	// Controllers
@@ -203,6 +203,8 @@ func main() {
 	apiV1.Get("/push/vapid-public-key", pushHandler.VapidPublicKey)
 
 	apiV1.Post("/support", supportHandler.CreateTicket)
+
+	apiV1.Post("/subscribe/webhook", subHandler.MidtransWebhook)
 
 	subGroup := apiV1.Group("/subscribe", middleware.AuthMiddleware(cfg))
 	subGroup.Post("/", subHandler.Subscribe)

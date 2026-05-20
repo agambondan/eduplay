@@ -45,6 +45,11 @@ type Config struct {
 		PublicKey  string
 		PrivateKey string
 	}
+	Midtrans struct {
+		ServerKey string
+		ClientKey string
+		IsProduction bool
+	}
 	FrontendURL string
 }
 
@@ -73,6 +78,9 @@ func Load() (*Config, error) {
 	cfg.Google.ClientID = os.Getenv("GOOGLE_CLIENT_ID")
 	cfg.VAPID.PublicKey = os.Getenv("VAPID_PUBLIC_KEY")
 	cfg.VAPID.PrivateKey = os.Getenv("VAPID_PRIVATE_KEY")
+	cfg.Midtrans.ServerKey = os.Getenv("MIDTRANS_SERVER_KEY")
+	cfg.Midtrans.ClientKey = os.Getenv("MIDTRANS_CLIENT_KEY")
+	cfg.Midtrans.IsProduction = os.Getenv("MIDTRANS_IS_PRODUCTION") == "true"
 	cfg.AvatarUploadPath = os.Getenv("AVATAR_UPLOAD_PATH")
 	if cfg.AvatarUploadPath == "" {
 		cfg.AvatarUploadPath = "./uploads/avatars"

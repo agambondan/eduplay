@@ -36,7 +36,7 @@ func (h *SubscriptionController) Status(c *fiber.Ctx) error {
 
 	sub, err := h.svc.GetUserSubscription(userID)
 	if err != nil {
-		return response.Error(c, fiber.StatusNotFound, "No active subscription")
+		return response.Error(c, fiber.StatusNotFound, err.Error())
 	}
 
 	return response.Success(c, sub)
@@ -53,4 +53,17 @@ func (h *SubscriptionController) Cancel(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, fiber.Map{"message": "Subscription cancelled"})
+}
+
+func (h *SubscriptionController) MidtransWebhook(c *fiber.Ctx) error {
+	var payload map[string]interface{}
+	if err := c.BodyParser(&payload); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "Invalid payload")
+	}
+
+	if err := h.svc.HandleMidtransWebhook(payload); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	return response.Success(c, fiber.Map{"message": "OK"})
 }

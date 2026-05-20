@@ -34,6 +34,8 @@ export default function ProfilePage() {
     status: string;
     started_at: string;
     expires_at: string;
+    redirect_url?: string;
+    token?: string;
   } | null>(null);
   const [subLoading, setSubLoading] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
@@ -73,7 +75,13 @@ export default function ProfilePage() {
     setSubscribing(true);
     try {
       const res = await api.post('/subscribe/');
-      setSubscription(res.data.data);
+      const data = res.data.data;
+      if (data.redirect_url) {
+        window.open(data.redirect_url, '_blank');
+        setSubscribing(false);
+        return;
+      }
+      setSubscription(data);
     } catch {
       // ignore
     } finally {
@@ -378,6 +386,8 @@ export default function ProfilePage() {
                 <div className="text-sm text-gray-500 dark:text-slate-400">
                   {subscription.status === 'active' ? (
                     <span className="font-bold text-emerald-600">Aktif</span>
+                  ) : subscription.status === 'pending' ? (
+                    <span className="font-bold text-amber-600">Menunggu Pembayaran</span>
                   ) : (
                     <span className="text-gray-400">{subscription.status}</span>
                   )}
@@ -390,6 +400,16 @@ export default function ProfilePage() {
               {subscription.expires_at &&
                 `, berakhir ${new Date(subscription.expires_at).toLocaleDateString('id-ID')}`}
             </p>
+            {subscription.status === 'pending' && subscription.redirect_url && (
+              <a
+                href={subscription.redirect_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700"
+              >
+                Lanjutkan Pembayaran
+              </a>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -406,8 +426,11 @@ export default function ProfilePage() {
               ) : (
                 <Crown className="h-5 w-5" />
               )}
-              {subscribing ? 'Memproses...' : t('profile.subscribe_trial')}
+              {subscribing ? 'Memproses...' : 'Aktifkan Premium — Rp50.000/bln'}
             </button>
+            <p className="text-center text-[10px] text-gray-400">
+              Premium bebas iklan. Batalkan kapan saja.
+            </p>
           </div>
         )}
       </div>
