@@ -80,7 +80,9 @@ func main() {
 	app.Use(recover.New())
 	app.Use(middleware.RequestLogger())
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     cfg.FrontendURL,
+		AllowOriginsFunc: func(origin string) bool {
+			return true
+		},
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true,
 	}))
