@@ -28,3 +28,4 @@ apps/web/yarn-error.log*
 .DS_Store
 Thumbs.db
 *.log
+.dev.pids
