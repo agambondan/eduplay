@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -211,6 +212,8 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 	u.LastActive = &now
 	database.DB.Save(&u)
 
+	s.recordGhost(g.ID, uid, req.Score, req.Duration, req.Difficulty)
+
 	return &SubmitScoreResponse{
 		SessionID:    session.ID,
 		XPEarned:     xp,
@@ -218,4 +221,46 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 		LevelUp:      levelUp,
 		NewLevel:     u.Level,
 	}, nil
+}
+
+func (s *gameService) recordGhost(gameID uuid.UUID, userID uuid.UUID, score, duration int, difficulty string) {
+	if score < 10 || duration < 5 {
+		return
+	}
+	totalQ := score / 10
+	if totalQ < 1 {
+		totalQ = 1
+	}
+	correct := totalQ
+	wrong := 0
+	if score%10 != 0 {
+		correct = totalQ - 1
+		wrong = 1
+	}
+	avgTimePerQ := time.Duration(duration/totalQ) * time.Second
+	events := make([]model.GhostEvent, totalQ)
+	for i := 0; i < totalQ; i++ {
+		isCorrect := i < correct
+		events[i] = model.GhostEvent{
+			Timestamp:  time.Duration(i) * avgTimePerQ,
+			EventType:  "answer",
+			QuestionID: fmt.Sprintf("q%d", i+1),
+			IsCorrect:  isCorrect,
+			TimeTaken:  avgTimePerQ,
+		}
+	}
+	eventsJSON, _ := json.Marshal(events)
+	ghost := &model.GhostReplay{
+		UserID:         userID,
+		GameID:         gameID,
+		Difficulty:     difficulty,
+		Score:          score,
+		TotalQuestions: totalQ,
+		CorrectAnswers: correct,
+		WrongAnswers:   wrong,
+		Duration:       duration,
+		EventsJSON:     eventsJSON,
+		IsActive:       true,
+	}
+	database.DB.Create(ghost)
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/internal/repository"
 	"github.com/agambondan/eduplay/services/api/internal/seeder"
 	"github.com/agambondan/eduplay/services/api/internal/service"
+	"github.com/agambondan/eduplay/services/api/internal/ws"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/agambondan/eduplay/services/api/pkg/email"
 	"github.com/agambondan/eduplay/services/api/pkg/logger"
@@ -82,6 +83,11 @@ func main() {
 		&model.ChemicalElement{},
 		&model.HistoryEvent{},
 		&model.WordleWord{},
+		&model.MultiplayerMatch{},
+		&model.MatchParticipant{},
+		&model.GhostReplay{},
+		&model.AsyncChallenge{},
+		&model.WordChainGame{},
 	)
 
 	seedData()
@@ -128,6 +134,8 @@ func main() {
 	supportSvc := service.NewSupportService(emailCl)
 	subSvc := service.NewSubscriptionService(cfg)
 	friendSvc := service.NewFriendService()
+	challengeSvc := service.NewChallengeService(aiSvc, pushSvc)
+	wordChainSvc := service.NewWordChainService(cfg, aiSvc)
 
 	// Controllers
 	authHandler := controller.NewAuthController(authSvc)
@@ -144,6 +152,15 @@ func main() {
 	subHandler := controller.NewSubscriptionController(subSvc)
 	friendHandler := controller.NewFriendController(friendSvc)
 	contentHandler := controller.NewContentController()
+	challengeHandler := controller.NewChallengeController(challengeSvc)
+	wordChainHandler := controller.NewWordChainController(wordChainSvc)
+
+	// WebSocket
+	roomMgr := ws.NewRoomManager()
+	hub := ws.NewHub(cfg, roomMgr)
+	go hub.Run()
+	mmSvc := ws.NewMatchmakingService(hub)
+	wsHandler := controller.NewWSController(hub, mmSvc)
 
 	// Routes
 	authGroup := apiV1.Group("/auth")
@@ -227,9 +244,29 @@ func main() {
 	contentGroup.Get("/history", contentHandler.GetHistoryEvents)
 	contentGroup.Get("/words/wordle", contentHandler.GetWordleWords)
 
+	challengeGroup := apiV1.Group("/challenges", middleware.AuthMiddleware(cfg))
+	challengeGroup.Post("/", challengeHandler.Create)
+	challengeGroup.Get("/", challengeHandler.List)
+	challengeGroup.Get("/:id", challengeHandler.Get)
+	challengeGroup.Post("/:id/submit", challengeHandler.Submit)
+
+	wordChainGroup := apiV1.Group("/wordchain", middleware.AuthMiddleware(cfg))
+	wordChainGroup.Get("/", wordChainHandler.List)
+	wordChainGroup.Post("/", wordChainHandler.Create)
+	wordChainGroup.Get("/:id", wordChainHandler.Get)
+	wordChainGroup.Post("/:id/word", wordChainHandler.SubmitWord)
+
+	apiV1.Get("/ws/game/:room_id", wsHandler.WSHandler())
+
+	multiplayerGroup := apiV1.Group("/multiplayer", middleware.AuthMiddleware(cfg))
+	multiplayerGroup.Post("/quickmatch", wsHandler.QuickMatch)
+	multiplayerGroup.Post("/quickmatch/bot", wsHandler.QuickMatchBot)
+	multiplayerGroup.Delete("/quickmatch", wsHandler.CancelQuickMatch)
+
 	// Start schedulers
 	service.StartDailyScheduler(gameRepo, aiSvc)
 	service.StartPushScheduler(cfg)
+	service.StartChallengeExpiryCleanup()
 
 	logger.Log.Info("Server starting", zap.String("port", cfg.App.Port))
 	if err := app.Listen(":" + cfg.App.Port); err != nil {
@@ -265,6 +302,9 @@ func seedGames() {
 		{Slug: "typing-speed", Name: "Typing Speed", Description: "Ketik kata Indonesia secepat mungkin dalam 60 detik.", Category: "language", IsActive: true},
 		{Slug: "simon-says", Name: "Simon Says", Description: "Ingat dan ulangi urutan warna yang menyala.", Category: "logic", IsActive: true},
 		{Slug: "snake", Name: "Snake Classic", Description: "Makan bola, panjangkan ular, jangan tabrak dirimu sendiri!", Category: "arcade", IsActive: true},
+		{Slug: "trivia-challenge", Name: "Trivia Challenge", Description: "Tantang teman dengan set soal yang sama, bandingkan skor!", Category: "multiplayer", IsActive: true},
+		{Slug: "word-chain", Name: "Word Chain", Description: "Sambung kata Bahasa Indonesia — tantang teman atau bot!", Category: "multiplayer", IsActive: true},
+		{Slug: "math-battle", Name: "Math Battle", Description: "Head-to-head real-time math battle melawan pemain lain atau bot!", Category: "multiplayer", IsActive: true},
 	}
 	for _, g := range games {
 		var count int64
