@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import WordSearch from '@/components/games/dynamic/WordSearchDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function WordSearchPage() {
         description="Asah ketelitianmu dengan mencari kata-kata tersembunyi!"
         gameSlug="word-search"
       />
-      <div className="container max-w-4xl py-8">
+      <GameContainer maxWidth="max-w-4xl">>
         <WordSearch />
-      </div>
+      </GameContainer>
     </>
   );
 }

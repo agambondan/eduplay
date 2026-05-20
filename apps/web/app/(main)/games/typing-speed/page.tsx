@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import TypingSpeed from '@/components/games/dynamic/TypingSpeedDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
     return {
@@ -27,7 +28,7 @@ export default function TypingSpeedPage() {
                 description='Uji kecepatan mengetikmu! Ketik kata-kata Bahasa Indonesia secepat mungkin dalam 60 detik.'
                 gameSlug='typing-speed'
             />
-            <div className='container max-w-2xl py-8'>
+            <GameContainer>
                 <div className='mb-6 text-center'>
                     <h1 className='text-2xl font-bold'>Typing Speed</h1>
                     <p className='mt-1 text-gray-500 dark:text-slate-400'>
@@ -35,7 +36,7 @@ export default function TypingSpeedPage() {
                     </p>
                 </div>
                 <TypingSpeed />
-            </div>
+            </GameContainer>
         </>
     );
 }

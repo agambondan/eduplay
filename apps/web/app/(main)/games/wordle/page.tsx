@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Wordle from '@/components/games/dynamic/WordleDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,10 +28,10 @@ export default function WordlePage() {
         description="Tebak kata 5 huruf Bahasa Indonesia dalam 6 percobaan!"
         gameSlug="wordle"
       />
-      <div className="container max-w-2xl py-8 text-center">
+      <GameContainer className="text-center">>
         <h1 className="mb-4 text-2xl font-bold">Wordle Indonesia</h1>
         <Wordle />
-      </div>
+      </GameContainer>
     </>
   );
 }

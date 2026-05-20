@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Nonogram from '@/components/games/dynamic/NonogramDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function NonogramPage() {
         description="Asah logika dengan mengungkapkan gambar tersembunyi lewat Nonogram!"
         gameSlug="nonogram"
       />
-      <div className="container max-w-2xl py-8">
+      <GameContainer>
         <Nonogram />
-      </div>
+      </GameContainer>
     </>
   );
 }

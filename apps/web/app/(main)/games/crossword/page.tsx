@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Crossword from '@/components/games/dynamic/CrosswordDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function CrosswordPage() {
         description="Uji wawasan kosakata dengan Teka-Teki Silang!"
         gameSlug="crossword"
       />
-      <div className="container max-w-4xl py-8">
+      <GameContainer maxWidth="max-w-4xl">>
         <Crossword />
-      </div>
+      </GameContainer>
     </>
   );
 }

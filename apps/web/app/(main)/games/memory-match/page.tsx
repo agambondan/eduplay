@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import MemoryMatch from '@/components/games/dynamic/MemoryMatchDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
     return {
@@ -27,7 +28,7 @@ export default function MemoryMatchPage() {
                 description='Cocokkan pasangan kartu dalam waktu tercepat. Latih daya ingat dan konsentrasimu!'
                 gameSlug='memory-match'
             />
-            <div className='container max-w-2xl py-8'>
+            <GameContainer>
                 <div className='mb-6 text-center'>
                     <h1 className='text-2xl font-bold'>Memory Match</h1>
                     <p className='mt-1 text-gray-500 dark:text-slate-400'>
@@ -35,7 +36,7 @@ export default function MemoryMatchPage() {
                     </p>
                 </div>
                 <MemoryMatch />
-            </div>
+            </GameContainer>
         </>
     );
 }

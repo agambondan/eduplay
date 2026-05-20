@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import MathQuiz from '@/components/games/dynamic/MathQuizDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function MathQuizPage() {
         description="Uji kecepatan berhitungmu dalam 60 detik!"
         gameSlug="math-quiz"
       />
-      <div className="container max-w-2xl py-8">
+      <GameContainer>
         <MathQuiz />
-      </div>
+      </GameContainer>
     </>
   );
 }

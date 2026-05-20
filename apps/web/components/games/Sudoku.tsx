@@ -253,7 +253,7 @@ export default function Sudoku() {
   const selBox = selected ? [Math.floor(selRow / 3), Math.floor(selCol / 3)] : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-4 py-4">
+    <div className={cn('mx-auto flex w-full flex-col items-center gap-4 py-4', isPlaying ? 'max-w-xl' : 'max-w-sm')}>
       {/* Status bar */}
       <div className="flex w-full items-center justify-between gap-2">
         <Timer

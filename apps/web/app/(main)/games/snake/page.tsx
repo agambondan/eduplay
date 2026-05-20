@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import SnakeGame from '@/components/games/dynamic/SnakeGameDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
     return {
@@ -27,7 +28,7 @@ export default function SnakePage() {
                 description='Game snake klasik — makan bola, panjangkan ular, jangan sampai menabrak dirimu sendiri!'
                 gameSlug='snake'
             />
-            <div className='container max-w-2xl py-8'>
+            <GameContainer>
                 <div className='mb-6 text-center'>
                     <h1 className='text-2xl font-bold'>Snake Classic</h1>
                     <p className='mt-1 text-gray-500 dark:text-slate-400'>
@@ -37,7 +38,7 @@ export default function SnakePage() {
                 <div className='flex justify-center'>
                     <SnakeGame />
                 </div>
-            </div>
+            </GameContainer>
         </>
     );
 }

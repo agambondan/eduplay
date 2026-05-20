@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import BubbleShooter from '@/components/games/dynamic/BubbleShooterDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function BubbleShooterPage() {
         description="Tembak bubble dan jumlahkan angka dengan tepat!"
         gameSlug="bubble-shooter"
       />
-      <div className="container max-w-4xl py-8">
+      <GameContainer maxWidth="max-w-4xl">>
         <BubbleShooter />
-      </div>
+      </GameContainer>
     </>
   );
 }

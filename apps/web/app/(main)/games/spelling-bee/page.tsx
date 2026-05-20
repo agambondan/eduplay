@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import SpellingBee from '@/components/games/dynamic/SpellingBeeDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function SpellingBeePage() {
         description="Susun huruf acak menjadi kata yang benar!"
         gameSlug="spelling-bee"
       />
-      <div className="container max-w-2xl py-8">
+      <GameContainer>
         <SpellingBee />
-      </div>
+      </GameContainer>
     </>
   );
 }

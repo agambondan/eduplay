@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import TimesTable from '@/components/games/dynamic/TimesTableDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function TimesTablePage() {
         description="Latih perkalian 1-12 dengan cara seru!"
         gameSlug="times-table"
       />
-      <div className="container max-w-2xl py-8">
+      <GameContainer>
         <TimesTable />
-      </div>
+      </GameContainer>
     </>
   );
 }

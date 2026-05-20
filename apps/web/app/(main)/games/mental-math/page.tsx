@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import MentalMath from '@/components/games/dynamic/MentalMathDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function MentalMathPage() {
         description="Uji kecepatan berhitungmu dengan mengetik jawaban secepat mungkin!"
         gameSlug="mental-math"
       />
-      <div className="container max-w-2xl py-8">
+      <GameContainer>
         <MentalMath />
-      </div>
+      </GameContainer>
     </>
   );
 }

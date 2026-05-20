@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import BrickBreaker from '@/components/games/dynamic/BrickBreakerDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function BrickBreakerPage() {
         description="Hancurkan block dan jawab soal matematika dadakan untuk bonus skor!"
         gameSlug="brick-breaker"
       />
-      <div className="container max-w-4xl py-8">
+      <GameContainer maxWidth="max-w-4xl">>
         <BrickBreaker />
-      </div>
+      </GameContainer>
     </>
   );
 }

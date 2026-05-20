@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import FlagQuiz from '@/components/games/dynamic/FlagQuizDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function FlagQuizPage() {
         description="Tebak nama negara dari gambar benderanya!"
         gameSlug="flag-quiz"
       />
-      <div className="container max-w-2xl py-8">
+      <GameContainer>
         <FlagQuiz />
-      </div>
+      </GameContainer>
     </>
   );
 }

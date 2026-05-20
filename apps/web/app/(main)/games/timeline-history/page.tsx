@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import TimelineHistory from '@/components/games/dynamic/TimelineHistoryDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function TimelineHistoryPage() {
         description="Tebak tahun kejadian penting di Indonesia dan Dunia!"
         gameSlug="timeline-history"
       />
-      <div className="container max-w-4xl py-8">
+      <GameContainer maxWidth="max-w-4xl">>
         <TimelineHistory />
-      </div>
+      </GameContainer>
     </>
   );
 }

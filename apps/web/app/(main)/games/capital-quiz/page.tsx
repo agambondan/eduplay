@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import CapitalQuiz from '@/components/games/dynamic/CapitalQuizDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function CapitalQuizPage() {
         description="Tebak ibukota negara-negara di dunia!"
         gameSlug="capital-quiz"
       />
-      <div className="container max-w-2xl py-8">
+      <GameContainer>
         <CapitalQuiz />
-      </div>
+      </GameContainer>
     </>
   );
 }

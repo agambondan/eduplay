@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Game2048 from '@/components/games/dynamic/Game2048Dynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function Game2048Page() {
         description="Gabungkan angka-angka hingga mencapai 2048!"
         gameSlug="2048"
       />
-      <div className="container max-w-2xl py-8">
+      <GameContainer>
         <Game2048 />
-      </div>
+      </GameContainer>
     </>
   );
 }

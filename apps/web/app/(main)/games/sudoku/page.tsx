@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Sudoku from '@/components/games/dynamic/SudokuDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,9 +28,9 @@ export default function SudokuPage() {
         description="Asah logika dengan teka-teki Sudoku!"
         gameSlug="sudoku"
       />
-      <div className="container max-w-2xl py-8">
+      <GameContainer>
         <Sudoku />
-      </div>
+      </GameContainer>
     </>
   );
 }

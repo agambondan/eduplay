@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import SimonSays from '@/components/games/dynamic/SimonSaysDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 export async function generateMetadata(): Promise<Metadata> {
     return {
@@ -27,7 +28,7 @@ export default function SimonSaysPage() {
                 description='Ingat dan ulangi urutan warna yang menyala. Sampai berapa level kamu bisa bertahan?'
                 gameSlug='simon-says'
             />
-            <div className='container max-w-lg py-8'>
+            <GameContainer maxWidth="max-w-lg">>
                 <div className='mb-6 text-center'>
                     <h1 className='text-2xl font-bold'>Simon Says</h1>
                     <p className='mt-1 text-gray-500 dark:text-slate-400'>
@@ -35,7 +36,7 @@ export default function SimonSaysPage() {
                     </p>
                 </div>
                 <SimonSays />
-            </div>
+            </GameContainer>
         </>
     );
 }
