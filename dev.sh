@@ -29,14 +29,18 @@ if ! docker compose ps postgres 2>/dev/null | grep -q "Up"; then
   docker compose up -d postgres redis
 fi
 
-echo "Starting backend (air)..."
+echo "Starting backend..."
 cd "$ROOT_DIR/services/api"
-air &
+if command -v air &>/dev/null; then
+  air &
+else
+  go run ./cmd/main.go &
+fi
 echo $! >> "$PID_FILE"
 
 echo "Starting frontend (next dev)..."
 cd "$ROOT_DIR/apps/web"
-npx next dev --webpack &
+npm run dev &
 echo $! >> "$PID_FILE"
 
 echo ""

@@ -10,6 +10,11 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   transpilePackages: ['framer-motion'],
+  experimental: {
+    turbo: {
+      root: __dirname,
+    },
+  },
 };
 
 module.exports = withPWA(nextConfig);
