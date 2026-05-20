@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import MathQuiz from '@/components/games/MathQuiz';
+import MathQuiz from '@/components/games/dynamic/MathQuizDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

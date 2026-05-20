@@ -45,6 +45,7 @@ export function ResultScreen({
     const { t } = useLocale();
     const [displayScore, setDisplayScore] = useState(0);
     const [displayXp, setDisplayXp] = useState(0);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         const duration = 800;
@@ -63,11 +64,18 @@ export function ResultScreen({
     }, [score, xpEarned]);
 
     const handleShare = () => {
-        const text = shareText || t('level.up_share', { score, game: gameName });
+        const text = shareText || `Aku dapat ${score} poin di ${gameName}! Main yuk di EduPlay 🎮`;
+        const url = typeof window !== 'undefined' ? window.location.href : '';
         if (navigator.share) {
-            navigator.share({ title: 'EduPlay', text }).catch(() => {});
+            navigator.share({ title: 'EduPlay', text, url }).catch(() => {});
         } else {
-            navigator.clipboard.writeText(text).catch(() => {});
+            navigator.clipboard
+                .writeText(`${text} ${url}`)
+                .then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                })
+                .catch(() => {});
         }
     };
 
@@ -186,9 +194,10 @@ export function ResultScreen({
                     <button
                         onClick={handleShare}
                         className='flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700'
+                        aria-live='polite'
                     >
                         <Share2 className='h-4 w-4' />
-                        {t('game.share')}
+                        {copied ? 'Disalin!' : t('game.share')}
                     </button>
                 </div>
             </motion.div>

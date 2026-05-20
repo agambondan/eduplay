@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
@@ -11,11 +11,14 @@ import { CookieBanner } from '@/components/layout/CookieBanner';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const viewport: Viewport = {
+  themeColor: '#4F46E5',
+};
+
 export const metadata: Metadata = {
   title: 'EduPlay — Educational Mini Games',
   description: 'Platform mini game edukatif untuk pelajar SD hingga SMA',
   manifest: '/manifest.json',
-  themeColor: '#4F46E5',
   icons: {
     icon: [
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },

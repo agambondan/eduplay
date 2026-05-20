@@ -25,18 +25,21 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let count = 0;
+    const tick = () => { count++; if (count === 3) setLoading(false); };
+
     api
       .get('/user/stats')
-      .then((res) => setStats(res.data.data))
-      .catch(() => {});
+      .then((res) => { setStats(res.data.data); tick(); })
+      .catch(() => tick());
     api
       .get('/user/achievements')
-      .then((res) => setAchievements(res.data.data || []))
-      .catch(() => {});
+      .then((res) => { setAchievements(res.data.data || []); tick(); })
+      .catch(() => tick());
     api
       .get('/subscribe/status')
-      .then((res) => setSubscription(res.data.data))
-      .catch(() => {});
+      .then((res) => { setSubscription(res.data.data); tick(); })
+      .catch(() => tick());
   }, []);
 
   const handleSubscribe = async () => {
@@ -190,7 +193,21 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {stats && (
+      {loading ? (
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <Skeleton className="mb-4 h-6 w-32" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl bg-gray-50 p-4 text-center dark:bg-slate-700">
+              <Skeleton className="mx-auto mb-2 h-8 w-16" />
+              <Skeleton className="mx-auto h-4 w-24" />
+            </div>
+            <div className="rounded-xl bg-gray-50 p-4 text-center dark:bg-slate-700">
+              <Skeleton className="mx-auto mb-2 h-8 w-16" />
+              <Skeleton className="mx-auto h-4 w-24" />
+            </div>
+          </div>
+        </div>
+      ) : stats ? (
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
             <Gamepad2 className="h-5 w-5" /> {t('profile.stats')}
@@ -210,7 +227,7 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Progress History Graph */}
       {stats && stats.history && stats.history.length > 0 && (
@@ -245,7 +262,20 @@ export default function ProfilePage() {
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <Trophy className="h-5 w-5" /> {t('achievement.title')}
         </h2>
-        {achievements.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {[1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50 p-3 dark:border-amber-900/20 dark:bg-amber-900/10">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="min-w-0 flex-1">
+                  <Skeleton className="mb-1 h-4 w-28" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-5 w-14 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : achievements.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-slate-400">
             {t('achievement.empty')}
           </p>
@@ -280,7 +310,12 @@ export default function ProfilePage() {
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <ShieldCheck className="h-5 w-5" /> {t('profile.subscription')}
         </h2>
-        {subscription ? (
+        {loading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        ) : subscription ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3 rounded-xl bg-indigo-50 p-4 dark:bg-indigo-900/10">
               <Crown className="h-8 w-8 text-indigo-600" />

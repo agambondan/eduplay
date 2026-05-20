@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import Wordle from '@/components/games/Wordle';
+import Wordle from '@/components/games/dynamic/WordleDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

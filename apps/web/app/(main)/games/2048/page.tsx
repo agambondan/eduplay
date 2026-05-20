@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import Game2048 from '@/components/games/Game2048';
+import Game2048 from '@/components/games/dynamic/Game2048Dynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

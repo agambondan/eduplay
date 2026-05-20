@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import Crossword from '@/components/games/Crossword';
+import Crossword from '@/components/games/dynamic/CrosswordDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import BubbleShooter from '@/components/games/BubbleShooter';
+import BubbleShooter from '@/components/games/dynamic/BubbleShooterDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

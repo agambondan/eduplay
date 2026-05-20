@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import Nonogram from '@/components/games/Nonogram';
+import Nonogram from '@/components/games/dynamic/NonogramDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

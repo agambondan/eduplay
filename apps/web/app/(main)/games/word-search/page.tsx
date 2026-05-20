@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import WordSearch from '@/components/games/WordSearch';
+import WordSearch from '@/components/games/dynamic/WordSearchDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

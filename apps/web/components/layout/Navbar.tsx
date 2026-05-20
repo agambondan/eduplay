@@ -31,13 +31,13 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="hidden border-b border-gray-200 bg-white md:block">
+    <nav className="hidden border-b border-gray-200 bg-white/90 backdrop-blur-md md:block dark:border-slate-800 dark:bg-slate-900/90">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex">
             <Link
               href="/"
-              className="flex flex-shrink-0 items-center text-xl font-bold text-indigo-600"
+              className="flex flex-shrink-0 items-center text-xl font-bold text-indigo-600 dark:text-indigo-400"
             >
               EduPlay
             </Link>
@@ -46,10 +46,10 @@ export default function Navbar() {
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium ${
-                    pathname === item.path
-                      ? 'border-indigo-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium transition-colors ${
+                    pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))
+                      ? 'border-indigo-500 text-gray-900 dark:text-white'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
                   {item.name}

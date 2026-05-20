@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import SpellingBee from '@/components/games/SpellingBee';
+import SpellingBee from '@/components/games/dynamic/SpellingBeeDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

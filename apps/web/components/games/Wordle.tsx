@@ -6,7 +6,7 @@ import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { cn } from '@/lib/utils/cn';
-import { Pause } from 'lucide-react';
+import { Pause, Share2 } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
 
 const WORD_LIST = [
@@ -100,6 +100,7 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
   const [won, setWon] = useState(false);
   const [usedLetters, setUsedLetters] = useState<Record<string, LetterStatus>>({});
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
+  const [gridCopied, setGridCopied] = useState(false);
 
   const handleStart = () => {
     setTargetWord(getRandomWord());
@@ -212,6 +213,34 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
     return () => window.removeEventListener('keydown', handler);
   }, [handleKey]);
 
+  const buildEmojiGrid = (): string => {
+    const emojiMap: Record<LetterStatus, string> = {
+      correct: '🟩',
+      present: '🟨',
+      absent: '⬜',
+      empty: '⬜',
+    };
+    const rows = guesses.map((row) => row.map((cell) => emojiMap[cell.status]).join(''));
+    const result = won ? `Berhasil dalam ${guesses.length}/6` : 'Gagal 😢';
+    return `Wordle Indonesia — ${result}\n\n${rows.join('\n')}\n\nMain di EduPlay 🎮`;
+  };
+
+  const handleShareGrid = () => {
+    const text = buildEmojiGrid();
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    if (navigator.share) {
+      navigator.share({ title: 'EduPlay — Wordle Indonesia', text, url }).catch(() => {});
+    } else {
+      navigator.clipboard
+        .writeText(`${text}\n${url}`)
+        .then(() => {
+          setGridCopied(true);
+          setTimeout(() => setGridCopied(false), 2000);
+        })
+        .catch(() => {});
+    }
+  };
+
   const statusColor: Record<LetterStatus, string> = {
     correct: 'bg-emerald-500 text-white border-emerald-500',
     present: 'bg-amber-500 text-white border-amber-500',
@@ -302,6 +331,14 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
             onReplay={handleStart}
             description={won ? t('game.congrats_word') : `${t('game.over')} ${t('game.reveal_target').replace('{word}', targetWord)}`}
           />
+          <button
+            onClick={handleShareGrid}
+            aria-live="polite"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 py-3 font-bold text-emerald-700 transition-colors hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+          >
+            <Share2 className="h-4 w-4" />
+            {gridCopied ? 'Disalin!' : 'Bagikan Grid'}
+          </button>
         </div>
       )}
 

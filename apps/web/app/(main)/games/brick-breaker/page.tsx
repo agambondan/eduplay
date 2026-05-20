@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import BrickBreaker from '@/components/games/BrickBreaker';
+import BrickBreaker from '@/components/games/dynamic/BrickBreakerDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

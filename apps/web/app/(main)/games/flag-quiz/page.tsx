@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import FlagQuiz from '@/components/games/FlagQuiz';
+import FlagQuiz from '@/components/games/dynamic/FlagQuizDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

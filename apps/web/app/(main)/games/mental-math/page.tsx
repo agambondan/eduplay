@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import MentalMath from '@/components/games/MentalMath';
+import MentalMath from '@/components/games/dynamic/MentalMathDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

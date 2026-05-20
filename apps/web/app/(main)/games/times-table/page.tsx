@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import TimesTable from '@/components/games/TimesTable';
+import TimesTable from '@/components/games/dynamic/TimesTableDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

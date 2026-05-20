@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import TimelineHistory from '@/components/games/TimelineHistory';
+import TimelineHistory from '@/components/games/dynamic/TimelineHistoryDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {

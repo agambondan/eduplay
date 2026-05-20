@@ -1,4 +1,4 @@
-.PHONY: up down build rebuild logs ps clean load-test load-test-local
+.PHONY: up down build rebuild deploy logs ps clean load-test load-test-local
 
 up:
 	docker compose up -d
@@ -13,6 +13,9 @@ rebuild:
 	docker compose down --remove-orphans
 	docker compose build --no-cache
 	docker compose up -d
+
+deploy:
+	docker-compose -f docker-compose.prod.yml up -d --build
 
 rebuild-api:
 	docker compose build --no-cache api

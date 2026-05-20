@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import Sudoku from '@/components/games/Sudoku';
+import Sudoku from '@/components/games/dynamic/SudokuDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {
