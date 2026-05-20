@@ -10,6 +10,8 @@ import {
   ToggleLeft,
   Trophy,
   Megaphone,
+  Inbox,
+  BarChart3,
   ChevronLeft,
   Menu,
   X,
@@ -19,10 +21,13 @@ import { useAuthStore } from '@/lib/stores/authStore';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/games', label: 'Games', icon: Gamepad2 },
   { href: '/admin/features', label: 'Feature Flags', icon: ToggleLeft },
   { href: '/admin/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/admin/tournaments', label: 'Turnamen', icon: Trophy },
+  { href: '/admin/support', label: 'Support', icon: Inbox },
   { href: '/admin/ads', label: 'Iklan', icon: Megaphone },
 ];
 

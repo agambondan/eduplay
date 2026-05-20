@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -203,6 +204,23 @@ func (s *AdminService) ListReportedUsernames() ([]ReportedUsername, error) {
 	return reported, nil
 }
 
+func (s *AdminService) GetOnetConfig() (map[string]interface{}, error) {
+	ctx := context.Background()
+	val, err := database.RDB.Get(ctx, "game:onet:config").Result()
+	if err != nil {
+		return make(map[string]interface{}), nil
+	}
+	var cfg map[string]interface{}
+	json.Unmarshal([]byte(val), &cfg)
+	return cfg, nil
+}
+
+func (s *AdminService) SetOnetConfig(cfg map[string]interface{}) error {
+	ctx := context.Background()
+	data, _ := json.Marshal(cfg)
+	return database.RDB.Set(ctx, "game:onet:config", data, 0).Err()
+}
+
 func (s *AdminService) ListFeatureFlags() (map[string]string, error) {
 	ctx := context.Background()
 	flags := make(map[string]string)
@@ -216,4 +234,125 @@ func (s *AdminService) ListFeatureFlags() (map[string]string, error) {
 		flags[key[8:]] = val
 	}
 	return flags, iter.Err()
+}
+
+// ----- Support tickets -----
+
+type SupportTicketItem struct {
+	ID        uuid.UUID  `json:"id"`
+	Name      string     `json:"name"`
+	Email     string     `json:"email"`
+	Category  string     `json:"category"`
+	Message   string     `json:"message"`
+	Status    string     `json:"status"`
+	UserID    *uuid.UUID `json:"user_id"`
+	CreatedAt time.Time  `json:"created_at"`
+}
+
+func (s *AdminService) ListSupportTickets(status string) ([]SupportTicketItem, error) {
+	var tickets []model.SupportTicket
+	q := database.DB.Order("created_at DESC")
+	if status != "" {
+		q = q.Where("status = ?", status)
+	}
+	if err := q.Find(&tickets).Error; err != nil {
+		return nil, err
+	}
+	items := make([]SupportTicketItem, len(tickets))
+	for i, t := range tickets {
+		items[i] = SupportTicketItem{
+			ID: t.ID, Name: t.Name, Email: t.Email,
+			Category: t.Category, Message: t.Message,
+			Status: t.Status, UserID: t.UserID, CreatedAt: t.CreatedAt,
+		}
+	}
+	return items, nil
+}
+
+func (s *AdminService) UpdateTicketStatus(id, status string) error {
+	return database.DB.Model(&model.SupportTicket{}).
+		Where("id = ?", id).Update("status", status).Error
+}
+
+// ----- Analytics -----
+
+type AnalyticsStats struct {
+	NewUsersLast30d     []DailyCount        `json:"new_users_last_30d"`
+	SessionsLast30d     []DailyCount        `json:"sessions_last_30d"`
+	CategoryBreakdown   []CategoryPlayCount `json:"category_breakdown"`
+	TotalSubscriptions  int64               `json:"total_subscriptions"`
+	ActiveSubscriptions int64               `json:"active_subscriptions"`
+}
+
+type CategoryPlayCount struct {
+	Category string `json:"category"`
+	Count    int64  `json:"count"`
+}
+
+func (s *AdminService) GetAnalytics() (*AnalyticsStats, error) {
+	var stats AnalyticsStats
+
+	database.DB.Raw(`
+		SELECT TO_CHAR(created_at, 'YYYY-MM-DD') as date, COUNT(*) as count
+		FROM users WHERE created_at > NOW() - INTERVAL '30 days'
+		GROUP BY date ORDER BY date ASC
+	`).Scan(&stats.NewUsersLast30d)
+
+	database.DB.Raw(`
+		SELECT TO_CHAR(created_at, 'YYYY-MM-DD') as date, COUNT(*) as count
+		FROM game_sessions WHERE created_at > NOW() - INTERVAL '30 days'
+		GROUP BY date ORDER BY date ASC
+	`).Scan(&stats.SessionsLast30d)
+
+	database.DB.Raw(`
+		SELECT g.category, COUNT(gs.id) as count
+		FROM game_sessions gs JOIN games g ON g.id = gs.game_id
+		GROUP BY g.category ORDER BY count DESC
+	`).Scan(&stats.CategoryBreakdown)
+
+	database.DB.Model(&model.Subscription{}).Count(&stats.TotalSubscriptions)
+	database.DB.Model(&model.Subscription{}).
+		Where("status = 'active'").Count(&stats.ActiveSubscriptions)
+
+	return &stats, nil
+}
+
+// ----- Tournaments (admin) -----
+
+type TournamentListItem struct {
+	ID          uuid.UUID  `json:"id"`
+	Name        string     `json:"name"`
+	GameSlug    string     `json:"game_slug"`
+	Status      string     `json:"status"`
+	MaxPlayers  int        `json:"max_players"`
+	PlayerCount int64      `json:"player_count"`
+	StartedAt   *time.Time `json:"started_at"`
+	FinishedAt  *time.Time `json:"finished_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
+func (s *AdminService) ListTournaments() ([]TournamentListItem, error) {
+	var tournaments []model.Tournament
+	if err := database.DB.Order("created_at DESC").Limit(100).Find(&tournaments).Error; err != nil {
+		return nil, err
+	}
+	items := make([]TournamentListItem, len(tournaments))
+	for i, t := range tournaments {
+		var count int64
+		database.DB.Model(&model.TournamentPlayer{}).
+			Where("tournament_id = ? AND status = 'active'", t.ID).Count(&count)
+		items[i] = TournamentListItem{
+			ID: t.ID, Name: t.Name, GameSlug: t.GameSlug,
+			Status: t.Status, MaxPlayers: t.MaxPlayers,
+			PlayerCount: count,
+			StartedAt:   t.StartedAt, FinishedAt: t.FinishedAt,
+			CreatedAt:   t.CreatedAt,
+		}
+	}
+	return items, nil
+}
+
+func (s *AdminService) CancelTournament(id string) error {
+	return database.DB.Model(&model.Tournament{}).
+		Where("id = ?", id).Update("status", "cancelled").Error
 }

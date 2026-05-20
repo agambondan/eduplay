@@ -93,6 +93,7 @@ func main() {
 		&model.Tournament{},
 		&model.TournamentPlayer{},
 		&model.TournamentMatch{},
+		&model.BattleshipMatch{},
 		&model.Ad{},
 	)
 
@@ -147,6 +148,7 @@ func main() {
 	mpLeadSvc := service.NewMultiplayerLeaderboardService()
 	rematchSvc := service.NewRematchService(roomSvc)
 	tournamentSvc := service.NewTournamentService()
+	battleshipSvc := service.NewBattleshipService()
 
 	// Controllers
 	authHandler := controller.NewAuthController(authSvc)
@@ -172,6 +174,7 @@ func main() {
 	rematchHandler := controller.NewRematchController(rematchSvc)
 	scoreChallengeHandler := controller.NewScoreChallengeController(scoreChallengeSvc)
 	tournamentHandler := controller.NewTournamentController(tournamentSvc)
+	battleshipHandler := controller.NewBattleshipController(battleshipSvc)
 	adRepo := repository.NewAdRepository()
 	adSvc := service.NewAdService(adRepo)
 	adHandler := controller.NewAdController(adSvc)
@@ -233,9 +236,16 @@ func main() {
 	adminGroup.Get("/games", adminHandler.ListGames)
 	adminGroup.Post("/games/:id/toggle", adminHandler.ToggleGame)
 	adminGroup.Post("/leaderboard/reset", adminHandler.ResetLeaderboard)
+	adminGroup.Get("/games/onet/config", adminHandler.GetOnetConfig)
+	adminGroup.Post("/games/onet/config", adminHandler.SetOnetConfig)
 	adminGroup.Get("/feature-flags", adminHandler.GetFeatureFlags)
 	adminGroup.Post("/feature-flags/:key", adminHandler.SetFeatureFlag)
 	adminGroup.Get("/reported-usernames", adminHandler.ListReportedUsernames)
+	adminGroup.Get("/support", adminHandler.ListSupportTickets)
+	adminGroup.Patch("/support/:id", adminHandler.UpdateTicketStatus)
+	adminGroup.Get("/analytics", adminHandler.GetAnalytics)
+	adminGroup.Get("/tournaments", adminHandler.ListTournaments)
+	adminGroup.Post("/tournaments/:id/cancel", adminHandler.CancelTournament)
 
 	pushGroup := apiV1.Group("/push", middleware.AuthMiddleware(cfg))
 	pushGroup.Post("/subscribe", pushHandler.Subscribe)
@@ -314,6 +324,14 @@ func main() {
 	tournamentGroup.Post("/:id/start", tournamentHandler.Start)
 	tournamentGroup.Post("/:id/matches/:match_id/report", tournamentHandler.ReportMatch)
 
+	battleshipGroup := apiV1.Group("/battleship", middleware.AuthMiddleware(cfg))
+	battleshipGroup.Get("/", battleshipHandler.List)
+	battleshipGroup.Post("/", battleshipHandler.Create)
+	battleshipGroup.Get("/:id", battleshipHandler.Get)
+	battleshipGroup.Post("/:id/target", battleshipHandler.Target)
+	battleshipGroup.Post("/:id/shot", battleshipHandler.Shot)
+	battleshipGroup.Post("/:id/resign", battleshipHandler.Resign)
+
 	// Ads — public slot query + admin CRUD
 	apiV1.Get("/ads", adHandler.GetActiveAd)
 	adminGroup.Get("/ads", adHandler.List)
@@ -371,6 +389,7 @@ func seedGames() {
 		{Slug: "brick-breaker", Name: "Brick Breaker", Description: "Hancurkan semua bata dengan bola dan paddle!", Category: "arcade", IsActive: true},
 		{Slug: "number-match", Name: "Number Match", Description: "Coret pasangan angka yang sama atau berjumlah 10.", Category: "math", IsActive: true},
 		{Slug: "fraction-visualizer", Name: "Fraction Visualizer", Description: "Kenali, bandingkan, dan sederhanakan pecahan secara visual.", Category: "math", IsActive: true},
+		{Slug: "onet", Name: "Onet", Description: "Cocokkan tile berpasangan dengan jalur bersih. Maksimal 2 tikungan!", Category: "logic", IsActive: true},
 		{Slug: "trivia-challenge", Name: "Trivia Challenge", Description: "Tantang teman dengan set soal yang sama, bandingkan skor!", Category: "multiplayer", IsActive: true},
 		{Slug: "word-chain", Name: "Word Chain", Description: "Sambung kata Bahasa Indonesia — tantang teman atau bot!", Category: "multiplayer", IsActive: true},
 		{Slug: "math-battle", Name: "Math Battle", Description: "Head-to-head real-time math battle melawan pemain lain atau bot!", Category: "multiplayer", IsActive: true},

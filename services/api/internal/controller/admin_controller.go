@@ -6,6 +6,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/internal/service"
 	"github.com/agambondan/eduplay/services/api/pkg/response"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 )
 
 type AdminController struct {
@@ -87,6 +88,25 @@ func (h *AdminController) ListReportedUsernames(c *fiber.Ctx) error {
 	return response.Success(c, fiber.Map{"reported_usernames": reported})
 }
 
+func (h *AdminController) GetOnetConfig(c *fiber.Ctx) error {
+	cfg, err := h.svc.GetOnetConfig()
+	if err != nil {
+		log.Error(err)
+	}
+	return response.Success(c, cfg)
+}
+
+func (h *AdminController) SetOnetConfig(c *fiber.Ctx) error {
+	var cfg map[string]interface{}
+	if err := c.BodyParser(&cfg); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "Invalid request")
+	}
+	if err := h.svc.SetOnetConfig(cfg); err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+	}
+	return response.Success(c, fiber.Map{"message": "Onet config updated"})
+}
+
 func (h *AdminController) GetFeatureFlags(c *fiber.Ctx) error {
 	flags, err := h.svc.ListFeatureFlags()
 	if err != nil {
@@ -107,4 +127,48 @@ func (h *AdminController) SetFeatureFlag(c *fiber.Ctx) error {
 		return response.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
 	return response.Success(c, fiber.Map{"message": "Feature flag updated"})
+}
+
+func (h *AdminController) ListSupportTickets(c *fiber.Ctx) error {
+	tickets, err := h.svc.ListSupportTickets(c.Query("status"))
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+	}
+	return response.Success(c, tickets)
+}
+
+func (h *AdminController) UpdateTicketStatus(c *fiber.Ctx) error {
+	var req struct {
+		Status string `json:"status"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "Invalid request")
+	}
+	if err := h.svc.UpdateTicketStatus(c.Params("id"), req.Status); err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+	}
+	return response.Success(c, fiber.Map{"message": "Ticket updated"})
+}
+
+func (h *AdminController) GetAnalytics(c *fiber.Ctx) error {
+	stats, err := h.svc.GetAnalytics()
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+	}
+	return response.Success(c, stats)
+}
+
+func (h *AdminController) ListTournaments(c *fiber.Ctx) error {
+	list, err := h.svc.ListTournaments()
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+	}
+	return response.Success(c, list)
+}
+
+func (h *AdminController) CancelTournament(c *fiber.Ctx) error {
+	if err := h.svc.CancelTournament(c.Params("id")); err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+	}
+	return response.Success(c, fiber.Map{"message": "Tournament cancelled"})
 }
