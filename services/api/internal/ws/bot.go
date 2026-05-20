@@ -2,8 +2,6 @@ package ws
 
 import (
 	"math/rand"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -69,34 +67,25 @@ func (b *RuleBasedBot) GetDelay() time.Duration {
 }
 
 func (b *RuleBasedBot) AnswerQuestion(q QuestionPayload) BotAnswer {
-	delay := b.GetDelay()
-	time.Sleep(delay)
-
 	isCorrect := rand.Float64() < b.config.Accuracy
 
-	if isCorrect {
-		correctAnswer := extractCorrectAnswer(q.Text, q.Options)
-		if correctAnswer != "" {
-			return BotAnswer{Answer: correctAnswer, IsCorrect: true, TimeTaken: delay}
-		}
+	if isCorrect && q.CorrectAnswer != "" {
+		return BotAnswer{Answer: q.CorrectAnswer, IsCorrect: true, TimeTaken: 0}
 	}
 
 	if len(q.Options) > 0 {
-		wrong := q.Options[rand.Intn(len(q.Options))]
-		return BotAnswer{Answer: wrong, IsCorrect: false, TimeTaken: delay}
-	}
-
-	return BotAnswer{Answer: "0", IsCorrect: false, TimeTaken: delay}
-}
-
-func extractCorrectAnswer(text string, options []string) string {
-	for _, opt := range options {
-		if _, err := strconv.Atoi(strings.TrimSpace(opt)); err == nil {
-			return opt
+		wrongOpts := make([]string, 0, len(q.Options))
+		for _, opt := range q.Options {
+			if opt != q.CorrectAnswer {
+				wrongOpts = append(wrongOpts, opt)
+			}
+		}
+		if len(wrongOpts) > 0 {
+			return BotAnswer{Answer: wrongOpts[rand.Intn(len(wrongOpts))], IsCorrect: false, TimeTaken: 0}
 		}
 	}
-	if len(options) > 0 {
-		return options[0]
-	}
-	return ""
+
+	return BotAnswer{Answer: "0", IsCorrect: false, TimeTaken: 0}
 }
+
+

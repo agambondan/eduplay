@@ -88,6 +88,7 @@ func main() {
 		&model.GhostReplay{},
 		&model.AsyncChallenge{},
 		&model.WordChainGame{},
+		&model.ScoreChallenge{},
 		&model.Referral{},
 	)
 
@@ -138,6 +139,7 @@ func main() {
 	challengeSvc := service.NewChallengeService(aiSvc, pushSvc)
 	wordChainSvc := service.NewWordChainService(cfg, aiSvc)
 	roomSvc := service.NewRoomService()
+	scoreChallengeSvc := service.NewScoreChallengeService()
 	mpLeadSvc := service.NewMultiplayerLeaderboardService()
 	rematchSvc := service.NewRematchService(roomSvc)
 
@@ -163,11 +165,13 @@ func main() {
 	referralHandler := controller.NewReferralController(referralSvc)
 	mpLeadHandler := controller.NewMultiplayerLeaderboardController(mpLeadSvc)
 	rematchHandler := controller.NewRematchController(rematchSvc)
+	scoreChallengeHandler := controller.NewScoreChallengeController(scoreChallengeSvc)
 
 	// WebSocket
 	roomMgr := ws.NewRoomManager()
 	roomMgr.StartCleanup(5 * time.Minute)
 	hub := ws.NewHub(cfg, roomMgr)
+	hub.SetAchievementChecker(achSvc)
 	go hub.Run()
 	mmSvc := ws.NewMatchmakingService(hub)
 	wsHandler := controller.NewWSController(hub, mmSvc)
@@ -285,6 +289,13 @@ func main() {
 
 	apiV1.Post("/rooms/:code/rematch", middleware.AuthMiddleware(cfg), rematchHandler.CreateRematch)
 
+	scoreChallengeGroup := apiV1.Group("/score-challenges", middleware.AuthMiddleware(cfg))
+	scoreChallengeGroup.Post("/", scoreChallengeHandler.Create)
+	scoreChallengeGroup.Get("/", scoreChallengeHandler.List)
+	scoreChallengeGroup.Get("/:link", scoreChallengeHandler.GetByLink)
+	scoreChallengeGroup.Post("/:link/accept", scoreChallengeHandler.Accept)
+	scoreChallengeGroup.Post("/:link/submit", scoreChallengeHandler.SubmitScore)
+
 	apiV1.Get("/ws/game/:room_id", wsHandler.WSHandler())
 
 	multiplayerGroup := apiV1.Group("/multiplayer", middleware.AuthMiddleware(cfg))
@@ -332,10 +343,15 @@ func seedGames() {
 		{Slug: "typing-speed", Name: "Typing Speed", Description: "Ketik kata Indonesia secepat mungkin dalam 60 detik.", Category: "language", IsActive: true},
 		{Slug: "simon-says", Name: "Simon Says", Description: "Ingat dan ulangi urutan warna yang menyala.", Category: "logic", IsActive: true},
 		{Slug: "snake", Name: "Snake Classic", Description: "Makan bola, panjangkan ular, jangan tabrak dirimu sendiri!", Category: "arcade", IsActive: true},
+		{Slug: "brick-breaker", Name: "Brick Breaker", Description: "Hancurkan semua bata dengan bola dan paddle!", Category: "arcade", IsActive: true},
+		{Slug: "number-match", Name: "Number Match", Description: "Coret pasangan angka yang sama atau berjumlah 10.", Category: "math", IsActive: true},
+		{Slug: "fraction-visualizer", Name: "Fraction Visualizer", Description: "Kenali, bandingkan, dan sederhanakan pecahan secara visual.", Category: "math", IsActive: true},
 		{Slug: "trivia-challenge", Name: "Trivia Challenge", Description: "Tantang teman dengan set soal yang sama, bandingkan skor!", Category: "multiplayer", IsActive: true},
 		{Slug: "word-chain", Name: "Word Chain", Description: "Sambung kata Bahasa Indonesia — tantang teman atau bot!", Category: "multiplayer", IsActive: true},
 		{Slug: "math-battle", Name: "Math Battle", Description: "Head-to-head real-time math battle melawan pemain lain atau bot!", Category: "multiplayer", IsActive: true},
 		{Slug: "quiz-showdown", Name: "Quiz Showdown", Description: "Real-time quiz battle 2-4 player — siapa paling cepat & benar!", Category: "multiplayer", IsActive: true},
+		{Slug: "wordle-duel", Name: "Wordle Duel", Description: "Tebak kata 5 huruf yang sama — siapa lebih cepat?", Category: "multiplayer", IsActive: true},
+		{Slug: "sudoku-race", Name: "Sudoku Race", Description: "Selesaikan puzzle Sudoku yang sama — duluan menang!", Category: "multiplayer", IsActive: true},
 	}
 	for _, g := range games {
 		var count int64
@@ -360,6 +376,9 @@ func seedAchievements() {
 		{Slug: "top-10", Name: "Elite", Description: "Masuk top 10 leaderboard", XPReward: 500, Icon: "trophy"},
 		{Slug: "level-5", Name: "Naik Kelas", Description: "Capai Level 5", XPReward: 0, Icon: "zap"},
 		{Slug: "all-games", Name: "Explorer", Description: "Coba semua game", XPReward: 300, Icon: "compass"},
+		{Slug: "mp-first-win", Name: "First Blood", Description: "Dapat kemenangan pertamamu di multiplayer", XPReward: 100, Icon: "trophy"},
+		{Slug: "mp-10-wins", Name: "Multiplayer Veteran", Description: "Kumpulkan 10 kemenangan multiplayer", XPReward: 500, Icon: "award"},
+		{Slug: "mp-bot-slayer", Name: "Bot Slayer", Description: "Kalahkan bot di multiplayer", XPReward: 100, Icon: "zap"},
 	}
 	for _, a := range achievements {
 		var count int64

@@ -113,7 +113,8 @@ export default function FractionVisualizerPage() {
     const [question, setQuestion] = useState<Question | null>(null);
     const [answered, setAnswered] = useState<string | null>(null);
     const [qCount, setQCount] = useState(0);
-    const { isPlaying, score, startGame, endGame, addScore } = useGame();
+    const { isPlaying, score, startGame, endGame, addScore, submitScore } = useGame("fraction-visualizer", "Fraction Visualizer", "math");
+    const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
 
     const TOTAL_Q = 8;
 
@@ -125,6 +126,7 @@ export default function FractionVisualizerPage() {
     const init = useCallback(() => {
         setQCount(0);
         setAnswered(null);
+        setResult(null);
         startGame();
         setQuestion(generateQuestion(difficulty));
     }, [difficulty, startGame]);
@@ -141,7 +143,10 @@ export default function FractionVisualizerPage() {
         setTimeout(() => {
             const next_count = qCount + 1;
             if (next_count >= TOTAL_Q) {
-                endGame(score + (opt === question?.correctAnswer ? 20 : 0), difficulty as any);
+                endGame();
+                submitScore().then((res) =>
+                    setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false }),
+                );
             } else {
                 setQCount(next_count);
                 next();
@@ -149,13 +154,15 @@ export default function FractionVisualizerPage() {
         }, 900);
     };
 
-    if (!isPlaying && qCount >= TOTAL_Q) {
+    if (!isPlaying && qCount >= TOTAL_Q && result !== null) {
         return (
             <ResultScreen
                 score={score}
+                xpEarned={result.xp}
+                isNewHighscore={result.highscore}
                 gameSlug="fraction-visualizer"
+                gameName="Fraction Visualizer"
                 onReplay={init}
-                extraStats={[{ label: 'Soal selesai', value: `${TOTAL_Q}` }]}
             />
         );
     }

@@ -29,15 +29,14 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
+        const { refreshToken } = useAuthStore.getState();
         const res = await axios.post(
           `${api.defaults.baseURL}/auth/refresh`,
-          {},
-          {
-            withCredentials: true,
-          }
+          refreshToken ? { refresh_token: refreshToken } : {},
+          { withCredentials: true }
         );
-        const { access_token } = res.data.data;
-        useAuthStore.getState().setTokens(access_token, ''); // Clear refresh token from store since it's in cookie
+        const { access_token, refresh_token } = res.data.data;
+        useAuthStore.getState().setTokens(access_token, refresh_token || refreshToken);
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return api(originalRequest);
       } catch (refreshError) {

@@ -128,7 +128,7 @@ export default function Crossword() {
     endGame();
     addScore(300);
     const res = await submitScore();
-    if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
+    setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
   };
 
   if (!isPlaying && !gameOver) {

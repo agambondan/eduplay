@@ -15,6 +15,7 @@ type Difficulty = 'easy' | 'medium' | 'hard';
 
 const CLUES: Record<Difficulty, number> = { easy: 38, medium: 30, hard: 24 };
 const TIME: Record<Difficulty, number> = { easy: 600, medium: 450, hard: 300 };
+const MAX_ERRORS = 3;
 const DIFF_LABEL: Record<Difficulty, { label: string; color: string; desc: string }> = {
   easy: {
     label: 'Mudah',
@@ -131,6 +132,20 @@ export default function Sudoku() {
     setSelected([r, c]);
   };
 
+  const handleWin = async () => {
+    setGameOver(true);
+    endGame();
+    const res = await submitScore();
+    setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
+  };
+
+  const handleTimeUp = useCallback(async () => {
+    setGameOver(true);
+    endGame();
+    const res = await submitScore();
+    setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
+  }, [endGame, submitScore]);
+
   const handleNumberInput = useCallback(
     (num: number | null) => {
       if (!selected || gameOver) return;
@@ -143,9 +158,11 @@ export default function Sudoku() {
 
       const newErrors = new Set(errors);
       const key = `${r}-${c}`;
+      let newErrorCount = errorCount;
       if (num !== null && num !== solution[r][c]) {
         newErrors.add(key);
-        setErrorCount((e) => e + 1);
+        newErrorCount = errorCount + 1;
+        setErrorCount(newErrorCount);
       } else {
         newErrors.delete(key);
       }
@@ -153,32 +170,23 @@ export default function Sudoku() {
 
       if (num === null) return;
 
+      if (newErrorCount >= MAX_ERRORS) {
+        handleTimeUp();
+        return;
+      }
+
       const isSolved = newCurrent.every((row, ri) =>
         row.every((cell, ci) => cell === solution[ri][ci])
       );
       if (isSolved) {
         const timeBonus = 500;
-        const errorPenalty = errorCount * 10;
+        const errorPenalty = newErrorCount * 10;
         addScore(Math.max(timeBonus - errorPenalty, 50));
         handleWin();
       }
     },
-    [selected, gameOver, puzzle, current, solution, errors, errorCount, addScore]
+    [selected, gameOver, puzzle, current, solution, errors, errorCount, addScore, handleTimeUp]
   );
-
-  const handleWin = async () => {
-    setGameOver(true);
-    endGame();
-    const res = await submitScore();
-    if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
-  };
-
-  const handleTimeUp = useCallback(async () => {
-    setGameOver(true);
-    endGame();
-    const res = await submitScore();
-    if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
-  }, [endGame, submitScore]);
 
   useEffect(() => {
     if (!isPlaying || gameOver) return;
@@ -293,12 +301,17 @@ export default function Sudoku() {
           isRunning={isPlaying && !gameOver}
         />
         <div aria-live="polite" className="flex items-center gap-2">
-          {errors.size > 0 && (
+          {errorCount > 0 && (
             <span
               aria-live="polite"
-              className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400"
+              className={cn(
+                'rounded-full px-2.5 py-0.5 text-xs font-bold',
+                errorCount >= MAX_ERRORS - 1
+                  ? 'bg-red-200 text-red-700 dark:bg-red-900/50 dark:text-red-300'
+                  : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+              )}
             >
-              {t('game.sudoku_errors').replace('{n}', String(errors.size))}
+              {errorCount}/{MAX_ERRORS} {t('game.sudoku_errors').replace('{n}', '')}
             </span>
           )}
           <ScoreBoard score={score} />
@@ -412,7 +425,12 @@ export default function Sudoku() {
       )}
 
       {/* Game over */}
-      {gameOver && result && (
+      {gameOver && result === null && (
+        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-slate-500">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        </div>
+      )}
+      {gameOver && result !== null && (
         <div className="w-full">
           <ResultScreen
             score={score}
@@ -422,9 +440,12 @@ export default function Sudoku() {
             gameName={t('game.sudoku.title')}
             onReplay={handleStart}
             description={
-              errors.size === 0 && current.flat().every((cell, i) => cell === solution.flat()[i])
+              errorCount < MAX_ERRORS &&
+              current.flat().every((cell, i) => cell === solution.flat()[i])
                 ? t('game.done')
-                : t('game.time_up')
+                : errorCount >= MAX_ERRORS
+                  ? `${errorCount} kesalahan — coba lagi!`
+                  : t('game.time_up')
             }
           />
         </div>

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/agambondan/eduplay/services/api/internal/service"
 	"github.com/agambondan/eduplay/services/api/internal/ws"
 	"github.com/agambondan/eduplay/services/api/pkg/response"
 	"github.com/agambondan/eduplay/services/api/pkg/validator"
@@ -50,6 +51,7 @@ func (h *WSController) QuickMatch(c *fiber.Ctx) error {
 type QuickMatchBotInput struct {
 	GameSlug      string `json:"game_slug" validate:"required"`
 	BotDifficulty string `json:"bot_difficulty" validate:"required,oneof=easy medium hard"`
+	Recommended   bool   `json:"recommended"`
 }
 
 func (h *WSController) QuickMatchBot(c *fiber.Ctx) error {
@@ -66,13 +68,23 @@ func (h *WSController) QuickMatchBot(c *fiber.Ctx) error {
 		return response.ValidationError(c, err.Error())
 	}
 
-	roomID := "math_battle:" + req.BotDifficulty
+	difficulty := req.BotDifficulty
+	recSvc := service.NewBotRecommendationService()
+	recommended := recSvc.GetRecommendedDifficulty(userID, req.GameSlug)
+
+	if req.Recommended {
+		difficulty = recommended
+	}
+
+	roomID := "math_battle:" + difficulty
 	return response.Success(c, fiber.Map{
-		"match_id": roomID,
-		"room_id":  roomID,
+		"match_id":         roomID,
+		"room_id":          roomID,
+		"recommended":      recommended,
+		"bot_difficulty":   difficulty,
 		"bot": fiber.Map{
-			"name":       getBotDisplayName(req.BotDifficulty),
-			"difficulty": req.BotDifficulty,
+			"name":       getBotDisplayName(difficulty),
+			"difficulty": difficulty,
 		},
 	})
 }

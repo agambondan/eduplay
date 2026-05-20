@@ -136,7 +136,7 @@ export default function FlagQuiz() {
         setGameOver(true);
         endGame();
         const res = await submitScore();
-        if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
+        setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
       }, 600);
     } else {
       setTimeout(() => next(), 600);

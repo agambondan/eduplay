@@ -334,6 +334,8 @@ const id: Record<string, string> = {
   'category.logic': 'Logika',
   'category.science': 'Sains',
   'category.history': 'Sejarah',
+  'category.arcade': 'Arcade',
+  'category.multiplayer': 'Multiplayer',
   'category.edu': 'Edukasi',
   'category.card': 'Kartu',
   'category.games': 'Game',

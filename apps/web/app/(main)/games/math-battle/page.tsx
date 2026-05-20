@@ -7,6 +7,7 @@ import { multiplayerApi } from '@/lib/api/multiplayer'
 import { useAuthStore } from '@/lib/stores/authStore'
 import { GameContainer } from '@/components/ui/GameContainer'
 import { ArrowLeft, Zap, Loader2, Wifi, WifiOff, Trophy, Target } from 'lucide-react'
+import { ShareButton } from '@/components/ui/ShareButton'
 import { QuickMatchResult, RealtimeQuestion, AnswerResult, GameOverResult } from '@/types/multiplayer'
 
 type Screen = 'menu' | 'searching' | 'playing' | 'result'
@@ -265,6 +266,10 @@ function SearchingScreen({ matchInfo, onGameStart, onBack }: { matchInfo: QuickM
             <p className="text-sm text-gray-500">{myResult.correct} benar · {myResult.wrong} salah</p>
           )}
           <p className="text-sm font-semibold text-indigo-600">+{gameResult.xp_earned} XP</p>
+          <ShareButton
+            title="Math Battle - EduPlay"
+            text={`Aku ${isWin ? 'menang' : 'kalah'} di Math Battle! Skor: ${myScore} vs ${opponentScore}. ${isWin ? '🏆' : '💪'} Main yuk!`}
+          />
           <div className="flex gap-3">
             <button onClick={() => router.refresh()} className="flex-1 rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white">Main Lagi</button>
             <button onClick={() => router.push('/games')} className="flex-1 rounded-xl border-2 border-gray-200 px-6 py-3 font-semibold text-gray-700">Kembali</button>

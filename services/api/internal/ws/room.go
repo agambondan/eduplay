@@ -3,10 +3,12 @@ package ws
 import (
 	"log"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/config"
+	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
 )
 
@@ -190,6 +192,7 @@ type GameRoom struct {
 	CreatedAt  time.Time
 	StartedAt  *time.Time
 	FinishedAt *time.Time
+	GameData   map[string]interface{}
 	mu         sync.RWMutex
 	questionCh chan QuestionPayload
 	done       chan struct{}
@@ -298,35 +301,56 @@ func (r *GameRoom) StartGame(hub *Hub, cfg *config.Config) {
 	close(r.done)
 
 	results := r.calculateResults()
+	winnerID := r.getWinnerID(results)
 	r.Broadcast("game_over", GameOverPayload{
 		Results:  results,
-		WinnerID: r.getWinnerID(results),
+		WinnerID: winnerID,
 		XPEarned: r.calculateXP(results),
 	})
+
+	if winnerID != "" {
+		matchType := "quickmatch"
+		isBotMatch := false
+		if strings.HasPrefix(winnerID, "bot_") {
+			for _, p := range r.Players {
+				if !strings.HasPrefix(p.ID, "bot_") {
+					winnerID = p.ID
+					break
+				}
+			}
+			matchType = "bot"
+			isBotMatch = true
+		}
+
+		database.DB.Exec(`
+			INSERT INTO multiplayer_matches (id, game_id, match_type, status, winner_id, started_at, finished_at, created_at)
+			VALUES (gen_random_uuid(), $1, $2, 'finished', $3, $4, NOW(), NOW())
+		`, r.GameID, matchType, winnerID, r.StartedAt)
+
+		if !isBotMatch {
+			hub.checkAchievements(winnerID)
+		}
+	}
 }
 
 func (r *GameRoom) runBotPlayer(hub *Hub) {
 	if r.Bot == nil {
 		return
 	}
-	for {
+	bot := r.Bot
+	for i := range r.Questions {
+		q := r.Questions[i]
+
 		select {
-		case q, ok := <-r.questionCh:
-			if !ok {
-				return
-			}
-			r.mu.Lock()
-			bot := r.Bot
-			r.mu.Unlock()
-			if bot == nil {
-				return
-			}
-			time.Sleep(bot.GetDelay())
-			answer := bot.AnswerQuestion(q)
-			r.SubmitAnswer(bot.UserID, q.ID, answer.Answer, int(answer.TimeTaken.Milliseconds()))
 		case <-r.done:
 			return
+		default:
 		}
+
+		time.Sleep(bot.GetDelay())
+
+		answer := bot.AnswerQuestion(q)
+		r.SubmitAnswer(bot.UserID, q.ID, answer.Answer, int(bot.GetDelay().Milliseconds()))
 	}
 }
 

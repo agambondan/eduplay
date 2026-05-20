@@ -1,14 +1,130 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Globe, Loader2, Radio, Trophy } from 'lucide-react';
+import { ChevronDown, Loader2, Radio, Search, Trophy } from 'lucide-react';
+
 import { gamesApi } from '@/lib/api/games';
 import { leaderboardApi } from '@/lib/api/leaderboard';
 import { useLocale } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { cn } from '@/lib/utils/cn';
 import { LeaderboardTable } from '@/components/ui/LeaderboardTable';
+import type { Game } from '@/types/game';
+
+const CATEGORY_LABEL: Record<string, string> = {
+    math: 'Matematika',
+    language: 'Bahasa',
+    geography: 'Geografi',
+    logic: 'Logika',
+    science: 'Sains',
+    history: 'Sejarah',
+    arcade: 'Arcade',
+    multiplayer: 'Multiplayer',
+};
+
+function GameSelector({
+    games,
+    value,
+    onChange,
+}: {
+    games: Game[];
+    value: string;
+    onChange: (slug: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const selected = games.find((g) => g.slug === value);
+
+    const filtered = search.trim()
+        ? games.filter((g) => g.name.toLowerCase().includes(search.toLowerCase()))
+        : games;
+
+    const grouped = filtered.reduce<Record<string, Game[]>>((acc, g) => {
+        const cat = g.category || 'other';
+        (acc[cat] ??= []).push(g);
+        return acc;
+    }, {});
+
+    return (
+        <div ref={ref} className='relative w-full'>
+            <button
+                onClick={() => setOpen((o) => !o)}
+                className='flex w-full items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 shadow-sm transition-all hover:border-indigo-300 hover:shadow-md dark:border-slate-600 dark:bg-slate-800 dark:text-white'
+            >
+                <span className='truncate'>{selected?.name ?? 'Pilih game…'}</span>
+                <ChevronDown
+                    className={cn(
+                        'h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200',
+                        open && 'rotate-180',
+                    )}
+                />
+            </button>
+
+            {open && (
+                <div className='absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-slate-600 dark:bg-slate-800'>
+                    <div className='sticky top-0 border-b border-gray-100 bg-white p-2 dark:border-slate-700 dark:bg-slate-800'>
+                        <div className='flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-1.5 dark:bg-slate-700'>
+                            <Search className='h-3.5 w-3.5 shrink-0 text-gray-400' />
+                            <input
+                                autoFocus
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder='Cari game…'
+                                className='w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400 dark:text-white'
+                            />
+                        </div>
+                    </div>
+
+                    {Object.entries(grouped).map(([cat, list]) => (
+                        <div key={cat}>
+                            <p className='px-3 pb-0.5 pt-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-500'>
+                                {CATEGORY_LABEL[cat] ?? cat}
+                            </p>
+                            {list.map((g) => (
+                                <button
+                                    key={g.slug}
+                                    onClick={() => {
+                                        onChange(g.slug);
+                                        setOpen(false);
+                                        setSearch('');
+                                    }}
+                                    className={cn(
+                                        'flex w-full items-center px-4 py-2 text-left text-sm transition-colors hover:bg-indigo-50 dark:hover:bg-slate-700',
+                                        g.slug === value
+                                            ? 'font-bold text-indigo-600 dark:text-indigo-400'
+                                            : 'text-gray-700 dark:text-slate-300',
+                                    )}
+                                >
+                                    {g.name}
+                                    {g.slug === value && (
+                                        <span className='ml-auto text-indigo-400'>✓</span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+
+                    {filtered.length === 0 && (
+                        <p className='px-4 py-6 text-center text-sm text-gray-400'>
+                            Tidak ada game yang ditemukan
+                        </p>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function LeaderboardPage() {
   const { user } = useAuthStore();
@@ -104,22 +220,11 @@ export default function LeaderboardPage() {
       </div>
 
       {tab === 'game' && (
-        <div className="flex flex-wrap gap-2">
-          {games?.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setSelectedGame(g.slug)}
-              className={cn(
-                'rounded-lg border px-3 py-1.5 text-xs font-bold transition-all',
-                selectedGame === g.slug
-                  ? 'border-indigo-200 bg-indigo-50 text-indigo-600 dark:border-indigo-800 dark:bg-indigo-900/20'
-                  : 'border-gray-100 bg-white text-gray-500 dark:border-slate-700 dark:bg-slate-800'
-              )}
-            >
-              {g.name}
-            </button>
-          ))}
-        </div>
+        <GameSelector
+          games={games ?? []}
+          value={selectedGame}
+          onChange={setSelectedGame}
+        />
       )}
 
       {isLoading ? (

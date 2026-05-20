@@ -274,7 +274,7 @@ export default function BubbleShooter() {
           setGameOver(true);
           endGame();
           submitScore().then((res) => {
-            if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
+            setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
           });
         }
       });

@@ -26,6 +26,8 @@ describe('authStore', () => {
     avatar_color: '#4F46E5',
     role: 'user',
     is_active: true,
+    referral_code: 'ABC123',
+    avatar_url: '',
     created_at: '',
     updated_at: '',
   };

@@ -1,7 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { type MotionProps, motion } from 'framer-motion';
+
+type MotionButtonProps = MotionProps & React.ButtonHTMLAttributes<HTMLButtonElement>;
+const MotionButton = motion.button as React.FC<MotionButtonProps>;
 import { useGame } from '@/lib/hooks/useGame';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { cn } from '@/lib/utils/cn';
@@ -160,7 +163,7 @@ export default function SimonSays({ isDaily }: Props) {
 
             <div className='grid grid-cols-2 gap-4'>
                 {COLORS.map((color) => (
-                    <motion.button
+                    <MotionButton
                         key={color.id}
                         onClick={() => handlePress(color.id)}
                         disabled={phase !== 'input'}
@@ -169,7 +172,7 @@ export default function SimonSays({ isDaily }: Props) {
                             lit === color.id ? color.active : color.bg,
                             phase !== 'input' ? 'cursor-default opacity-80' : 'hover:scale-105 active:scale-95',
                         )}
-                        whileTap={phase === 'input' ? { scale: 0.92 } : {}}
+                        whileTap={phase === 'input' ? { scale: 0.92 } : { scale: 1 }}
                     />
                 ))}
             </div>

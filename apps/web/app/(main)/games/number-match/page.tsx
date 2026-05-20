@@ -56,12 +56,13 @@ function arePairablePositions(nums: number[], crossed: Set<number>, i: number, j
 
 export default function NumberMatchPage() {
     const { t } = useLocale();
-    const { isPlaying, score, startGame, endGame, addScore } = useGame();
+    const { isPlaying, score, startGame, endGame, addScore, submitScore } = useGame('number-match', 'Number Match', 'math');
     const [nums, setNums] = useState<number[]>([]);
     const [crossed, setCrossed] = useState<Set<number>>(new Set());
     const [selected, setSelected] = useState<number | null>(null);
     const [flash, setFlash] = useState<{ idx: number; ok: boolean } | null>(null);
     const [won, setWon] = useState(false);
+    const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
 
     const init = useCallback(() => {
         setNums(generateInitialNumbers());
@@ -69,6 +70,7 @@ export default function NumberMatchPage() {
         setSelected(null);
         setFlash(null);
         setWon(false);
+        setResult(null);
         startGame();
     }, [startGame]);
 
@@ -104,7 +106,10 @@ export default function NumberMatchPage() {
 
             if (next.size === nums.length) {
                 setWon(true);
-                endGame(score + 10, 'easy');
+                endGame();
+                submitScore().then((res) =>
+                    setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false }),
+                );
             }
         } else {
             setFlash({ idx, ok: false });
@@ -116,13 +121,16 @@ export default function NumberMatchPage() {
     const totalRows = Math.ceil(nums.length / COLS);
     const cells = Array.from({ length: totalRows * COLS }, (_, i) => i);
 
-    if (!isPlaying && won) {
+    if (!isPlaying && won && result !== null) {
         return (
             <ResultScreen
                 score={score}
+                xpEarned={result.xp}
+                isNewHighscore={result.highscore}
                 gameSlug="number-match"
+                gameName="Number Match"
                 onReplay={init}
-                extraStats={[{ label: 'Pasangan ditemukan', value: String(crossed.size / 2) }]}
+                description="Semua pasangan ditemukan!"
             />
         );
     }

@@ -331,6 +331,8 @@ const en: Record<string, string> = {
   'category.logic': 'Logic',
   'category.science': 'Science',
   'category.history': 'History',
+  'category.arcade': 'Arcade',
+  'category.multiplayer': 'Multiplayer',
   'category.edu': 'Education',
   'category.card': 'Card',
   'category.games': 'Games',

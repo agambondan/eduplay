@@ -97,7 +97,8 @@ type authService struct {
 
 func NewAuthService(cfg *config.Config, userRepo repository.UserRepository, emailCl *email.ResendClient, achSvc interface {
 	CheckAndUnlock(userID string, slug string) (bool, error)
-}) AuthService {
+},
+) AuthService {
 	return &authService{cfg: cfg, userRepo: userRepo, emailCl: emailCl, achSvc: achSvc}
 }
 

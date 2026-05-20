@@ -19,16 +19,31 @@ func NewMatchmakingService(hub *Hub) *MatchmakingService {
 	return &MatchmakingService{hub: hub}
 }
 
+func (m *MatchmakingService) getUserSkill(userID, gameSlug string) int {
+	var avgScore float64
+	database.DB.Raw(`
+		SELECT COALESCE(AVG(gs.score), 0)
+		FROM game_sessions gs
+		JOIN games g ON g.id = gs.game_id
+		WHERE gs.user_id = ? AND g.slug = ?
+	`, userID, gameSlug).Scan(&avgScore)
+	return int(avgScore)
+}
+
 func (m *MatchmakingService) JoinQueue(userID, gameSlug, difficulty string) (*MatchResult, error) {
 	ctx := context.Background()
-	queueKey := fmt.Sprintf("matchmaking:%s:%s", gameSlug, difficulty)
+	skill := m.getUserSkill(userID, gameSlug)
 
 	entry := MatchmakingEntry{
 		UserID:     userID,
 		GameSlug:   gameSlug,
 		Difficulty: difficulty,
+		Skill:      skill,
 		JoinedAt:   time.Now(),
 	}
+
+	queueKey := fmt.Sprintf("matchmaking:%s:%s", gameSlug, difficulty)
+
 	data, _ := json.Marshal(entry)
 
 	database.RDB.Set(ctx, fmt.Sprintf("matchmaking:entry:%s:%s", gameSlug, userID), data, 30*time.Second)
@@ -57,27 +72,59 @@ func (m *MatchmakingService) JoinQueue(userID, gameSlug, difficulty string) (*Ma
 func (m *MatchmakingService) waitForMatch(ctx context.Context, userID, gameSlug, difficulty, queueKey string, resultChan chan<- *MatchResult) {
 	database.RDB.LPush(ctx, queueKey, userID)
 
+	mySkill := m.getUserSkill(userID, gameSlug)
+	skillRange := 50
+
 	for i := 0; i < 10; i++ {
 		time.Sleep(1 * time.Second)
 
 		users, _ := database.RDB.LRange(ctx, queueKey, 0, -1).Result()
-		for _, u := range users {
-			if u != userID {
-				m.removeFromQueue(ctx, queueKey, userID)
-				m.removeFromQueue(ctx, queueKey, u)
-
-				database.RDB.Del(ctx, fmt.Sprintf("matchmaking:entry:%s:%s", gameSlug, userID))
-				database.RDB.Del(ctx, fmt.Sprintf("matchmaking:entry:%s:%s", gameSlug, u))
-
-				roomID := fmt.Sprintf("math_battle:%s", difficulty)
-				resultChan <- &MatchResult{
-					MatchID:    roomID,
-					RoomID:     roomID,
-					OpponentID: u,
-					OpponentName: m.getUsername(u),
-				}
-				return
+		for _, opponent := range users {
+			if opponent == userID {
+				continue
 			}
+
+			oppEntry, _ := database.RDB.Get(ctx, fmt.Sprintf("matchmaking:entry:%s:%s", gameSlug, opponent)).Result()
+			if oppEntry == "" {
+				continue
+			}
+			var opp MatchmakingEntry
+			json.Unmarshal([]byte(oppEntry), &opp)
+
+			skillDiff := mySkill - opp.Skill
+			if skillDiff < 0 {
+				skillDiff = -skillDiff
+			}
+			if skillDiff > skillRange {
+				continue
+			}
+
+			lockKey := fmt.Sprintf("matchmaking:lock:%s:%s", gameSlug, userID)
+			locked, _ := database.RDB.SetNX(ctx, lockKey, opponent, 5*time.Second).Result()
+			if !locked {
+				continue
+			}
+
+			m.removeFromQueue(ctx, queueKey, userID)
+			m.removeFromQueue(ctx, queueKey, opponent)
+
+			database.RDB.Del(ctx, fmt.Sprintf("matchmaking:entry:%s:%s", gameSlug, userID))
+			database.RDB.Del(ctx, fmt.Sprintf("matchmaking:entry:%s:%s", gameSlug, opponent))
+
+			roomID := fmt.Sprintf("math_battle:%s", difficulty)
+			resultChan <- &MatchResult{
+				MatchID:    roomID,
+				RoomID:     roomID,
+				OpponentID: opponent,
+				OpponentName: m.getUsername(opponent),
+			}
+			return
+		}
+
+		if i >= 3 && i < 6 {
+			skillRange = 150
+		} else if i >= 6 {
+			skillRange = 500
 		}
 	}
 
@@ -92,10 +139,7 @@ func (m *MatchmakingService) CancelQueue(userID, gameSlug string) {
 	ctx := context.Background()
 	database.RDB.Del(ctx, fmt.Sprintf("matchmaking:entry:%s:%s", gameSlug, userID))
 
-	if ch, ok := m.queues.Load(userID); ok {
-		close(ch.(chan *MatchResult))
-		m.queues.Delete(userID)
-	}
+	m.queues.Delete(userID)
 
 	keys, _ := database.RDB.Keys(ctx, fmt.Sprintf("matchmaking:%s:*", gameSlug)).Result()
 	for _, key := range keys {
@@ -107,6 +151,7 @@ type MatchmakingEntry struct {
 	UserID     string    `json:"user_id"`
 	GameSlug   string    `json:"game_slug"`
 	Difficulty string    `json:"difficulty"`
+	Skill      int       `json:"skill"`
 	JoinedAt   time.Time `json:"joined_at"`
 }
 

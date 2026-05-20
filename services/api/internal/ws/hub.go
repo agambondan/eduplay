@@ -15,12 +15,19 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type AchievementChecker interface {
+	CheckMPFirstWin(userID string) error
+	CheckMP10Wins(userID string) error
+	CheckMPBotSlayer(userID string) error
+}
+
 type Hub struct {
 	cfg        *config.Config
 	Clients    map[string]*Client
 	Rooms      *RoomManager
 	Register   chan *Client
 	Unregister chan *Client
+	achSvc     AchievementChecker
 	mu         sync.RWMutex
 }
 
@@ -32,6 +39,19 @@ func NewHub(cfg *config.Config, roomMgr *RoomManager) *Hub {
 		Register:   make(chan *Client, 256),
 		Unregister: make(chan *Client, 256),
 	}
+}
+
+func (h *Hub) SetAchievementChecker(ach AchievementChecker) {
+	h.achSvc = ach
+}
+
+func (h *Hub) checkAchievements(userID string) {
+	if h.achSvc == nil || userID == "" || strings.HasPrefix(userID, "bot_") {
+		return
+	}
+	h.achSvc.CheckMPFirstWin(userID)
+	h.achSvc.CheckMP10Wins(userID)
+	h.achSvc.CheckMPBotSlayer(userID)
 }
 
 func (h *Hub) Run() {
@@ -154,6 +174,28 @@ func (h *Hub) handleMessage(client *Client, msg WSMessage) {
 		}
 		h.handleSubmitAnswer(client, payload)
 
+	case "submit_wordle_guess":
+		var payload struct {
+			RoomID string `json:"room_id"`
+			Word   string `json:"word"`
+		}
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+			return
+		}
+		h.handleWordleGuess(client, payload.RoomID, payload.Word)
+
+	case "submit_sudoku_cell":
+		var payload struct {
+			RoomID string `json:"room_id"`
+			Row    int    `json:"row"`
+			Col    int    `json:"col"`
+			Value  int    `json:"value"`
+		}
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+			return
+		}
+		h.handleSudokuCell(client, payload.RoomID, payload.Row, payload.Col, payload.Value)
+
 	case "leave_room":
 		var payload struct {
 			RoomID string `json:"room_id"`
@@ -226,6 +268,280 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 			time.Sleep(500 * time.Millisecond)
 			go room.StartGame(h, h.cfg)
 		}
+	} else if strings.HasPrefix(roomID, "wordle_duel:") {
+		room, ok := h.Rooms.Get(roomID)
+		if !ok {
+			gameID := h.getGameID("wordle")
+			room = h.Rooms.CreateRoom(roomID, "wordle_duel", RoomSettings{
+				GameSlug:   "wordle",
+				Difficulty: strings.TrimPrefix(roomID, "wordle_duel:"),
+				MaxPlayers: 2,
+			}, gameID)
+		}
+
+		var u model.User
+		database.DB.First(&u, "id = ?", client.UserID)
+		h.Rooms.JoinRoom(roomID, client.UserID, u.Username, u.Level)
+
+		room.mu.Lock()
+		if room.ClientMap == nil {
+			room.ClientMap = make(map[string]*Client)
+		}
+		room.ClientMap[client.UserID] = client
+		if p, exists := room.Players[client.UserID]; exists {
+			p.Client = client
+		}
+		if room.Bot == nil &&
+			len(room.GetPlayers()) == 1 {
+			bot := NewRuleBasedBot("medium", "wordle")
+			room.Bot = bot
+			if room.Bots == nil {
+				room.Bots = make(map[string]*RuleBasedBot)
+			}
+			room.Bots[bot.UserID] = bot
+			room.Players[bot.UserID] = &Player{
+				ID: bot.UserID, Username: bot.DisplayName, Level: 1, Score: 0,
+				Correct: 0, Wrong: 0, JoinedAt: time.Now(),
+			}
+		}
+		room.mu.Unlock()
+
+		oldRoomID := client.RoomID
+		if oldRoomID != "" && oldRoomID != roomID {
+			h.Rooms.LeaveRoom(oldRoomID, client.UserID)
+		}
+		client.RoomID = roomID
+		client.SendMessage("room_joined", map[string]interface{}{"room_id": roomID, "players": room.GetPlayers()})
+
+		if room.IsFull() {
+			go h.startWordleDuel(room)
+		}
+
+	} else if strings.HasPrefix(roomID, "sudoku_race:") {
+		room, ok := h.Rooms.Get(roomID)
+		if !ok {
+			gameID := h.getGameID("sudoku")
+			room = h.Rooms.CreateRoom(roomID, "sudoku_race", RoomSettings{
+				GameSlug:   "sudoku",
+				Difficulty: strings.TrimPrefix(roomID, "sudoku_race:"),
+				MaxPlayers: 2,
+			}, gameID)
+		}
+
+		var u model.User
+		database.DB.First(&u, "id = ?", client.UserID)
+		h.Rooms.JoinRoom(roomID, client.UserID, u.Username, u.Level)
+
+		room.mu.Lock()
+		if room.ClientMap == nil {
+			room.ClientMap = make(map[string]*Client)
+		}
+		room.ClientMap[client.UserID] = client
+		if p, exists := room.Players[client.UserID]; exists {
+			p.Client = client
+		}
+		room.mu.Unlock()
+
+		oldRoomID := client.RoomID
+		if oldRoomID != "" && oldRoomID != roomID {
+			h.Rooms.LeaveRoom(oldRoomID, client.UserID)
+		}
+		client.RoomID = roomID
+		client.SendMessage("room_joined", map[string]interface{}{"room_id": roomID, "players": room.GetPlayers()})
+
+		if room.IsFull() {
+			go h.startSudokuRace(room)
+		}
+	}
+}
+
+func (h *Hub) startWordleDuel(room *GameRoom) {
+	target := pickWordleWord()
+	room.mu.Lock()
+	room.GameData = map[string]interface{}{
+		"target_word": target,
+		"guesses":     map[string][]string{},
+	}
+	room.State = "playing"
+	room.mu.Unlock()
+
+	room.Broadcast("game_starting", map[string]int{"countdown": 3})
+	time.Sleep(2 * time.Second)
+	room.Broadcast("wordle_start", map[string]int{"word_length": 5})
+}
+
+func (h *Hub) handleWordleGuess(client *Client, roomID, word string) {
+	room, ok := h.Rooms.Get(roomID)
+	if !ok {
+		return
+	}
+
+	room.mu.Lock()
+	target, _ := room.GameData["target_word"].(string)
+	if target == "" {
+		room.mu.Unlock()
+		return
+	}
+
+	guesses, _ := room.GameData["guesses"].(map[string][]string)
+	if guesses == nil {
+		guesses = map[string][]string{}
+	}
+	playerGuesses := guesses[client.UserID]
+	if len(playerGuesses) >= 6 {
+		room.mu.Unlock()
+		client.SendMessage("error", map[string]string{"message": "Sudah 6 percobaan"})
+		return
+	}
+
+	word = strings.ToLower(strings.TrimSpace(word))
+	if len(word) != 5 {
+		room.mu.Unlock()
+		client.SendMessage("error", map[string]string{"message": "Kata harus 5 huruf"})
+		return
+	}
+
+	playerGuesses = append(playerGuesses, word)
+	guesses[client.UserID] = playerGuesses
+	room.GameData["guesses"] = guesses
+
+	result := evaluateWordleGuess(word, target)
+	isCorrect := word == target
+	guessNum := len(playerGuesses)
+	room.mu.Unlock()
+
+	client.SendMessage("wordle_result", map[string]interface{}{
+		"word":      word,
+		"result":    result,
+		"attempts":  guessNum,
+		"correct":   isCorrect,
+	})
+
+	room.Broadcast("opponent_progress", map[string]interface{}{
+		"player_id": client.UserID,
+		"attempts":  guessNum,
+	})
+
+	if isCorrect {
+		room.mu.Lock()
+		gData, _ := room.GameData["guesses"].(map[string][]string)
+		room.mu.Unlock()
+
+		allDone := true
+		for _, p := range room.GetPlayers() {
+			pg := gData[p.ID]
+			lastGuess := ""
+			if len(pg) > 0 {
+				lastGuess = pg[len(pg)-1]
+			}
+			if lastGuess != target {
+				allDone = false
+				break
+			}
+		}
+		if allDone || len(room.GameData) > 0 {
+			room.Broadcast("game_over", GameOverPayload{
+				WinnerID: client.UserID,
+				XPEarned: 50,
+				Results:  []PlayerResult{},
+			})
+		}
+	}
+}
+
+func (h *Hub) startSudokuRace(room *GameRoom) {
+	diff := room.Settings.Difficulty
+	if diff == "" {
+		diff = "medium"
+	}
+	puzzle := generateSudokuPuzzle(diff)
+
+	var solution [9][9]int
+	copy(solution[:], puzzle[:])
+	solveSudoku(&solution)
+
+	room.mu.Lock()
+	room.GameData = map[string]interface{}{
+		"puzzle":    puzzle,
+		"solution":  solution,
+		"progress":  map[string]int{},
+	}
+	room.State = "playing"
+	room.mu.Unlock()
+
+	room.Broadcast("game_starting", map[string]int{"countdown": 3})
+	time.Sleep(2 * time.Second)
+	room.Broadcast("sudoku_start", map[string]interface{}{
+		"puzzle": puzzle,
+	})
+
+	go func() {
+		time.Sleep(10 * time.Minute)
+		room.mu.Lock()
+		if room.State == "playing" {
+			room.State = "finished"
+			room.mu.Unlock()
+			room.Broadcast("game_over", GameOverPayload{})
+		} else {
+			room.mu.Unlock()
+		}
+	}()
+}
+
+func (h *Hub) handleSudokuCell(client *Client, roomID string, row, col, value int) {
+	room, ok := h.Rooms.Get(roomID)
+	if !ok {
+		return
+	}
+
+	room.mu.Lock()
+	puzzle, ok := room.GameData["puzzle"].([9][9]int)
+	if !ok {
+		room.mu.Unlock()
+		return
+	}
+
+	if puzzle[row][col] != 0 {
+		room.mu.Unlock()
+		return
+	}
+
+	solution, _ := room.GameData["solution"].([9][9]int)
+	if solution[row][col] != value {
+		room.mu.Unlock()
+		client.SendMessage("sudoku_error", map[string]string{"message": "Nilai salah"})
+		return
+	}
+
+	puzzle[row][col] = value
+	room.GameData["puzzle"] = puzzle
+
+	progress, _ := room.GameData["progress"].(map[string]int)
+	if progress == nil {
+		progress = map[string]int{}
+	}
+	progress[client.UserID] = sudokuProgress(&puzzle)
+	room.GameData["progress"] = progress
+
+	pct := progress[client.UserID]
+	room.mu.Unlock()
+
+	client.SendMessage("sudoku_cell_ok", map[string]interface{}{
+		"row": row, "col": col, "value": value,
+	})
+	room.Broadcast("opponent_progress", map[string]interface{}{
+		"player_id": client.UserID,
+		"progress":  pct,
+	})
+
+	if isSudokuComplete(&puzzle, &solution) {
+		room.mu.Lock()
+		room.State = "finished"
+		room.mu.Unlock()
+		room.Broadcast("game_over", GameOverPayload{
+			WinnerID: client.UserID,
+			XPEarned: 100,
+		})
 	}
 }
 

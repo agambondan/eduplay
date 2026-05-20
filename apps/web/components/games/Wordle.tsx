@@ -184,12 +184,12 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
       setGameOver(true);
       endGame();
       const res = await submitScore();
-      if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
+      setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
     } else if (newAttempt >= 6) {
       setGameOver(true);
       endGame();
       const res = await submitScore();
-      if (res) setResult({ xp: res.xp_earned, highscore: res.new_highscore });
+      setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
     }
   }, [
     currentGuess,

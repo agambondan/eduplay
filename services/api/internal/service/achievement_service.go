@@ -19,6 +19,9 @@ type AchievementService interface {
 	CheckAllGames(userID string) error
 	CheckDailyCount(userID string) error
 	CheckTop10(userID string) error
+	CheckMPFirstWin(userID string) error
+	CheckMP10Wins(userID string) error
+	CheckMPBotSlayer(userID string) error
 }
 
 type achievementService struct {
@@ -115,6 +118,41 @@ func (s *achievementService) CheckDailyCount(userID string) error {
 	database.DB.Model(&model.DailySubmission{}).Where("user_id = ?", userID).Count(&count)
 	if count >= 5 {
 		s.CheckAndUnlock(userID, "daily-5")
+	}
+	return nil
+}
+
+func (s *achievementService) CheckMPFirstWin(userID string) error {
+	uid, _ := uuid.Parse(userID)
+	var wins int64
+	database.DB.Model(&model.MatchParticipant{}).
+		Where("user_id = ? AND is_winner = true", uid).Count(&wins)
+	if wins >= 1 {
+		s.CheckAndUnlock(userID, "mp-first-win")
+	}
+	return nil
+}
+
+func (s *achievementService) CheckMP10Wins(userID string) error {
+	uid, _ := uuid.Parse(userID)
+	var wins int64
+	database.DB.Model(&model.MatchParticipant{}).
+		Where("user_id = ? AND is_winner = true", uid).Count(&wins)
+	if wins >= 10 {
+		s.CheckAndUnlock(userID, "mp-10-wins")
+	}
+	return nil
+}
+
+func (s *achievementService) CheckMPBotSlayer(userID string) error {
+	uid, _ := uuid.Parse(userID)
+	var botWins int64
+	database.DB.Model(&model.MatchParticipant{}).
+		Joins("JOIN multiplayer_matches m ON m.id = match_participants.match_id").
+		Where("match_participants.user_id = ? AND match_participants.is_winner = true AND m.match_type = 'bot'", uid).
+		Count(&botWins)
+	if botWins >= 1 {
+		s.CheckAndUnlock(userID, "mp-bot-slayer")
 	}
 	return nil
 }

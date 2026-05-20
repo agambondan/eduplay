@@ -10,8 +10,10 @@ import {
   ChevronRight,
   Clock,
   FlaskConical,
+  Gamepad2,
   Globe,
   Layers,
+  Swords,
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { gamesApi } from '@/lib/api/games';
@@ -75,6 +77,22 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     lightBg: 'bg-rose-50 dark:bg-rose-950/30',
     textColor: 'text-rose-600 dark:text-rose-400',
     desc: 'Sejarah dan peristiwa dunia',
+  },
+  arcade: {
+    label: 'Arcade',
+    icon: Gamepad2,
+    gradient: 'from-orange-500 to-red-500',
+    lightBg: 'bg-orange-50 dark:bg-orange-950/30',
+    textColor: 'text-orange-600 dark:text-orange-400',
+    desc: 'Game seru dan adiktif',
+  },
+  multiplayer: {
+    label: 'Multiplayer',
+    icon: Swords,
+    gradient: 'from-violet-500 to-fuchsia-500',
+    lightBg: 'bg-violet-50 dark:bg-violet-950/30',
+    textColor: 'text-violet-600 dark:text-violet-400',
+    desc: 'Tantang temanmu secara real-time',
   },
 };
 
