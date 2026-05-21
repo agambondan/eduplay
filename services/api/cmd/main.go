@@ -95,6 +95,7 @@ func main() {
 		&model.TournamentMatch{},
 		&model.BattleshipMatch{},
 		&model.Ad{},
+		&model.BlogPost{},
 	)
 
 	seedData()
@@ -178,6 +179,9 @@ func main() {
 	adRepo := repository.NewAdRepository()
 	adSvc := service.NewAdService(adRepo)
 	adHandler := controller.NewAdController(adSvc)
+	blogRepo := repository.NewBlogRepository()
+	blogSvc := service.NewBlogService(blogRepo)
+	blogHandler := controller.NewBlogController(blogSvc)
 
 	// WebSocket
 	roomMgr := ws.NewRoomManager()
@@ -347,6 +351,15 @@ func main() {
 	adminGroup.Patch("/ads/:id", adHandler.Update)
 	adminGroup.Delete("/ads/:id", adHandler.Delete)
 
+	// Blog — public + admin
+	blogGroup := apiV1.Group("/blog")
+	blogGroup.Get("/", blogHandler.ListPosts)
+	blogGroup.Get("/:slug", blogHandler.GetPost)
+	adminGroup.Get("/blog", blogHandler.AdminList)
+	adminGroup.Post("/blog", blogHandler.AdminCreate)
+	adminGroup.Patch("/blog/:id", blogHandler.AdminUpdate)
+	adminGroup.Delete("/blog/:id", blogHandler.AdminDelete)
+
 	apiV1.Get("/ws/game/:room_id", wsHandler.WSHandler())
 
 	multiplayerGroup := apiV1.Group("/multiplayer", middleware.AuthMiddleware(cfg))
@@ -372,6 +385,91 @@ func seedData() {
 	seedAchievements()
 	seedUsers()
 	seeder.SeedGameContent()
+	seedBlogPosts()
+}
+
+func seedBlogPosts() {
+	posts := []model.BlogPost{
+		{
+			Title: "Cara Belajar Matematika Jadi Seru dengan Game Edukasi",
+			Slug:  "belajar-matematika-seru-dengan-game-edukasi",
+			Excerpt: "Matematika sering dianggap sulit dan membosankan. Tapi dengan pendekatan gamifikasi, belajar jadi menyenangkan!",
+			Content: `<h2>Belajar Matematika Tidak Harus Membosankan</h2>
+<p>Matematika adalah salah satu mata pelajaran yang paling ditakuti oleh pelajar di Indonesia. Menurut survei, lebih dari 60% pelajar SMP mengaku kesulitan dengan matematika. Tapi tahukah kamu? Matematika sebenarnya bisa sangat seru jika dikemas dengan cara yang tepat.</p>
+<h3>Mengapa Game Edukasi Efektif?</h3>
+<p>Game edukasi menggabungkan dua elemen kuat: pembelajaran dan hiburan. Ketika belajar terasa seperti bermain, otak kita lebih mudah menyerap informasi. Beberapa penelitian menunjukkan bahwa gamifikasi bisa meningkatkan retensi materi hingga 40%.</p>
+<h3>Fitur Unggulan Math Quiz Blitz</h3>
+<ul>
+<li>Soal tak terbatas berkat AI generator</li>
+<li>Tingkat kesulitan Easy, Medium, Hard</li>
+<li>Timer dan scoring yang menantang</li>
+<li>Leaderboard untuk kompetisi sehat</li>
+</ul>
+<p>Coba mainkan Math Quiz Blitz di EduPlay sekarang juga!</p>`,
+			Category:    "tips-belajar",
+			Tags:        "matematika,game edukasi,belajar seru",
+			Author:      "Tim EduPlay",
+			IsPublished: true,
+		},
+		{
+			Title: "7 Manfaat Bermain Puzzle untuk Kecerdasan Otak",
+			Slug:  "manfaat-bermain-puzzle-untuk-kecerdasan-otak",
+			Excerpt: "Bermain puzzle bukan sekadar hiburan. Ini dia 7 manfaat ilmiah bermain puzzle untuk otak kamu.",
+			Content: `<h2>Puzzle: Hiburan yang Mencerdaskan</h2>
+<p>Puzzle seperti Sudoku, Nonogram, dan 2048 bukan hanya game yang menyenangkan — mereka juga punya dampak positif pada fungsi kognitif otak.</p>
+<h3>1. Meningkatkan Daya Ingat</h3>
+<p>Saat bermain puzzle, otak kita bekerja membentuk dan mengingat pola, warna, dan posisi. Ini melatih memori jangka pendek dan panjang.</p>
+<h3>2. Melatih Pemecahan Masalah</h3>
+<p>Setiap puzzle adalah masalah yang harus dipecahkan. Semakin sering melakukannya, semakin terasah kemampuan problem-solving kamu.</p>
+<h3>3. Meningkatkan Kecepatan Berpikir</h3>
+<p>Game seperti Math Quiz Blitz yang menggunakan timer melatih otak untuk berpikir cepat di bawah tekanan.</p>
+<h3>4. Mengurangi Stres</h3>
+<p>Fokus pada puzzle bisa menjadi meditasi aktif yang membantu menenangkan pikiran dari stres sehari-hari.</p>
+<p>Mulai latih otak kamu dengan game-game puzzle di EduPlay!</p>`,
+			Category:    "tips-belajar",
+			Tags:        "puzzle,sudoku,nonogram,kecerdasan",
+			Author:      "Tim EduPlay",
+			IsPublished: true,
+		},
+		{
+			Title: "Mengenal Wordle Bahasa Indonesia — Game Tebak Kata Populer",
+			Slug:  "mengenal-wordle-bahasa-indonesia",
+			Excerpt: "Wordle versi Bahasa Indonesia? Ada! Tebak kata 5 huruf dalam 6 percobaan. Simak cara main dan tipsnya.",
+			Content: `<h2>Apa Itu Wordle?</h2>
+<p>Wordle adalah game tebak kata yang fenomenal di seluruh dunia. Pemain harus menebak kata 5 huruf dalam 6 percobaan. Setiap tebakan memberikan kode warna: hijau untuk huruf yang tepat di posisi tepat, kuning untuk huruf yang ada tapi posisi salah, dan abu-abu untuk huruf yang tidak ada sama sekali.</p>
+<h2>Wordle Bahasa Indonesia di EduPlay</h2>
+<p>EduPlay menghadirkan Wordle dalam Bahasa Indonesia dengan ribuan kata dari KBBI. Fitur lengkapnya:</p>
+<ul>
+<li>Daily Mode: satu kata per hari, sama untuk semua pemain</li>
+<li>Practice Mode: main sebanyak yang kamu mau</li>
+<li>Statistik pribadi: streak, win rate, distribusi tebakan</li>
+<li>Share hasil ke WhatsApp dengan pola emoji</li>
+</ul>
+<h3>Tips Jitu Main Wordle</h3>
+<ol>
+<li>Mulai dengan kata yang punya banyak vokal seperti "BENAR" atau "SUARA"</li>
+<li>Perhatikan posisi huruf hijau dan kuning</li>
+<li>Jangan gunakan huruf yang sudah pasti abu-abu</li>
+<li>Gunakan fitur hint jika mentok (rewarded ad)</li>
+</ol>
+<p>Main Wordle Bahasa Indonesia sekarang di EduPlay!</p>`,
+			Category:    "panduan-game",
+			Tags:        "wordle,bahasa indonesia,tebak kata,kbbi",
+			Author:      "Tim EduPlay",
+			IsPublished: true,
+		},
+	}
+	for _, p := range posts {
+		var count int64
+		database.DB.Model(&model.BlogPost{}).Where("slug = ?", p.Slug).Count(&count)
+		if count > 0 {
+			continue
+		}
+		now := time.Now()
+		p.ID = uuid.New()
+		p.PublishedAt = &now
+		database.DB.Create(&p)
+	}
 }
 
 func seedGames() {
