@@ -256,6 +256,27 @@ Win: tenggelamkan semua kapal lawan
 - Notifikasi saat giliran kamu
 - Turn expire: 24 jam
 
+### Implementasi API v1.3
+
+Battleship Math menggunakan REST turn-based state supaya bisa dimainkan async dan
+bisa dilanjutkan lintas sesi.
+
+| Method | Endpoint                         | Fungsi                                      |
+| ------ | -------------------------------- | ------------------------------------------- |
+| GET    | `/api/v1/battleship`             | List match milik user                       |
+| POST   | `/api/v1/battleship`             | Buat match vs bot atau tantang username     |
+| GET    | `/api/v1/battleship/:id`         | Ambil detail match dan board yang di-mask   |
+| POST   | `/api/v1/battleship/:id/target`  | Pilih koordinat dan buat soal server-side   |
+| POST   | `/api/v1/battleship/:id/shot`    | Submit jawaban dan proses HIT/MISS          |
+| POST   | `/api/v1/battleship/:id/reveal`  | Rewarded reveal area 3x3 di radar lawan     |
+| POST   | `/api/v1/battleship/:id/resign`  | Menyerah dan selesaikan match               |
+
+Validasi jawaban dan posisi kapal dilakukan di server. Board lawan selalu
+di-mask sampai match selesai. Hasil match dicatat ke tabel multiplayer umum
+untuk leaderboard multiplayer.
+Server juga menyimpan timer jawaban 30 detik, turn expiry 24 jam, dan mengirim
+push notification saat giliran berpindah ke player manusia yang lain.
+
 ### Ad Slots
 - Banner di game screen
 - Interstitial saat kapal tenggelam (natural break)
@@ -562,6 +583,13 @@ Dua tim saling berhadapan dalam kuis bendera negara. Soal muncul bergantian ke m
 - **Europe:** 44 negara Eropa
 - **Hard Mode:** Hanya bendera yang mirip-mirip (Chad vs Romania, dll)
 
+> Implementation note (2026-05-21): Phase 7 runtime sudah mendukung pemilihan
+> theme dan filtering server-side. Dataset negara digenerate via
+> `node scripts/sync-country-flags.mjs` dari REST Countries v3.1 dan aset
+> `country-flag-icons` MIT, menghasilkan 195 negara, 48 Asia, 10 ASEAN,
+> dan 44 Eropa. Flag emblem-heavy tertentu dapat dioverride dari `flag-icons`
+> MIT agar detail coat of arms tetap akurat untuk quiz.
+
 ### Bot System
 - Rule-based bot dengan timing dan akurasi per difficulty
 - Easy Bot: lambat + sering salah bendera yang mirip
@@ -576,6 +604,19 @@ Dua tim saling berhadapan dalam kuis bendera negara. Soal muncul bergantian ke m
 ---
 
 ## Game 8: Math Tournament (Bracket Competition)
+
+> **Status implementasi Mei 2026:** Math Tournament v2.0 sudah tersedia end-to-end.
+> Scope mencakup Quick/Daily/Weekly mode, invite code, create/join/start tournament,
+> seeding, bot-fill slot kosong, bracket single-elimination, room Math Battle
+> `tournament:{tournament_id}:r{round}:m{position}`, report hasil authoritative dari
+> Math Battle, sudden-death tiebreaker saat skor seri, auto-create Daily/Weekly Open
+> Tournament dengan system host, background/lazy auto-start setelah jadwal mulai dan
+> minimal 1 peserta real dengan bot-fill, auto-cancel jika kosong, auto-resolve match
+> bot-only, advancement round, spectator
+> bracket view untuk player eliminated, champion/finalist badges, 3rd-place XP tier,
+> ad banner lobby/bracket, dan interstitial pada natural break setelah match tournament.
+> Current implementation memakai 15 soal dengan 4 detik per soal untuk memenuhi durasi
+> round ~60 detik di engine Math Battle yang berbasis timer per soal.
 
 ### Deskripsi
 Tournament bracket elimination system. 8 atau 16 player mendaftar, lalu bertanding dalam format Math Battle (soal math head-to-head). Kalah = eliminated. Menang semua = Champion.
@@ -617,7 +658,7 @@ Bracket 8 Player:
 | Phase          | Waktu         | Keterangan           |
 | -------------- | ------------- | -------------------- |
 | Registrasi     | 30 menit      | Player daftar        |
-| Seeding        | Otomatis      | Berdasarkan ELO/rank |
+| Seeding        | Otomatis      | Berdasarkan XP/rank  |
 | Quarter Final  | 5 menit/match | 4 match bersamaan    |
 | Semi Final     | 5 menit/match | 2 match bersamaan    |
 | Grand Final    | 5 menit       | 1 match              |
@@ -793,6 +834,17 @@ func GenerateBracket(players []TournamentPlayer) []TournamentRound {
     // Pair players: 1 vs 8, 2 vs 7, 3 vs 6, 4 vs 5
     // Generate QF, SF, Final rounds
 }
+```
+
+Implemented REST surface:
+
+```http
+GET  /api/v1/tournaments
+POST /api/v1/tournaments
+GET  /api/v1/tournaments/:id
+POST /api/v1/tournaments/:id/join
+POST /api/v1/tournaments/:id/start
+POST /api/v1/tournaments/:id/matches/:match_id/report
 ```
 
 ### Leaderboard Challenge (Minimal Implementation)

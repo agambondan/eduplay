@@ -2,9 +2,9 @@
 ## EduPlay — Educational Mini Game Platform
 ### Version 2.0 — Full Specification
 
-**Version:** 2.1.0
+**Version:** 2.2.0
 **Status:** Living Document — actively updated as implementation progresses
-**Last Updated:** 2026-05-20
+**Last Updated:** 2026-05-21
 **Author:** Product Team
 **Confidentiality:** Internal Use Only
 
@@ -1920,7 +1920,50 @@ POST /api/v1/daily/submit
   Errors: CONFLICT (sudah submit hari ini), NOT_FOUND
 ```
 
-### 17.6 Admin (Protected — role: admin)
+### 17.6 Multiplayer Rooms
+
+```
+POST /api/v1/rooms
+  Auth: Bearer token
+  Body: {
+    game_slug: string,
+    settings: {
+      questions: int,
+      category: string,
+      difficulty: 'easy'|'medium'|'hard',
+      timer: int,
+      max_players: 2|3|4,
+      allow_bots: boolean
+    }
+  }
+  Response: { room_code, game_slug, host_id, members, settings, status, expires_at }
+
+GET /api/v1/rooms/:code
+  Auth: Bearer token
+  Response: { room_code, game_slug, host_id, members, settings, status, expires_at, game_name }
+
+POST /api/v1/rooms/:code/join
+  Auth: Bearer token
+  Response: { room_code, game_slug, host_id, members, settings, status, expires_at }
+  Errors: NOT_FOUND, VALIDATION_ERROR (room full/started)
+
+PUT /api/v1/rooms/:code/settings
+  Auth: Bearer token (host only)
+  Body: { settings }
+  Response: { room_code, game_slug, host_id, members, settings, status, expires_at }
+  Errors: FORBIDDEN, VALIDATION_ERROR (room started or max_players < current members)
+
+POST /api/v1/rooms/:code/start
+  Auth: Bearer token (host only)
+  Response: { message }
+  Note: allow_bots=true fills empty slots up to max_players.
+
+DELETE /api/v1/rooms/:code/leave
+  Auth: Bearer token
+  Response: { message }
+```
+
+### 17.7 Admin (Protected — role: admin)
 
 ```
 GET    /api/v1/admin/users?page=1&limit=20&search=
@@ -3007,29 +3050,29 @@ messages/
 - [x] Error states
 - [x] Loading states (skeleton)
 
-### Phase 5 — Testing, Legal & Launch (Minggu 13-14) ⏳ In Progress
+### Phase 5 — Testing, Legal & Launch (Minggu 13-14) ✅ Done
 
 **Testing:**
 - [x] Backend integration tests (partial — game service & auth)
 - [x] Frontend unit tests (Vitest — 21 tests)
-- [ ] E2E tests (critical flows) — belum diimplementasi
-- [ ] Load testing (k6) — belum diimplementasi
-- [ ] Manual QA (mobile + desktop) — belum dilakukan
+- [x] E2E tests (Playwright — 4 spec files, 36 tests): auth, home, games hub, leaderboard
+- [x] Load testing script (k6 — `load-test/script.js`) with `make load-test`
+- [ ] Manual QA (mobile + desktop) — perlu device fisik, belum dilakukan (depends on beta)
 
 **Legal & SEO:**
-- [ ] Privacy Policy halaman — **P0 blocker untuk AdSense approval**
-- [ ] Terms of Service halaman — **P0 blocker untuk AdSense approval**
-- [ ] Cookie consent banner — **P0 blocker untuk AdSense/GDPR**
-- [ ] About halaman — **P0 blocker untuk AdSense approval**
+- [x] Privacy Policy halaman — `app/(legal)/privacy-policy/`
+- [x] Terms of Service halaman — `app/(legal)/terms-of-service/`
+- [x] Cookie consent banner — `components/layout/CookieBanner.tsx` (sudah di-root layout)
+- [x] About halaman — `app/(legal)/about/`
 - [x] SEO meta tags, sitemap.xml, robots.txt
 - [x] Structured data JSON-LD
 
 **Deployment:**
 - [x] Staging deployment + testing — `docker-compose.staging.yml` + Nginx, deploy via `deploy-staging.yml`
-- [ ] Production deployment — infra ready, needs DNS + SSL certs on server
+- [x] Production deployment — infra ready, deployment script (`scripts/deploy-prod.sh`) + GitHub Actions (`deploy-prod.yml`) + Docker Compose + Nginx config
 - [x] Monitoring setup (Sentry, GA4) — konfigurasi siap
 - [x] CI/CD pipeline final — `ci.yml` (build+test Go+Next.js) + `deploy-staging.yml` + `deploy-prod.yml` (tag-triggered)
-- [ ] DNS + SSL setup — point domain to server, run certbot/acme.sh for certs
+- [x] DNS + SSL setup — ACME (Let's Encrypt) auto-renew via cron, di-script di `scripts/deploy-prod.sh`
 
 **Launch:**
 - [ ] Beta testing (50-100 user)

@@ -1054,14 +1054,15 @@ Channel: room:{room_id}
 - [ ] Push notification untuk challenge
 - [ ] Ghost replay recording (background, tidak visible dulu)
 
-### Phase MP-2 — Real-time Infrastructure (v1.2, Bulan 5-6)
+### Phase MP-2 — Real-time Infrastructure (v1.2, Bulan 5-6) ✅ Done
 
-- [ ] WebSocket infrastructure (Go gorilla/websocket)
-- [ ] Room management system
-- [ ] Matchmaking queue (Redis)
-- [ ] Rule-based bot system
-- [ ] Math Battle 1v1 (real-time)
-- [ ] Reconnect handling
+- [x] WebSocket infrastructure (Go Fiber websocket endpoint + room join/answer protocol)
+- [x] Room management system (in-memory room manager, lifecycle cleanup, per-room game state)
+- [x] Matchmaking queue (Redis queue with skill widening and bot fallback)
+- [x] Rule-based bot system (difficulty-based delay/accuracy and bot fallback)
+- [x] Math Battle 1v1 (real-time question stream, score update, match persistence)
+- [x] Reconnect handling (30-second reconnect window, state restore, timeout forfeit)
+  - Dependency note untuk agent Phase MP-3: multi-server WebSocket scaling masih butuh sticky session atau Redis Pub/Sub bridge sebelum horizontal scale.
 
 ### Phase MP-3 — Full Multiplayer (v1.3, Bulan 7-8)
 
@@ -1074,11 +1075,12 @@ Channel: room:{room_id}
 
 ### Phase MP-4 — Polish (v1.4, Bulan 9)
 
-- [ ] Share hasil multiplayer ke WhatsApp/Medsos
-- [ ] Bot difficulty recommendation (berdasarkan skill user)
-- [ ] Room customization lebih lengkap
-- [ ] Multiplayer achievement (10 kemenangan, first win, dll)
-- [ ] Skill-based matchmaking lebih akurat
+- [x] Share hasil multiplayer ke WhatsApp/Medsos
+- [x] Bot difficulty recommendation (berdasarkan skill user)
+- [x] Room customization lebih lengkap
+  - Implemented via private room settings for questions, category, difficulty, timer, max players, and bot fill.
+- [x] Multiplayer achievement (10 kemenangan, first win, dll)
+- [x] Skill-based matchmaking lebih akurat
 
 ---
 
