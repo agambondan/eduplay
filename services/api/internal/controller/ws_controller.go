@@ -6,6 +6,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/pkg/response"
 	"github.com/agambondan/eduplay/services/api/pkg/validator"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type WSController struct {
@@ -24,6 +25,7 @@ func (h *WSController) WSHandler() fiber.Handler {
 type QuickMatchInput struct {
 	GameSlug   string `json:"game_slug" validate:"required"`
 	Difficulty string `json:"difficulty" validate:"required,oneof=easy medium hard"`
+	Theme      string `json:"theme" validate:"omitempty,oneof=world asia asean europe hard"`
 }
 
 func (h *WSController) QuickMatch(c *fiber.Ctx) error {
@@ -40,7 +42,7 @@ func (h *WSController) QuickMatch(c *fiber.Ctx) error {
 		return response.ValidationError(c, err.Error())
 	}
 
-	result, err := h.matchmaking.JoinQueue(userID, req.GameSlug, req.Difficulty)
+	result, err := h.matchmaking.JoinQueue(userID, req.GameSlug, req.Difficulty, req.Theme)
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, err.Error())
 	}
@@ -52,6 +54,7 @@ type QuickMatchBotInput struct {
 	GameSlug      string `json:"game_slug" validate:"required"`
 	BotDifficulty string `json:"bot_difficulty" validate:"required,oneof=easy medium hard"`
 	Recommended   bool   `json:"recommended"`
+	Theme         string `json:"theme" validate:"omitempty,oneof=world asia asean europe hard"`
 }
 
 func (h *WSController) QuickMatchBot(c *fiber.Ctx) error {
@@ -76,12 +79,17 @@ func (h *WSController) QuickMatchBot(c *fiber.Ctx) error {
 		difficulty = recommended
 	}
 
-	roomID := "math_battle:" + difficulty
+	roomPrefix := ws.RoomPrefixForGame(req.GameSlug)
+	if roomPrefix == "" {
+		return response.Error(c, fiber.StatusBadRequest, "Unsupported multiplayer game")
+	}
+
+	roomID := roomPrefix + ":" + difficulty + ws.RoomThemeSegment(req.GameSlug, req.Theme) + ":" + uuid.NewString()
 	return response.Success(c, fiber.Map{
-		"match_id":         roomID,
-		"room_id":          roomID,
-		"recommended":      recommended,
-		"bot_difficulty":   difficulty,
+		"match_id":       roomID,
+		"room_id":        roomID,
+		"recommended":    recommended,
+		"bot_difficulty": difficulty,
 		"bot": fiber.Map{
 			"name":       getBotDisplayName(difficulty),
 			"difficulty": difficulty,

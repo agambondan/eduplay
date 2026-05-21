@@ -84,7 +84,7 @@ func (s *leaderboardService) getGameLeaderboardRaw(slug string, period string, u
 			database.DB.Select("username", "xp", "level").Where("id = ?", userID).First(&u)
 			userScore := u.XP
 			resp.UserRank = &repository.Entry{
-				Rank:     int(rank) + 1,
+				Rank:     int(rank),
 				UserID:   userID,
 				Username: u.Username,
 				Score:    userScore,
@@ -174,7 +174,7 @@ func (s *leaderboardService) GetGlobalLeaderboard(userID string, limit int64) (*
 				var u model.User
 				database.DB.Select("username", "xp", "level").Where("id = ?", userID).First(&u)
 				resp.UserRank = &repository.Entry{
-					Rank:     int(rank) + 1,
+					Rank:     int(rank),
 					UserID:   userID,
 					Username: u.Username,
 					Score:    u.XP,

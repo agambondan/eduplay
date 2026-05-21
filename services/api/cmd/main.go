@@ -148,7 +148,7 @@ func main() {
 	mpLeadSvc := service.NewMultiplayerLeaderboardService()
 	rematchSvc := service.NewRematchService(roomSvc)
 	tournamentSvc := service.NewTournamentService()
-	battleshipSvc := service.NewBattleshipService()
+	battleshipSvc := service.NewBattleshipService(pushSvc)
 
 	// Controllers
 	authHandler := controller.NewAuthController(authSvc)
@@ -337,6 +337,7 @@ func main() {
 	battleshipGroup.Get("/:id", battleshipHandler.Get)
 	battleshipGroup.Post("/:id/target", battleshipHandler.Target)
 	battleshipGroup.Post("/:id/shot", battleshipHandler.Shot)
+	battleshipGroup.Post("/:id/reveal", battleshipHandler.Reveal)
 	battleshipGroup.Post("/:id/resign", battleshipHandler.Resign)
 
 	// Ads — public slot query + admin CRUD
@@ -358,6 +359,7 @@ func main() {
 	service.StartPushScheduler(cfg)
 	service.StartChallengeExpiryCleanup()
 	service.StartGhostReplayCleanup()
+	service.StartTournamentScheduler()
 
 	logger.Log.Info("Server starting", zap.String("port", cfg.App.Port))
 	if err := app.Listen(":" + cfg.App.Port); err != nil {
@@ -433,6 +435,8 @@ func seedAchievements() {
 		{Slug: "mp-first-win", Name: "First Blood", Description: "Dapat kemenangan pertamamu di multiplayer", XPReward: 100, Icon: "trophy"},
 		{Slug: "mp-10-wins", Name: "Multiplayer Veteran", Description: "Kumpulkan 10 kemenangan multiplayer", XPReward: 500, Icon: "award"},
 		{Slug: "mp-bot-slayer", Name: "Bot Slayer", Description: "Kalahkan bot di multiplayer", XPReward: 100, Icon: "zap"},
+		{Slug: "tournament-champion", Name: "Tournament Champion", Description: "Menjadi champion Math Tournament", XPReward: 0, Icon: "crown"},
+		{Slug: "tournament-finalist", Name: "Tournament Finalist", Description: "Masuk grand final Math Tournament", XPReward: 0, Icon: "award"},
 	}
 	for _, a := range achievements {
 		var count int64

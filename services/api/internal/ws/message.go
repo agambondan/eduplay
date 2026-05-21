@@ -15,9 +15,14 @@ type PlayerInfo struct {
 }
 
 type RoomSettings struct {
+	RoomCode   string `json:"room_code,omitempty"`
 	GameSlug   string `json:"game_slug"`
+	Category   string `json:"category,omitempty"`
 	Difficulty string `json:"difficulty"`
+	Questions  int    `json:"questions,omitempty"`
+	Timer      int    `json:"timer,omitempty"`
 	MaxPlayers int    `json:"max_players"`
+	AllowBots  bool   `json:"allow_bots,omitempty"`
 }
 
 type JoinRoomPayload struct {
@@ -32,12 +37,21 @@ type SubmitAnswerPayload struct {
 	TimeTaken  int    `json:"time_taken_ms"`
 }
 
+type SubmitFlagAnswerPayload struct {
+	RoomID     string `json:"room_id"`
+	QuestionID string `json:"question_id"`
+	Answer     string `json:"answer"`
+	TimeTaken  int    `json:"time_taken_ms"`
+}
+
 type QuestionPayload struct {
 	ID             string   `json:"id"`
 	Text           string   `json:"text"`
 	Options        []string `json:"options"`
 	QuestionNumber int      `json:"question_number"`
 	Total          int      `json:"total"`
+	FlagCode       string   `json:"flag_code,omitempty"`
+	Region         string   `json:"region,omitempty"`
 	CorrectAnswer  string   `json:"-"` // only used server-side, never sent to client
 }
 
@@ -55,18 +69,20 @@ type OpponentProgressPayload struct {
 }
 
 type GameOverPayload struct {
-	Results  []PlayerResult `json:"results"`
-	WinnerID string         `json:"winner_id"`
-	XPEarned int            `json:"xp_earned"`
+	Results     []PlayerResult `json:"results"`
+	WinnerID    string         `json:"winner_id"`
+	XPEarned    int            `json:"xp_earned"`
+	TeamScores  map[string]int `json:"team_scores,omitempty"`
+	WinningTeam string         `json:"winning_team,omitempty"`
 }
 
 type PlayerResult struct {
-	PlayerID   string `json:"player_id"`
-	Username   string `json:"username"`
-	Score      int    `json:"score"`
-	Correct    int    `json:"correct"`
-	Wrong      int    `json:"wrong"`
-	IsWinner   bool   `json:"is_winner"`
+	PlayerID string `json:"player_id"`
+	Username string `json:"username"`
+	Score    int    `json:"score"`
+	Correct  int    `json:"correct"`
+	Wrong    int    `json:"wrong"`
+	IsWinner bool   `json:"is_winner"`
 }
 
 type BotInfo struct {

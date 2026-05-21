@@ -97,6 +97,30 @@ func (h *RoomController) Start(c *fiber.Ctx) error {
 	return response.Success(c, fiber.Map{"message": "Game dimulai!"})
 }
 
+func (h *RoomController) UpdateSettings(c *fiber.Ctx) error {
+	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
+	code := c.Params("code")
+	if code == "" {
+		return response.Error(c, fiber.StatusBadRequest, "Kode room diperlukan")
+	}
+
+	var req struct {
+		Settings service.RoomSettingsInput `json:"settings"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "Invalid request")
+	}
+
+	result, err := h.svc.UpdateSettings(code, userID, req.Settings)
+	if err != nil {
+		return response.Error(c, fiber.StatusBadRequest, err.Error())
+	}
+	return response.Success(c, result)
+}
+
 func (h *RoomController) Kick(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
 	if userID == "" {

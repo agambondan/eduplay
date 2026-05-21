@@ -1,7 +1,9 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"strings"
 	"sync"
@@ -9,10 +11,12 @@ import (
 
 	"github.com/agambondan/eduplay/services/api/config"
 	"github.com/agambondan/eduplay/services/api/internal/model"
+	"github.com/agambondan/eduplay/services/api/internal/service"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type AchievementChecker interface {
@@ -72,7 +76,7 @@ func (h *Hub) Run() {
 					})
 				}
 				client.SendMessage("room_joined", map[string]interface{}{
-					"room_id": client.RoomID,
+					"room_id":     client.RoomID,
 					"reconnected": true,
 				})
 			} else {
@@ -83,7 +87,7 @@ func (h *Hub) Run() {
 
 		case client := <-h.Unregister:
 			h.mu.Lock()
-			if _, ok := h.Clients[client.UserID]; ok {
+			if current, ok := h.Clients[client.UserID]; ok && current == client {
 				delete(h.Clients, client.UserID)
 			}
 			h.mu.Unlock()
@@ -196,6 +200,13 @@ func (h *Hub) handleMessage(client *Client, msg WSMessage) {
 		}
 		h.handleSudokuCell(client, payload.RoomID, payload.Row, payload.Col, payload.Value)
 
+	case "submit_flag_answer":
+		var payload SubmitFlagAnswerPayload
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+			return
+		}
+		h.handleFlagTeamAnswer(client, payload)
+
 	case "leave_room":
 		var payload struct {
 			RoomID string `json:"room_id"`
@@ -209,13 +220,27 @@ func (h *Hub) handleMessage(client *Client, msg WSMessage) {
 }
 
 func (h *Hub) handleJoinRoom(client *Client, roomID string) {
-	if strings.HasPrefix(roomID, "math_battle:") {
+	if strings.HasPrefix(roomID, "math_battle:") || strings.HasPrefix(roomID, "tournament:") {
+		isTournamentRoom := strings.HasPrefix(roomID, "tournament:")
+		difficulty := roomDifficulty(roomID, "math_battle")
+		hasTournamentBot := false
+		if isTournamentRoom {
+			tournamentDifficulty, tournamentHasBot, err := h.tournamentRoomConfig(roomID)
+			if err != nil {
+				client.SendMessage("error", map[string]string{"code": "TOURNAMENT_ROOM_INVALID", "message": err.Error()})
+				return
+			}
+			difficulty = tournamentDifficulty
+			hasTournamentBot = tournamentHasBot
+		}
 		room, ok := h.Rooms.Get(roomID)
 		if !ok {
 			gameID := h.getGameID("math-battle")
 			room = h.Rooms.CreateRoom(roomID, "math_battle", RoomSettings{
 				GameSlug:   "math-battle",
-				Difficulty: strings.TrimPrefix(roomID, "math_battle:"),
+				Difficulty: difficulty,
+				Questions:  15,
+				Timer:      4,
 				MaxPlayers: 2,
 			}, gameID)
 		}
@@ -223,7 +248,31 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 		var u model.User
 		database.DB.First(&u, "id = ?", client.UserID)
 
+		reconnected := room.HasPlayer(client.UserID)
+		if isTournamentRoom && !reconnected && !h.canJoinTournamentMatch(roomID, client.UserID) {
+			if !h.canSpectateTournamentRoom(roomID, client.UserID) {
+				client.SendMessage("error", map[string]string{"code": "TOURNAMENT_ACCESS_DENIED", "message": "Tidak punya akses match tournament"})
+				return
+			}
+			room.mu.Lock()
+			if room.Spectators == nil {
+				room.Spectators = make(map[string]*Client)
+			}
+			room.Spectators[client.UserID] = client
+			room.mu.Unlock()
+			client.RoomID = roomID
+			client.SendMessage("room_joined", map[string]interface{}{
+				"room_id":   roomID,
+				"players":   room.GetPlayers(),
+				"spectator": true,
+			})
+			client.SendMessage("room_state", room.CurrentStatePayload())
+			return
+		}
 		h.Rooms.JoinRoom(roomID, client.UserID, u.Username, u.Level)
+		if reconnected {
+			h.Rooms.CancelReconnectTimer(roomID, client.UserID)
+		}
 
 		if room, ok := h.Rooms.Get(roomID); ok {
 			room.mu.Lock()
@@ -244,19 +293,27 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 		client.RoomID = roomID
 
 		client.SendMessage("room_joined", map[string]interface{}{
-			"room_id": roomID,
-			"players": room.GetPlayers(),
+			"room_id":     roomID,
+			"players":     room.GetPlayers(),
+			"reconnected": reconnected,
 		})
+		client.SendMessage("room_state", room.CurrentStatePayload())
 
-		room.BroadcastExcept(client.UserID, "player_joined", PlayerInfo{
-			ID:       client.UserID,
-			Username: u.Username,
-			Level:    u.Level,
-		})
+		if reconnected {
+			room.BroadcastExcept(client.UserID, "player_reconnected", map[string]string{
+				"player_id": client.UserID,
+			})
+		} else {
+			room.BroadcastExcept(client.UserID, "player_joined", PlayerInfo{
+				ID:       client.UserID,
+				Username: u.Username,
+				Level:    u.Level,
+			})
+		}
 
-		if room.IsFull() {
+		if room.State == "waiting" && room.IsFull() {
 			go room.StartGame(h, h.cfg)
-		} else if room.Bot == nil {
+		} else if room.State == "waiting" && room.Bot == nil && (!isTournamentRoom || hasTournamentBot) {
 			room.AddBot()
 			if room.Bot != nil {
 				room.Broadcast("bot_joined", BotInfo{
@@ -274,14 +331,18 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 			gameID := h.getGameID("wordle")
 			room = h.Rooms.CreateRoom(roomID, "wordle_duel", RoomSettings{
 				GameSlug:   "wordle",
-				Difficulty: strings.TrimPrefix(roomID, "wordle_duel:"),
+				Difficulty: roomDifficulty(roomID, "wordle_duel"),
 				MaxPlayers: 2,
 			}, gameID)
 		}
 
 		var u model.User
 		database.DB.First(&u, "id = ?", client.UserID)
+		reconnected := room.HasPlayer(client.UserID)
 		h.Rooms.JoinRoom(roomID, client.UserID, u.Username, u.Level)
+		if reconnected {
+			h.Rooms.CancelReconnectTimer(roomID, client.UserID)
+		}
 
 		room.mu.Lock()
 		if room.ClientMap == nil {
@@ -292,8 +353,8 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 			p.Client = client
 		}
 		if room.Bot == nil &&
-			len(room.GetPlayers()) == 1 {
-			bot := NewRuleBasedBot("medium", "wordle")
+			len(room.Players) == 1 {
+			bot := NewRuleBasedBot(room.Settings.Difficulty, "wordle")
 			room.Bot = bot
 			if room.Bots == nil {
 				room.Bots = make(map[string]*RuleBasedBot)
@@ -301,7 +362,7 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 			room.Bots[bot.UserID] = bot
 			room.Players[bot.UserID] = &Player{
 				ID: bot.UserID, Username: bot.DisplayName, Level: 1, Score: 0,
-				Correct: 0, Wrong: 0, JoinedAt: time.Now(),
+				Correct: 0, Wrong: 0, JoinedAt: time.Now(), AnsweredQuestions: make(map[string]bool),
 			}
 		}
 		room.mu.Unlock()
@@ -311,9 +372,16 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 			h.Rooms.LeaveRoom(oldRoomID, client.UserID)
 		}
 		client.RoomID = roomID
-		client.SendMessage("room_joined", map[string]interface{}{"room_id": roomID, "players": room.GetPlayers()})
+		client.SendMessage("room_joined", map[string]interface{}{"room_id": roomID, "players": room.GetPlayers(), "reconnected": reconnected})
+		client.SendMessage("room_state", room.CurrentStatePayload())
 
-		if room.IsFull() {
+		if reconnected {
+			room.BroadcastExcept(client.UserID, "player_reconnected", map[string]string{
+				"player_id": client.UserID,
+			})
+		}
+
+		if room.State == "waiting" && room.IsFull() {
 			go h.startWordleDuel(room)
 		}
 
@@ -323,9 +391,163 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 			gameID := h.getGameID("sudoku")
 			room = h.Rooms.CreateRoom(roomID, "sudoku_race", RoomSettings{
 				GameSlug:   "sudoku",
-				Difficulty: strings.TrimPrefix(roomID, "sudoku_race:"),
+				Difficulty: roomDifficulty(roomID, "sudoku_race"),
 				MaxPlayers: 2,
 			}, gameID)
+		}
+
+		var u model.User
+		database.DB.First(&u, "id = ?", client.UserID)
+		reconnected := room.HasPlayer(client.UserID)
+		h.Rooms.JoinRoom(roomID, client.UserID, u.Username, u.Level)
+		if reconnected {
+			h.Rooms.CancelReconnectTimer(roomID, client.UserID)
+		}
+
+		room.mu.Lock()
+		if room.ClientMap == nil {
+			room.ClientMap = make(map[string]*Client)
+		}
+		room.ClientMap[client.UserID] = client
+		if p, exists := room.Players[client.UserID]; exists {
+			p.Client = client
+		}
+		room.mu.Unlock()
+
+		oldRoomID := client.RoomID
+		if oldRoomID != "" && oldRoomID != roomID {
+			h.Rooms.LeaveRoom(oldRoomID, client.UserID)
+		}
+		client.RoomID = roomID
+		client.SendMessage("room_joined", map[string]interface{}{"room_id": roomID, "players": room.GetPlayers(), "reconnected": reconnected})
+		client.SendMessage("room_state", room.CurrentStatePayload())
+
+		if reconnected {
+			room.BroadcastExcept(client.UserID, "player_reconnected", map[string]string{
+				"player_id": client.UserID,
+			})
+		}
+
+		if room.State == "waiting" && room.IsFull() {
+			go h.startSudokuRace(room)
+		}
+	} else if strings.HasPrefix(roomID, "quiz_showdown:") {
+		roomData, hasRoomData := loadRoomDataFromCode(roomID, "quiz_showdown")
+		settings := RoomSettings{
+			RoomCode:   roomCodeFromID(roomID, "quiz_showdown"),
+			GameSlug:   "quiz-showdown",
+			Category:   "mix",
+			Difficulty: "medium",
+			Questions:  20,
+			Timer:      10,
+			MaxPlayers: 4,
+			AllowBots:  true,
+		}
+		if hasRoomData {
+			settings = roomSettingsFromData(roomData)
+		}
+
+		room, ok := h.Rooms.Get(roomID)
+		if !ok {
+			gameID := h.getGameID("quiz-showdown")
+			room = h.Rooms.CreateRoom(roomID, "quiz_showdown", settings, gameID)
+		}
+
+		isRoomMember := hasRoomData && roomDataHasMember(roomData, client.UserID)
+		room.mu.RLock()
+		_, alreadyJoined := room.Players[client.UserID]
+		roomFull := len(room.Players) >= room.Settings.MaxPlayers
+		roomState := room.State
+		room.mu.RUnlock()
+		if roomFull && !alreadyJoined && !isRoomMember {
+			client.SendMessage("error", map[string]string{"code": "ROOM_FULL", "message": "Room sudah penuh"})
+			return
+		}
+		if roomState != "waiting" && !alreadyJoined && !isRoomMember {
+			client.SendMessage("error", map[string]string{"code": "ROOM_STARTED", "message": "Match sudah dimulai"})
+			return
+		}
+		if roomFull && !alreadyJoined && isRoomMember {
+			room.RemoveOneBot()
+		}
+
+		var u model.User
+		database.DB.First(&u, "id = ?", client.UserID)
+		reconnected := room.HasPlayer(client.UserID)
+		h.Rooms.JoinRoom(roomID, client.UserID, u.Username, u.Level)
+		if reconnected {
+			h.Rooms.CancelReconnectTimer(roomID, client.UserID)
+		}
+
+		room.mu.Lock()
+		if room.ClientMap == nil {
+			room.ClientMap = make(map[string]*Client)
+		}
+		room.ClientMap[client.UserID] = client
+		if p, exists := room.Players[client.UserID]; exists {
+			p.Client = client
+		}
+		room.mu.Unlock()
+
+		oldRoomID := client.RoomID
+		if oldRoomID != "" && oldRoomID != roomID {
+			h.Rooms.LeaveRoom(oldRoomID, client.UserID)
+		}
+		client.RoomID = roomID
+		client.SendMessage("room_joined", map[string]interface{}{"room_id": roomID, "players": room.GetPlayers(), "reconnected": reconnected})
+		client.SendMessage("room_state", room.CurrentStatePayload())
+
+		if reconnected {
+			room.BroadcastExcept(client.UserID, "player_reconnected", map[string]string{
+				"player_id": client.UserID,
+			})
+		} else {
+			room.BroadcastExcept(client.UserID, "player_joined", PlayerInfo{
+				ID:       client.UserID,
+				Username: u.Username,
+				Level:    u.Level,
+			})
+		}
+
+		shouldStart := room.State == "waiting" && room.IsFull()
+		if room.State == "waiting" && hasRoomData && roomData.Status == "playing" {
+			if room.Settings.AllowBots {
+				for _, bot := range room.FillBotsUntilFull() {
+					room.Broadcast("bot_joined", BotInfo{
+						ID:         bot.UserID,
+						Username:   bot.DisplayName,
+						Difficulty: bot.Difficulty,
+					})
+				}
+			}
+			shouldStart = room.IsFull()
+		}
+		if shouldStart {
+			go room.StartGame(h, h.cfg)
+		}
+	} else if strings.HasPrefix(roomID, "flag_team_battle:") {
+		room, ok := h.Rooms.Get(roomID)
+		if !ok {
+			gameID := h.getGameID("flag-team-battle")
+			room = h.Rooms.CreateRoom(roomID, "flag_team_battle", RoomSettings{
+				GameSlug:   "flag-team-battle",
+				Difficulty: roomDifficulty(roomID, "flag_team_battle"),
+				MaxPlayers: 4,
+			}, gameID)
+		}
+
+		room.mu.RLock()
+		_, alreadyJoined := room.Players[client.UserID]
+		roomFull := len(room.Players) >= room.Settings.MaxPlayers
+		roomState := room.State
+		room.mu.RUnlock()
+		if roomFull && !alreadyJoined {
+			client.SendMessage("error", map[string]string{"code": "ROOM_FULL", "message": "Room sudah penuh"})
+			return
+		}
+		if roomState != "waiting" && !alreadyJoined {
+			client.SendMessage("error", map[string]string{"code": "ROOM_STARTED", "message": "Match sudah dimulai"})
+			return
 		}
 
 		var u model.User
@@ -348,11 +570,109 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 		}
 		client.RoomID = roomID
 		client.SendMessage("room_joined", map[string]interface{}{"room_id": roomID, "players": room.GetPlayers()})
+		room.BroadcastExcept(client.UserID, "player_joined", PlayerInfo{ID: client.UserID, Username: u.Username, Level: u.Level})
 
-		if room.IsFull() {
-			go h.startSudokuRace(room)
+		h.scheduleFlagTeamStart(roomID)
+	}
+}
+
+func loadRoomDataFromCode(roomID, prefix string) (*service.RoomData, bool) {
+	code := roomCodeFromID(roomID, prefix)
+	if code == "" {
+		return nil, false
+	}
+	raw, err := database.RDB.Get(context.Background(), "room:"+code).Result()
+	if err != nil {
+		return nil, false
+	}
+	var room service.RoomData
+	if err := json.Unmarshal([]byte(raw), &room); err != nil {
+		return nil, false
+	}
+	return &room, true
+}
+
+func (h *Hub) tournamentRoomConfig(roomID string) (string, bool, error) {
+	var match model.TournamentMatch
+	if err := database.DB.Where("room_id = ?", roomID).First(&match).Error; err != nil {
+		return "", false, errors.New("match tournament tidak ditemukan")
+	}
+	var tournament model.Tournament
+	if err := database.DB.Where("id = ?", match.TournamentID).First(&tournament).Error; err != nil {
+		return "", false, errors.New("tournament tidak ditemukan")
+	}
+
+	playerIDs := make([]uuid.UUID, 0, 2)
+	if match.Player1ID != nil {
+		playerIDs = append(playerIDs, *match.Player1ID)
+	}
+	if match.Player2ID != nil {
+		playerIDs = append(playerIDs, *match.Player2ID)
+	}
+	var botCount int64
+	if len(playerIDs) > 0 {
+		database.DB.Model(&model.TournamentPlayer{}).
+			Where("id IN ? AND user_id IS NULL", playerIDs).
+			Count(&botCount)
+	}
+	return tournament.Difficulty, botCount > 0, nil
+}
+
+func (h *Hub) canJoinTournamentMatch(roomID, userID string) bool {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return false
+	}
+	var count int64
+	database.DB.Table("tournament_matches AS tm").
+		Joins("JOIN tournament_players AS p ON p.id = tm.player1_id OR p.id = tm.player2_id").
+		Where("tm.room_id = ? AND p.user_id = ?", roomID, userUUID).
+		Count(&count)
+	return count > 0
+}
+
+func (h *Hub) canSpectateTournamentRoom(roomID, userID string) bool {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return false
+	}
+	var match model.TournamentMatch
+	if err := database.DB.Where("room_id = ?", roomID).First(&match).Error; err != nil {
+		return false
+	}
+	var count int64
+	database.DB.Model(&model.TournamentPlayer{}).
+		Where("tournament_id = ? AND user_id = ?", match.TournamentID, userUUID).
+		Count(&count)
+	return count > 0
+}
+
+func roomCodeFromID(roomID, prefix string) string {
+	value := strings.TrimPrefix(roomID, prefix+":")
+	parts := strings.SplitN(value, ":", 2)
+	return strings.TrimSpace(parts[0])
+}
+
+func roomSettingsFromData(room *service.RoomData) RoomSettings {
+	return RoomSettings{
+		RoomCode:   room.RoomCode,
+		GameSlug:   room.GameSlug,
+		Category:   room.Settings.Category,
+		Difficulty: room.Settings.Difficulty,
+		Questions:  room.Settings.Questions,
+		Timer:      room.Settings.Timer,
+		MaxPlayers: room.Settings.MaxPlayers,
+		AllowBots:  room.Settings.AllowBots,
+	}
+}
+
+func roomDataHasMember(room *service.RoomData, userID string) bool {
+	for _, member := range room.Members {
+		if member.ID == userID {
+			return true
 		}
 	}
+	return false
 }
 
 func (h *Hub) startWordleDuel(room *GameRoom) {
@@ -411,10 +731,10 @@ func (h *Hub) handleWordleGuess(client *Client, roomID, word string) {
 	room.mu.Unlock()
 
 	client.SendMessage("wordle_result", map[string]interface{}{
-		"word":      word,
-		"result":    result,
-		"attempts":  guessNum,
-		"correct":   isCorrect,
+		"word":     word,
+		"result":   result,
+		"attempts": guessNum,
+		"correct":  isCorrect,
 	})
 
 	room.Broadcast("opponent_progress", map[string]interface{}{
@@ -462,9 +782,9 @@ func (h *Hub) startSudokuRace(room *GameRoom) {
 
 	room.mu.Lock()
 	room.GameData = map[string]interface{}{
-		"puzzle":    puzzle,
-		"solution":  solution,
-		"progress":  map[string]int{},
+		"puzzle":   puzzle,
+		"solution": solution,
+		"progress": map[string]int{},
 	}
 	room.State = "playing"
 	room.mu.Unlock()

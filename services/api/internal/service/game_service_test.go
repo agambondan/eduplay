@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
@@ -16,12 +17,16 @@ import (
 	"gorm.io/gorm"
 )
 
+var gameDBSeq int64
+
 func setupGameTestDB() {
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	gameDBSeq++
+	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:gametest%d?mode=memory&cache=private", gameDBSeq)), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
-	db.AutoMigrate(&model.User{}, &model.Game{}, &model.GameSession{}, &model.UserHighscore{})
+	db.Migrator().DropTable(&model.User{}, &model.Game{}, &model.GameSession{}, &model.UserHighscore{}, &model.GhostReplay{})
+	db.AutoMigrate(&model.User{}, &model.Game{}, &model.GameSession{}, &model.UserHighscore{}, &model.GhostReplay{})
 	database.DB = db
 
 	mr, err := miniredis.Run()

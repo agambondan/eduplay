@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"math/rand"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
@@ -18,15 +20,17 @@ type RoomService interface {
 	JoinRoom(roomCode, userID string) (*RoomResponse, error)
 	LeaveRoom(roomCode, userID string) error
 	StartRoom(roomCode, userID string) error
+	UpdateSettings(roomCode, userID string, settings RoomSettingsInput) (*RoomResponse, error)
 	KickPlayer(roomCode, hostID, targetID string) error
 }
 
 type RoomSettingsInput struct {
-	Questions   int    `json:"questions"`
-	Category    string `json:"category"`
-	Timer       int    `json:"timer"`
-	MaxPlayers  int    `json:"max_players"`
-	AllowBots   bool   `json:"allow_bots"`
+	Questions  int    `json:"questions"`
+	Category   string `json:"category"`
+	Difficulty string `json:"difficulty"`
+	Timer      int    `json:"timer"`
+	MaxPlayers int    `json:"max_players"`
+	AllowBots  bool   `json:"allow_bots"`
 }
 
 type RoomMember struct {
@@ -37,13 +41,13 @@ type RoomMember struct {
 }
 
 type RoomData struct {
-	RoomCode  string       `json:"room_code"`
-	GameSlug  string       `json:"game_slug"`
-	HostID    string       `json:"host_id"`
-	Members   []RoomMember `json:"members"`
+	RoomCode  string            `json:"room_code"`
+	GameSlug  string            `json:"game_slug"`
+	HostID    string            `json:"host_id"`
+	Members   []RoomMember      `json:"members"`
 	Settings  RoomSettingsInput `json:"settings"`
-	Status    string       `json:"status"`
-	CreatedAt time.Time    `json:"created_at"`
+	Status    string            `json:"status"`
+	CreatedAt time.Time         `json:"created_at"`
 }
 
 type RoomResponse struct {
@@ -83,18 +87,7 @@ func (s *roomService) CreateRoom(hostID, gameSlug string, settings RoomSettingsI
 		return nil, errors.New("Pengguna tidak ditemukan")
 	}
 
-	if settings.Questions == 0 {
-		settings.Questions = 20
-	}
-	if settings.Timer == 0 {
-		settings.Timer = 10
-	}
-	if settings.Category == "" {
-		settings.Category = "mix"
-	}
-	if settings.MaxPlayers < 2 || settings.MaxPlayers > 4 {
-		settings.MaxPlayers = 4
-	}
+	settings = normalizeRoomSettings(settings)
 
 	roomCode := s.generateRoomCode()
 
@@ -121,12 +114,12 @@ func (s *roomService) CreateRoom(hostID, gameSlug string, settings RoomSettingsI
 	database.RDB.Expire(ctx, "room:"+roomCode+":members", 10*time.Minute)
 
 	return &RoomResponse{
-		RoomCode: roomCode,
-		GameSlug: gameSlug,
-		HostID:   hostID,
-		Members:  room.Members,
-		Settings: settings,
-		Status:   "waiting",
+		RoomCode:  roomCode,
+		GameSlug:  gameSlug,
+		HostID:    hostID,
+		Members:   room.Members,
+		Settings:  settings,
+		Status:    "waiting",
 		ExpiresAt: time.Now().Add(10 * time.Minute).Format(time.RFC3339),
 	}, nil
 }
@@ -142,12 +135,12 @@ func (s *roomService) GetRoom(roomCode string) (*RoomDetailResponse, error) {
 
 	return &RoomDetailResponse{
 		RoomResponse: RoomResponse{
-			RoomCode: room.RoomCode,
-			GameSlug: room.GameSlug,
-			HostID:   room.HostID,
-			Members:  room.Members,
-			Settings: room.Settings,
-			Status:   room.Status,
+			RoomCode:  room.RoomCode,
+			GameSlug:  room.GameSlug,
+			HostID:    room.HostID,
+			Members:   room.Members,
+			Settings:  room.Settings,
+			Status:    room.Status,
 			ExpiresAt: room.CreatedAt.Add(10 * time.Minute).Format(time.RFC3339),
 		},
 		GameName: game.Name,
@@ -170,8 +163,8 @@ func (s *roomService) JoinRoom(roomCode, userID string) (*RoomResponse, error) {
 		}
 	}
 
-	if len(room.Members) >= 4 {
-		return nil, errors.New("Room sudah penuh (maks 4 player)")
+	if len(room.Members) >= room.Settings.MaxPlayers {
+		return nil, errors.New("Room sudah penuh")
 	}
 
 	uid, _ := uuid.Parse(userID)
@@ -236,8 +229,24 @@ func (s *roomService) StartRoom(roomCode, userID string) error {
 		return errors.New("Hanya host yang bisa memulai game")
 	}
 
-	if len(room.Members) < 2 {
+	if room.Status != "waiting" {
+		return errors.New("Room sudah dimulai")
+	}
+
+	if len(room.Members) < 2 && !room.Settings.AllowBots {
 		return errors.New("Minimal 2 player untuk memulai")
+	}
+
+	if room.Settings.AllowBots {
+		for len(room.Members) < room.Settings.MaxPlayers {
+			n := len(room.Members)
+			room.Members = append(room.Members, RoomMember{
+				ID:       "bot_room_" + room.RoomCode + "_" + strconv.Itoa(n+1),
+				Username: botRoomName(n),
+				Level:    1,
+				IsHost:   false,
+			})
+		}
 	}
 
 	room.Status = "playing"
@@ -245,6 +254,31 @@ func (s *roomService) StartRoom(roomCode, userID string) error {
 	database.RDB.Set(context.Background(), "room:"+roomCode, data, 10*time.Minute)
 
 	return nil
+}
+
+func (s *roomService) UpdateSettings(roomCode, userID string, settings RoomSettingsInput) (*RoomResponse, error) {
+	room, err := s.getRoomData(roomCode)
+	if err != nil {
+		return nil, err
+	}
+
+	if room.HostID != userID {
+		return nil, errors.New("Hanya host yang bisa mengubah pengaturan")
+	}
+
+	if room.Status != "waiting" {
+		return nil, errors.New("Room sudah dimulai")
+	}
+
+	room.Settings = normalizeRoomSettings(settings)
+	if len(room.Members) > room.Settings.MaxPlayers {
+		return nil, errors.New("Max player lebih kecil dari jumlah player saat ini")
+	}
+
+	data, _ := json.Marshal(room)
+	database.RDB.Set(context.Background(), "room:"+roomCode, data, 10*time.Minute)
+
+	return s.toResponse(room), nil
 }
 
 func (s *roomService) KickPlayer(roomCode, hostID, targetID string) error {
@@ -305,4 +339,51 @@ func (s *roomService) generateRoomCode() string {
 	}
 
 	return string(code)
+}
+
+func normalizeRoomSettings(settings RoomSettingsInput) RoomSettingsInput {
+	switch {
+	case settings.Questions <= 0:
+		settings.Questions = 20
+	case settings.Questions < 5:
+		settings.Questions = 5
+	case settings.Questions > 30:
+		settings.Questions = 30
+	}
+
+	if settings.Timer <= 0 {
+		settings.Timer = 10
+	} else if settings.Timer < 5 {
+		settings.Timer = 5
+	} else if settings.Timer > 30 {
+		settings.Timer = 30
+	}
+
+	settings.Category = strings.TrimSpace(strings.ToLower(settings.Category))
+	if settings.Category == "" {
+		settings.Category = "mix"
+	}
+
+	settings.Difficulty = strings.TrimSpace(strings.ToLower(settings.Difficulty))
+	switch settings.Difficulty {
+	case "easy", "medium", "hard":
+	default:
+		settings.Difficulty = "medium"
+	}
+
+	if settings.MaxPlayers < 2 {
+		settings.MaxPlayers = 2
+	} else if settings.MaxPlayers > 4 {
+		settings.MaxPlayers = 4
+	}
+
+	return settings
+}
+
+func botRoomName(index int) string {
+	names := []string{"Rudi Bot", "Siti Bot", "Bimo Bot", "Ayu Bot"}
+	if index >= 0 && index < len(names) {
+		return names[index]
+	}
+	return "Edu Bot"
 }

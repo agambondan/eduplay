@@ -17,40 +17,10 @@ func SeedGameContent() {
 }
 
 func seedCountries() {
-	countries := []model.Country{
-		{Name: "Indonesia", Capital: "Jakarta", FlagEmoji: "🇮🇩", FlagCode: "ID", Region: "asia"},
-		{Name: "Japan", Capital: "Tokyo", FlagEmoji: "🇯🇵", FlagCode: "JP", Region: "asia"},
-		{Name: "China", Capital: "Beijing", FlagEmoji: "🇨🇳", FlagCode: "CN", Region: "asia"},
-		{Name: "India", Capital: "New Delhi", FlagEmoji: "🇮🇳", FlagCode: "IN", Region: "asia"},
-		{Name: "South Korea", Capital: "Seoul", FlagEmoji: "🇰🇷", FlagCode: "KR", Region: "asia"},
-		{Name: "Thailand", Capital: "Bangkok", FlagEmoji: "🇹🇭", FlagCode: "TH", Region: "asia"},
-		{Name: "Vietnam", Capital: "Hanoi", FlagEmoji: "🇻🇳", FlagCode: "VN", Region: "asia"},
-		{Name: "Malaysia", Capital: "Kuala Lumpur", FlagEmoji: "🇲🇾", FlagCode: "MY", Region: "asia"},
-		{Name: "Philippines", Capital: "Manila", FlagEmoji: "🇵🇭", FlagCode: "PH", Region: "asia"},
-		{Name: "Singapore", Capital: "Singapore", FlagEmoji: "🇸🇬", FlagCode: "SG", Region: "asia"},
-		{Name: "Australia", Capital: "Canberra", FlagEmoji: "🇦🇺", FlagCode: "AU", Region: "oceania"},
-		{Name: "New Zealand", Capital: "Wellington", FlagEmoji: "🇳🇿", FlagCode: "NZ", Region: "oceania"},
-		{Name: "United States", Capital: "Washington DC", FlagEmoji: "🇺🇸", FlagCode: "US", Region: "americas"},
-		{Name: "Canada", Capital: "Ottawa", FlagEmoji: "🇨🇦", FlagCode: "CA", Region: "americas"},
-		{Name: "Brazil", Capital: "Brasilia", FlagEmoji: "🇧🇷", FlagCode: "BR", Region: "americas"},
-		{Name: "Mexico", Capital: "Mexico City", FlagEmoji: "🇲🇽", FlagCode: "MX", Region: "americas"},
-		{Name: "Argentina", Capital: "Buenos Aires", FlagEmoji: "🇦🇷", FlagCode: "AR", Region: "americas"},
-		{Name: "United Kingdom", Capital: "London", FlagEmoji: "🇬🇧", FlagCode: "GB", Region: "europe"},
-		{Name: "France", Capital: "Paris", FlagEmoji: "🇫🇷", FlagCode: "FR", Region: "europe"},
-		{Name: "Germany", Capital: "Berlin", FlagEmoji: "🇩🇪", FlagCode: "DE", Region: "europe"},
-		{Name: "Italy", Capital: "Rome", FlagEmoji: "🇮🇹", FlagCode: "IT", Region: "europe"},
-		{Name: "Spain", Capital: "Madrid", FlagEmoji: "🇪🇸", FlagCode: "ES", Region: "europe"},
-		{Name: "Netherlands", Capital: "Amsterdam", FlagEmoji: "🇳🇱", FlagCode: "NL", Region: "europe"},
-		{Name: "Sweden", Capital: "Stockholm", FlagEmoji: "🇸🇪", FlagCode: "SE", Region: "europe"},
-		{Name: "Russia", Capital: "Moscow", FlagEmoji: "🇷🇺", FlagCode: "RU", Region: "europe"},
-		{Name: "Turkey", Capital: "Ankara", FlagEmoji: "🇹🇷", FlagCode: "TR", Region: "europe"},
-		{Name: "Egypt", Capital: "Cairo", FlagEmoji: "🇪🇬", FlagCode: "EG", Region: "africa"},
-		{Name: "South Africa", Capital: "Pretoria", FlagEmoji: "🇿🇦", FlagCode: "ZA", Region: "africa"},
-		{Name: "Nigeria", Capital: "Abuja", FlagEmoji: "🇳🇬", FlagCode: "NG", Region: "africa"},
-		{Name: "Saudi Arabia", Capital: "Riyadh", FlagEmoji: "🇸🇦", FlagCode: "SA", Region: "asia"},
-	}
+	countries := generatedCountries()
 	for _, c := range countries {
-		database.DB.Where(model.Country{FlagCode: c.FlagCode}).FirstOrCreate(&c)
+		var country model.Country
+		database.DB.Where(model.Country{FlagCode: c.FlagCode}).Assign(c).FirstOrCreate(&country)
 	}
 	logger.Log.Info("seeded countries", zap.Int("count", len(countries)))
 }

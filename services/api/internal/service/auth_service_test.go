@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/agambondan/eduplay/services/api/config"
@@ -17,11 +18,15 @@ import (
 	"gorm.io/gorm"
 )
 
+var testDBSeq int64
+
 func setupTestDB() {
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	testDBSeq++
+	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:test%d?mode=memory&cache=private", testDBSeq)), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
+	db.Migrator().DropTable(&model.User{})
 	db.AutoMigrate(&model.User{})
 	database.DB = db
 
@@ -32,6 +37,12 @@ func setupTestDB() {
 	database.RDB = redis.NewClient(&redis.Options{
 		Addr: mr.Addr(),
 	})
+}
+
+func flushRedis() {
+	if database.RDB != nil {
+		database.RDB.FlushAll(context.Background())
+	}
 }
 
 func getTestConfig() *config.Config {

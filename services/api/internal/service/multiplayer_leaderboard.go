@@ -196,9 +196,12 @@ func (s *rematchService) CreateRematch(oldRoomCode string) (string, error) {
 	}
 
 	settings := RoomSettingsInput{
-		Questions: oldRoom.Settings.Questions,
-		Category:  oldRoom.Settings.Category,
-		Timer:     oldRoom.Settings.Timer,
+		Questions:  oldRoom.Settings.Questions,
+		Category:   oldRoom.Settings.Category,
+		Difficulty: oldRoom.Settings.Difficulty,
+		Timer:      oldRoom.Settings.Timer,
+		MaxPlayers: oldRoom.Settings.MaxPlayers,
+		AllowBots:  oldRoom.Settings.AllowBots,
 	}
 
 	result, err := s.roomSvc.CreateRoom(oldRoom.HostID, oldRoom.GameSlug, settings)
