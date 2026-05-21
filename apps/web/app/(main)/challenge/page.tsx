@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import api from '@/lib/api/client'
@@ -21,7 +21,7 @@ interface ChallengeData {
   share_link: string
 }
 
-export default function ChallengePage() {
+function ChallengeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const link = searchParams.get('link')
@@ -133,5 +133,17 @@ export default function ChallengePage() {
         <p className="text-xs text-gray-400">Kadaluarsa: {new Date(challenge.expires_at).toLocaleDateString('id-ID')}</p>
       </div>
     </GameContainer>
+  )
+}
+
+export default function ChallengePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+      </div>
+    }>
+      <ChallengeContent />
+    </Suspense>
   )
 }

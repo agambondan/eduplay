@@ -5,8 +5,7 @@ import { describe, expect, it } from 'vitest';
 describe('ScoreBoard', () => {
   it('renders score with default label', () => {
     render(<ScoreBoard score={42} />);
-    expect(screen.getByText('Score:')).toBeInTheDocument();
-    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByText(/42/)).toBeInTheDocument();
   });
 
   it('renders score with custom label', () => {

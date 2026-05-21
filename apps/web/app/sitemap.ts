@@ -20,14 +20,17 @@ const games = [
   'timeline-history',
   'brick-breaker',
   'math-battle',
+  'math-tournament',
   'memory-match',
   'typing-speed',
   'simon-says',
   'snake',
   'trivia-challenge',
   'word-chain',
+  'battleship-math',
   'number-match',
   'fraction-visualizer',
+  'onet',
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

@@ -1,0 +1,7 @@
+country-flag-icons 1.6.17
+License: MIT
+Repository: git+https://gitlab.com/catamphetamine/country-flag-icons.git
+Detail overrides: flag-icons 4x3 MIT assets for selected emblem-heavy flags.
+
+Generated flag assets for EduPlay Phase 7.
+Regenerate with: node scripts/sync-country-flags.mjs

@@ -9,26 +9,27 @@ export function useGame(gameSlug: string, gameName?: string, category?: string) 
   const store = useGameStore();
   const { accessToken } = useAuthStore();
 
-  const submitScore = useCallback(async (): Promise<ScoreSubmitResponse | null> => {
+  const submitScore = useCallback(async (scoreOverride?: number): Promise<ScoreSubmitResponse | null> => {
     if (!accessToken) {
       return null;
     }
+    const scoreToSubmit = scoreOverride ?? store.score;
     try {
       const result = await gamesApi.submitScore(gameSlug, {
-        score: store.score,
+        score: scoreToSubmit,
         duration: 60 - store.timeLeft,
         difficulty: store.difficulty,
       });
       if (result) {
         analytics.gameCompleted(
           gameSlug,
-          store.score,
+          scoreToSubmit,
           60 - store.timeLeft,
           store.difficulty,
           result.xp_earned
         );
         if (result.new_highscore) {
-          analytics.newHighscore(gameSlug, store.score);
+          analytics.newHighscore(gameSlug, scoreToSubmit);
         }
         if (result.level_up && result.new_level) {
           store.setLevelUp({ newLevel: result.new_level });

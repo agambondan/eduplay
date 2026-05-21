@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
 import { multiplayerApi } from '@/lib/api/multiplayer'
 import { useAuthStore } from '@/lib/stores/authStore'
 import { GameContainer } from '@/components/ui/GameContainer'
-import { ArrowLeft, Loader2, Trophy } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
+import { QuickMatchBotResult } from '@/types/multiplayer'
 
 type Screen = 'menu' | 'playing' | 'result'
 
@@ -15,6 +16,7 @@ const COLS = 5
 
 export default function WordleDuelPage() {
   const [screen, setScreen] = useState<Screen>('menu')
+  const [matchInfo, setMatchInfo] = useState<QuickMatchBotResult | null>(null)
   const router = useRouter()
   const token = useAuthStore((s) => s.accessToken)
 
@@ -23,8 +25,8 @@ export default function WordleDuelPage() {
       <button onClick={() => router.push('/games')} className="absolute left-4 top-4 z-10 flex items-center gap-2 text-sm text-gray-500">
         <ArrowLeft className="h-4 w-4" /> Kembali
       </button>
-      {screen === 'menu' && <MenuScreen onStart={() => setScreen('playing')} />}
-      {screen === 'playing' && <DuelScreen token={token!} onResult={() => setScreen('result')} />}
+      {screen === 'menu' && <MenuScreen onStart={(result) => { setMatchInfo(result); setScreen('playing') }} />}
+      {screen === 'playing' && matchInfo && <DuelScreen token={token!} roomID={matchInfo.room_id} onResult={() => setScreen('result')} />}
       {screen === 'result' && (
         <GameContainer maxWidth="max-w-lg">
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -34,10 +36,10 @@ export default function WordleDuelPage() {
   )
 }
 
-function MenuScreen({ onStart }: { onStart: () => void }) {
+function MenuScreen({ onStart }: { onStart: (result: QuickMatchBotResult) => void }) {
   const botMutation = useMutation({
     mutationFn: () => multiplayerApi.quickMatchBot('wordle', 'medium'),
-    onSuccess: () => onStart(),
+    onSuccess: (result) => onStart(result),
   })
 
   return (
@@ -54,7 +56,7 @@ function MenuScreen({ onStart }: { onStart: () => void }) {
   )
 }
 
-function DuelScreen({ token, onResult }: { token: string; onResult: () => void }) {
+function DuelScreen({ token, roomID, onResult }: { token: string; roomID: string; onResult: () => void }) {
   const [grid, setGrid] = useState<string[][]>(Array(ROWS).fill(null).map(() => Array(COLS).fill('')))
   const [colors, setColors] = useState<string[][]>(Array(ROWS).fill(null).map(() => Array(COLS).fill('')))
   const [currentRow, setCurrentRow] = useState(0)
@@ -63,15 +65,14 @@ function DuelScreen({ token, onResult }: { token: string; onResult: () => void }
   const [gameOver, setGameOver] = useState(false)
   const [message, setMessage] = useState('')
   const wsRef = useRef<WebSocket | null>(null)
-  const router = useRouter()
 
   useEffect(() => {
     const wsUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/api\/v1\/?$/, '').replace('http', 'ws')
-    const ws = new WebSocket(`${wsUrl}/api/v1/ws/game/wordle_duel:medium?token=${token}`)
+    const ws = new WebSocket(`${wsUrl}/api/v1/ws/game/${roomID}?token=${token}`)
     wsRef.current = ws
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({ type: 'join_room', payload: { room_id: 'wordle_duel:medium', token } }))
+      ws.send(JSON.stringify({ type: 'join_room', payload: { room_id: roomID, token } }))
     }
 
     ws.onmessage = (event) => {
@@ -106,7 +107,7 @@ function DuelScreen({ token, onResult }: { token: string; onResult: () => void }
       } catch {}
     }
     return () => ws.close()
-  }, [token])
+  }, [token, roomID])
 
   const handleKey = (key: string) => {
     if (gameOver || currentRow >= ROWS) return
@@ -114,7 +115,7 @@ function DuelScreen({ token, onResult }: { token: string; onResult: () => void }
       if (currentCol !== COLS) return
       wsRef.current?.send(JSON.stringify({
         type: 'submit_wordle_guess',
-        payload: { room_id: 'wordle_duel:medium', word: grid[currentRow].join('') },
+        payload: { room_id: roomID, word: grid[currentRow].join('') },
       }))
     } else if (key === 'BACK') {
       if (currentCol <= 0) return

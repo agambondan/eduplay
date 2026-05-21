@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { challengesApi } from '@/lib/api/multiplayer'
@@ -25,7 +25,7 @@ interface AnswerRecord {
   points: number
 }
 
-export default function TriviaChallengePage() {
+function TriviaChallengeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const challengeIdFromUrl = searchParams.get('id')
@@ -520,5 +520,17 @@ function ResultScreen({ detail, onBack }: { detail: any; onBack: () => void }) {
         </div>
       </div>
     </GameContainer>
+  )
+}
+
+export default function TriviaChallengePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+      </div>
+    }>
+      <TriviaChallengeContent />
+    </Suspense>
   )
 }

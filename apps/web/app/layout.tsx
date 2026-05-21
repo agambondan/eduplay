@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import { ConsentAwareScripts } from '@/components/layout/CookieConsentProvider';
 import { CookieBanner } from '@/components/layout/CookieBanner';
 import { Providers } from '@/components/layout/Providers';
 import { SkipLink } from '@/components/layout/SkipLink';
@@ -49,32 +50,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script id="theme-init" strategy="beforeInteractive">{`
           (function(){try{var t=JSON.parse(localStorage.getItem('eduplay-theme'));var e=t&&t.state&&t.state.theme||'system';var n=e==='dark'||(e==='system'&&window.matchMedia('(prefers-color-scheme:dark)').matches);if(n)document.documentElement.classList.add('dark')}catch(e){}})()
         `}</Script>
-        {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-          <Script
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
-            crossOrigin="anonymous"
-            strategy="lazyOnload"
-          />
-        )}
-        {process.env.NEXT_PUBLIC_GA_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
-              `}
-            </Script>
-          </>
-        )}
+        <ConsentAwareScripts />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <SkipLink />
         <Providers>
           <ErrorBoundary>{children}</ErrorBoundary>

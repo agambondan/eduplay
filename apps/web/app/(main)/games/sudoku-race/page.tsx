@@ -6,12 +6,14 @@ import { useMutation } from '@tanstack/react-query'
 import { multiplayerApi } from '@/lib/api/multiplayer'
 import { useAuthStore } from '@/lib/stores/authStore'
 import { GameContainer } from '@/components/ui/GameContainer'
-import { ArrowLeft, Loader2, Trophy } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
+import { QuickMatchBotResult } from '@/types/multiplayer'
 
 type Screen = 'menu' | 'playing' | 'result'
 
 export default function SudokuRacePage() {
   const [screen, setScreen] = useState<Screen>('menu')
+  const [matchInfo, setMatchInfo] = useState<QuickMatchBotResult | null>(null)
   const router = useRouter()
   const token = useAuthStore((s) => s.accessToken)
 
@@ -20,8 +22,8 @@ export default function SudokuRacePage() {
       <button onClick={() => router.push('/games')} className="absolute left-4 top-4 z-10 flex items-center gap-2 text-sm text-gray-500">
         <ArrowLeft className="h-4 w-4" /> Kembali
       </button>
-      {screen === 'menu' && <MenuScreen onStart={() => setScreen('playing')} />}
-      {screen === 'playing' && <RaceScreen token={token!} onResult={() => setScreen('result')} />}
+      {screen === 'menu' && <MenuScreen onStart={(result) => { setMatchInfo(result); setScreen('playing') }} />}
+      {screen === 'playing' && matchInfo && <RaceScreen token={token!} roomID={matchInfo.room_id} onResult={() => setScreen('result')} />}
       {screen === 'result' && (
         <GameContainer maxWidth="max-w-lg">
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -31,10 +33,10 @@ export default function SudokuRacePage() {
   )
 }
 
-function MenuScreen({ onStart }: { onStart: () => void }) {
+function MenuScreen({ onStart }: { onStart: (result: QuickMatchBotResult) => void }) {
   const botMutation = useMutation({
     mutationFn: () => multiplayerApi.quickMatchBot('sudoku', 'medium'),
-    onSuccess: () => onStart(),
+    onSuccess: (result) => onStart(result),
   })
 
   return (
@@ -51,7 +53,7 @@ function MenuScreen({ onStart }: { onStart: () => void }) {
   )
 }
 
-function RaceScreen({ token, onResult }: { token: string; onResult: () => void }) {
+function RaceScreen({ token, roomID, onResult }: { token: string; roomID: string; onResult: () => void }) {
   const [puzzle, setPuzzle] = useState<number[][] | null>(null)
   const [userGrid, setUserGrid] = useState<number[][]>([])
   const [opponentProgress, setOpponentProgress] = useState(0)
@@ -59,14 +61,13 @@ function RaceScreen({ token, onResult }: { token: string; onResult: () => void }
   const [gameOver, setGameOver] = useState(false)
   const [message, setMessage] = useState('')
   const wsRef = useRef<WebSocket | null>(null)
-  const router = useRouter()
 
   useEffect(() => {
     const wsUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/api\/v1\/?$/, '').replace('http', 'ws')
-    const ws = new WebSocket(`${wsUrl}/api/v1/ws/game/sudoku_race:medium?token=${token}`)
+    const ws = new WebSocket(`${wsUrl}/api/v1/ws/game/${roomID}?token=${token}`)
     wsRef.current = ws
 
-    ws.onopen = () => ws.send(JSON.stringify({ type: 'join_room', payload: { room_id: 'sudoku_race:medium', token } }))
+    ws.onopen = () => ws.send(JSON.stringify({ type: 'join_room', payload: { room_id: roomID, token } }))
 
     ws.onmessage = (event) => {
       try {
@@ -94,7 +95,7 @@ function RaceScreen({ token, onResult }: { token: string; onResult: () => void }
       } catch {}
     }
     return () => ws.close()
-  }, [token])
+  }, [token, roomID])
 
   const handleCellClick = (r: number, c: number) => {
     if (gameOver || !puzzle || puzzle[r][c] !== 0) return
@@ -106,7 +107,7 @@ function RaceScreen({ token, onResult }: { token: string; onResult: () => void }
     const [r, c] = selected
     wsRef.current?.send(JSON.stringify({
       type: 'submit_sudoku_cell',
-      payload: { room_id: 'sudoku_race:medium', row: r, col: c, value: n },
+      payload: { room_id: roomID, row: r, col: c, value: n },
     }))
     setSelected(null)
   }

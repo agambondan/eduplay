@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('authStore', () => {
   beforeEach(() => {
+    localStorage.clear();
     useAuthStore.getState().logout();
   });
 
