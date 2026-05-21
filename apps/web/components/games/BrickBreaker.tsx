@@ -1,6 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+function useIsTouchDevice() {
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(pointer: coarse)').matches);
+  }, []);
+  return isTouch;
+}
 import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
@@ -9,6 +17,9 @@ import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
+
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 640;
 
 interface Question {
   text: string;
@@ -35,6 +46,7 @@ export default function BrickBreaker() {
   const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
     useGame('brick-breaker');
   const { t } = useLocale();
+  const isTouch = useIsTouchDevice();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
@@ -43,8 +55,8 @@ export default function BrickBreaker() {
 
   // Game state refs to avoid re-renders during animation loop
   const gameState = useRef({
-    ball: { x: 200, y: 300, dx: 3, dy: -3, radius: 8 },
-    paddle: { x: 175, width: 75, height: 10 },
+    ball: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT - 140, dx: 3, dy: -3, radius: 8 },
+    paddle: { x: CANVAS_WIDTH / 2 - 37.5, width: 75, height: 10 },
     bricks: [] as { x: number; y: number; status: number; isSpecial: boolean }[],
     brickRows: 5,
     brickCols: 8,
@@ -73,8 +85,14 @@ export default function BrickBreaker() {
 
   const handleStart = () => {
     initBricks();
-    gameState.current.ball = { x: 200, y: 300, dx: 3, dy: -3, radius: 8 };
-    gameState.current.paddle.x = 175;
+    gameState.current.ball = {
+      x: CANVAS_WIDTH / 2,
+      y: CANVAS_HEIGHT - 140,
+      dx: 3,
+      dy: -3,
+      radius: 8,
+    };
+    gameState.current.paddle.x = CANVAS_WIDTH / 2 - gameState.current.paddle.width / 2;
     setGameOver(false);
     setResult(null);
     setCurrentQuestion(null);
@@ -362,10 +380,11 @@ export default function BrickBreaker() {
     return () => cancelAnimationFrame(animationFrameId);
   }, [isPlaying, isPaused, gameOver, addScore, endGame, submitScore]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const relativeX = e.clientX - canvas.offsetLeft;
+    const rect = canvas.getBoundingClientRect();
+    const relativeX = (e.clientX - rect.left) * (canvas.width / rect.width);
     if (relativeX > 0 && relativeX < canvas.width) {
       gameState.current.paddle.x = relativeX - gameState.current.paddle.width / 2;
     }
@@ -401,7 +420,7 @@ export default function BrickBreaker() {
   }
 
   return (
-    <div className="relative flex flex-col items-center gap-6 py-6">
+    <div className="relative flex w-full flex-col items-center gap-4 py-2 sm:gap-6 sm:py-4">
       <div className="flex w-full max-w-md items-center justify-between">
         <div className="text-sm font-bold text-gray-500">Brick Breaker</div>
         <ScoreBoard score={score} />
@@ -414,13 +433,13 @@ export default function BrickBreaker() {
         </button>
       </div>
 
-      <div className="relative overflow-hidden rounded-xl border-4 border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="relative w-full max-w-[min(96vw,600px)] overflow-hidden rounded-xl border-4 border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         <canvas
           ref={canvasRef}
-          width={600}
-          height={400}
-          onMouseMove={handleMouseMove}
-          className="h-auto max-w-full cursor-none"
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          onPointerMove={handlePointerMove}
+          className="block h-auto w-full cursor-none touch-none"
         />
 
         {isPaused && currentQuestion && (
@@ -461,7 +480,9 @@ export default function BrickBreaker() {
         </div>
       )}
 
-      <p className="text-xs text-gray-400">{t('game.mouse_instructions')}</p>
+      <p className="text-xs text-gray-400">
+        {isTouch ? 'Geser jari untuk menggerakkan paddle' : t('game.mouse_instructions')}
+      </p>
     </div>
   );
 }

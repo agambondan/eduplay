@@ -1,6 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+function useIsTouchDevice() {
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(pointer: coarse)').matches);
+  }, []);
+  return isTouch;
+}
 import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
@@ -39,11 +47,14 @@ const GRADIENT_COLORS: Record<string, [string, string]> = {
   '#ef4444': ['#f87171', '#dc2626'],
   '#8b5cf6': ['#a78bfa', '#7c3aed'],
 };
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 640;
 
 export default function BubbleShooter() {
   const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
     useGame('bubble-shooter');
   const { t } = useLocale();
+  const isTouch = useIsTouchDevice();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [targetSum, setTargetSum] = useState(0);
   const [gameOver, setGameOver] = useState(false);
@@ -66,7 +77,7 @@ export default function BubbleShooter() {
 
   const spawnBubble = useCallback(() => {
     const radius = 25;
-    const x = Math.random() * (600 - radius * 2) + radius;
+    const x = Math.random() * (CANVAS_WIDTH - radius * 2) + radius;
     const value = Math.floor(Math.random() * 10) + 1;
     const color = COLORS[Math.floor(Math.random() * COLORS.length)];
     const [c1, c2] = GRADIENT_COLORS[color];
@@ -293,18 +304,19 @@ export default function BubbleShooter() {
     return () => cancelAnimationFrame(animationFrameId);
   }, [isPlaying, gameOver, targetSum, addScore, endGame, submitScore, spawnBubble]);
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isPlaying || gameOver) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const pX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const pY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-    const dx = mouseX - gameState.current.cannonX;
-    const dy = mouseY - canvas.height;
+    const dx = pX - gameState.current.cannonX;
+    const dy = pY - canvas.height;
     const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return;
 
     const speed = 7;
     gameState.current.projectiles.push({
@@ -317,11 +329,11 @@ export default function BubbleShooter() {
     });
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    gameState.current.cannonX = e.clientX - rect.left;
+    gameState.current.cannonX = (e.clientX - rect.left) * (canvas.width / rect.width);
   };
 
   if (!isPlaying && !gameOver) {
@@ -354,7 +366,7 @@ export default function BubbleShooter() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 py-6">
+    <div className="flex w-full flex-col items-center gap-4 py-2 sm:py-4">
       <div className="flex w-full max-w-md items-center justify-between">
         <div className="rounded-xl border border-amber-200 bg-amber-100 px-4 py-2 dark:bg-amber-900/40">
           <span className="text-xs font-bold uppercase text-amber-600">
@@ -372,14 +384,14 @@ export default function BubbleShooter() {
         </button>
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl border-4 border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="relative w-full max-w-[min(96vw,600px)] overflow-hidden rounded-2xl border-4 border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         <canvas
           ref={canvasRef}
-          width={600}
-          height={500}
-          onClick={handleCanvasClick}
-          onMouseMove={handleMouseMove}
-          className="h-auto max-w-full cursor-crosshair"
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          onPointerUp={handlePointerUp}
+          onPointerMove={handlePointerMove}
+          className="block h-auto w-full cursor-crosshair touch-none"
         />
       </div>
 
@@ -396,7 +408,11 @@ export default function BubbleShooter() {
         </div>
       )}
 
-      <p className="text-xs text-gray-400">Klik untuk menembak, gerakkan mouse untuk membidik</p>
+      <p className="text-xs text-gray-400">
+        {isTouch
+          ? 'Tap untuk menembak, geser jari untuk membidik'
+          : 'Klik untuk menembak, gerakkan mouse untuk membidik'}
+      </p>
     </div>
   );
 }
