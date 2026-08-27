@@ -10,6 +10,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"time"
 
@@ -94,6 +95,10 @@ func main() {
 		&model.TournamentPlayer{},
 		&model.TournamentMatch{},
 		&model.BattleshipMatch{},
+		&model.ChessMatch{},
+		&model.CrosswordPuzzle{},
+		&model.Experiment{},
+		&model.ExperimentEvent{},
 		&model.Ad{},
 		&model.BlogPost{},
 	)
@@ -150,6 +155,7 @@ func main() {
 	rematchSvc := service.NewRematchService(roomSvc)
 	tournamentSvc := service.NewTournamentService()
 	battleshipSvc := service.NewBattleshipService(pushSvc)
+	chessSvc := service.NewChessService()
 
 	// Controllers
 	authHandler := controller.NewAuthController(authSvc)
@@ -176,24 +182,49 @@ func main() {
 	scoreChallengeHandler := controller.NewScoreChallengeController(scoreChallengeSvc)
 	tournamentHandler := controller.NewTournamentController(tournamentSvc)
 	battleshipHandler := controller.NewBattleshipController(battleshipSvc)
+	chessHandler := controller.NewChessController(chessSvc)
 	adRepo := repository.NewAdRepository()
 	adSvc := service.NewAdService(adRepo)
 	adHandler := controller.NewAdController(adSvc)
 	blogRepo := repository.NewBlogRepository()
 	blogSvc := service.NewBlogService(blogRepo)
 	blogHandler := controller.NewBlogController(blogSvc)
+	expSvc := service.NewExperimentService()
+	expHandler := controller.NewExperimentController(expSvc)
 
 	// WebSocket
 	roomMgr := ws.NewRoomManager()
 	roomMgr.StartCleanup(5 * time.Minute)
 	hub := ws.NewHub(cfg, roomMgr)
 	hub.SetAchievementChecker(achSvc)
+	hub.StartPubSub()
+	ghostSvc := service.NewGhostBotService()
+	hub.SetGhostBotProvider(func(gameID, difficulty string, userScore int) (*ws.GhostBotPlayer, error) {
+		ghost, err := ghostSvc.GetGhostMatch(gameID, difficulty, userScore)
+		if err != nil {
+			return nil, err
+		}
+		events := make([]model.GhostEvent, len(ghost.Events))
+		for i, e := range ghost.Events {
+			events[i] = e
+		}
+		return ws.NewGhostBotPlayer(ghost.PlayerName, difficulty, ghost.Score, events), nil
+	})
 	go hub.Run()
 	mmSvc := ws.NewMatchmakingService(hub)
 	wsHandler := controller.NewWSController(hub, mmSvc)
 
 	// Routes
-	authGroup := apiV1.Group("/auth")
+	authGroup := apiV1.Group("/auth", limiter.New(limiter.Config{
+		Max:        10,
+		Expiration: 1 * time.Minute,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP()
+		},
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{"success": false, "message": "Too many requests"})
+		},
+	}))
 	authGroup.Post("/register", authHandler.Register)
 	authGroup.Post("/login", authHandler.Login)
 	authGroup.Post("/google", authHandler.GoogleLogin)
@@ -344,6 +375,13 @@ func main() {
 	battleshipGroup.Post("/:id/reveal", battleshipHandler.Reveal)
 	battleshipGroup.Post("/:id/resign", battleshipHandler.Resign)
 
+	chessGroup := apiV1.Group("/chess", middleware.AuthMiddleware(cfg))
+	chessGroup.Get("/", chessHandler.List)
+	chessGroup.Post("/", chessHandler.Create)
+	chessGroup.Get("/:id", chessHandler.Get)
+	chessGroup.Post("/:id/move", chessHandler.Move)
+	chessGroup.Post("/:id/resign", chessHandler.Resign)
+
 	// Ads — public slot query + admin CRUD
 	apiV1.Get("/ads", adHandler.GetActiveAd)
 	adminGroup.Get("/ads", adHandler.List)
@@ -360,6 +398,15 @@ func main() {
 	adminGroup.Patch("/blog/:id", blogHandler.AdminUpdate)
 	adminGroup.Delete("/blog/:id", blogHandler.AdminDelete)
 
+	// A/B Testing
+	expGroup := apiV1.Group("/experiments", middleware.AuthMiddleware(cfg))
+	expGroup.Get("/variant", expHandler.GetVariant)
+	expGroup.Post("/track", expHandler.Track)
+	adminGroup.Get("/experiments", expHandler.List)
+	adminGroup.Post("/experiments", expHandler.Create)
+	adminGroup.Get("/experiments/results", expHandler.Results)
+	adminGroup.Post("/experiments/:id/toggle", expHandler.Toggle)
+
 	apiV1.Get("/ws/game/:room_id", wsHandler.WSHandler())
 
 	multiplayerGroup := apiV1.Group("/multiplayer", middleware.AuthMiddleware(cfg))
@@ -373,6 +420,18 @@ func main() {
 	service.StartChallengeExpiryCleanup()
 	service.StartGhostReplayCleanup()
 	service.StartTournamentScheduler()
+	service.StartWeeklySummaryScheduler(emailCl)
+	go func() {
+		for {
+			now := time.Now()
+			next := time.Date(now.Year(), now.Month(), now.Day(), 18, 0, 0, 0, now.Location())
+			if now.After(next) {
+				next = next.Add(24 * time.Hour)
+			}
+			time.Sleep(time.Until(next))
+			service.SendStreakEmailReminder(emailCl)
+		}
+	}()
 
 	logger.Log.Info("Server starting", zap.String("port", cfg.App.Port))
 	if err := app.Listen(":" + cfg.App.Port); err != nil {
@@ -505,6 +564,10 @@ func seedGames() {
 		{Slug: "sudoku-race", Name: "Sudoku Race", Description: "Selesaikan puzzle Sudoku yang sama — duluan menang!", Category: "multiplayer", IsActive: true},
 		{Slug: "flag-team-battle", Name: "Flag Quiz Team Battle", Description: "Kuis bendera 2v2 dengan buzzer cepat dan skor tim.", Category: "multiplayer", IsActive: true},
 		{Slug: "battleship-math", Name: "Battleship Math", Description: "Tembak koordinat lawan dengan menjawab soal matematika terlebih dahulu.", Category: "multiplayer", IsActive: true},
+		{Slug: "chess", Name: "Chess", Description: "Catur klasik — main vs bot atau lawan pemain lain!", Category: "multiplayer", IsActive: true},
+		{Slug: "crossword-duel", Name: "Crossword Duel", Description: "Isi TTS bersama lawan secara real-time — siapa lebih cepat!", Category: "multiplayer", IsActive: true},
+		{Slug: "crossword-coop", Name: "Crossword Co-op", Description: "Isi TTS bersama-sama! Siapa paling banyak kontribusi = MVP!", Category: "multiplayer", IsActive: true},
+		{Slug: "math-relay", Name: "Math Relay", Description: "Game matematika estafet kooperatif — 2-4 player per tim!", Category: "multiplayer", IsActive: true},
 		{Slug: "math-tournament", Name: "Math Tournament", Description: "Bracket single-elimination berbasis Math Battle dengan 4-16 pemain.", Category: "multiplayer", IsActive: true},
 	}
 	for _, g := range games {
@@ -516,6 +579,105 @@ func seedGames() {
 		}
 	}
 	logger.Log.Info("seeded games", zap.Int("count", len(games)))
+
+	seedCrosswordPuzzles()
+}
+
+func seedCrosswordPuzzles() {
+	puzzles := []struct {
+		Slug       string
+		Title      string
+		GridSize   int
+		Grid       [][]string
+		Clues      []map[string]interface{}
+		Difficulty string
+	}{
+		{
+			Slug: "tts-buah", Title: "TTS Buah & Sehari-hari", GridSize: 5,
+			Grid: [][]string{
+				{"B", "U", "N", "G", "A"},
+				{"U", "#", "A", "#", "B"},
+				{"K", "A", "M", "I", "S"},
+				{"U", "#", "A", "#", "A"},
+				{"#", "S", "N", "A", "K"},
+			},
+			Clues: []map[string]interface{}{
+				{"n": 1, "d": "across", "c": "Bagian tanaman yang indah", "a": "BUNGA", "r": 0, "col": 0},
+				{"n": 4, "d": "across", "c": "Hari setelah Rabu", "a": "KAMIS", "r": 2, "col": 0},
+				{"n": 6, "d": "across", "c": "Camilan ringan (Inggris)", "a": "SNAK", "r": 4, "col": 1},
+				{"n": 1, "d": "down", "c": "Sumber ilmu tertulis", "a": "BUKU", "r": 0, "col": 0},
+				{"n": 2, "d": "down", "c": "Nama orang atau kata ganti", "a": "NAMA", "r": 0, "col": 2},
+				{"n": 3, "d": "down", "c": "Ibukota Jawa Tengah (singkat)", "a": "SMG", "r": 0, "col": 4},
+				{"n": 5, "d": "down", "c": "Satuan ukuran luas", "a": "ARE", "r": 2, "col": 3},
+			},
+			Difficulty: "easy",
+		},
+		{
+			Slug: "tts-hewan", Title: "TTS Hewan", GridSize: 5,
+			Grid: [][]string{
+				{"K", "U", "C", "I", "N"},
+				{"A", "#", "A", "#", "A"},
+				{"N", "I", "K", "E", "L"},
+				{"I", "#", "A", "#", "A"},
+				{"#", "B", "U", "R", "A"},
+			},
+			Clues: []map[string]interface{}{
+				{"n": 1, "d": "across", "c": "Hewan peliharaan yang suka mengeong", "a": "KUCING", "r": 0, "col": 0},
+				{"n": 4, "d": "across", "c": "Logam putih perak", "a": "NIKEL", "r": 2, "col": 0},
+				{"n": 6, "d": "across", "c": "Hewan berkantung dari Australia", "a": "BURA", "r": 4, "col": 1},
+				{"n": 1, "d": "down", "c": "Hewan berkaki empat, bisa dijinakkan", "a": "KANI", "r": 0, "col": 0},
+				{"n": 2, "d": "down", "c": "Uang logam", "a": "UANG", "r": 0, "col": 2},
+				{"n": 3, "d": "down", "c": "Daging buah kelapa", "a": "KELA", "r": 0, "col": 4},
+				{"n": 5, "d": "down", "c": "Buah berwarna hijau, daging putih", "a": "KELA", "r": 2, "col": 3},
+			},
+			Difficulty: "easy",
+		},
+		{
+			Slug: "tts-sekolah", Title: "TTS Sekolah", GridSize: 7,
+			Grid: [][]string{
+				{"P", "E", "N", "S", "I", "L", "#"},
+				{"E", "#", "A", "#", "A", "#", "#"},
+				{"N", "U", "L", "I", "S", "#", "S"},
+				{"G", "#", "I", "#", "T", "A", "K"},
+				{"E", "R", "A", "S", "E", "R", "A"},
+				{"R", "#", "S", "#", "T", "#", "#"},
+				{"#", "#", "B", "U", "K", "U", "#"},
+			},
+			Clues: []map[string]interface{}{
+				{"n": 1, "d": "across", "c": "Alat tulis yang bisa dihapus", "a": "PENSIL", "r": 0, "col": 0},
+				{"n": 4, "d": "across", "c": "Kegiatan membuat tulisan", "a": "NULIS", "r": 2, "col": 0},
+				{"n": 7, "d": "across", "c": "Papan untuk menulis di kelas", "a": "PAPAN", "r": 4, "col": 0},
+				{"n": 9, "d": "across", "c": "Bendera (Inggris)", "a": "FLAG", "r": 6, "col": 2},
+				{"n": 1, "d": "down", "c": "Tempat belajar", "a": "PEN", "r": 0, "col": 0},
+				{"n": 2, "d": "down", "c": "Tidak berbohong/Sesuai fakta", "a": "ASLI", "r": 1, "col": 2},
+				{"n": 3, "d": "down", "c": "Penghapus (Inggris)", "a": "ERASER", "r": 0, "col": 4},
+				{"n": 5, "d": "down", "c": "Alas meja belajar", "a": "MEJA", "r": 2, "col": 3},
+				{"n": 6, "d": "down", "c": "Guru yang mengajar", "a": "GURU", "r": 3, "col": 0},
+				{"n": 8, "d": "down", "c": "Tas sekolah", "a": "TAS", "r": 3, "col": 6},
+			},
+			Difficulty: "medium",
+		},
+	}
+
+	for _, p := range puzzles {
+		var count int64
+		database.DB.Model(&model.CrosswordPuzzle{}).Where("slug = ?", p.Slug).Count(&count)
+		if count > 0 {
+			continue
+		}
+		gridJSON, _ := json.Marshal(p.Grid)
+		cluesJSON, _ := json.Marshal(p.Clues)
+		database.DB.Create(&model.CrosswordPuzzle{
+			Slug:       p.Slug,
+			Title:      p.Title,
+			GridSize:   p.GridSize,
+			GridJSON:   gridJSON,
+			CluesJSON:  cluesJSON,
+			Difficulty: p.Difficulty,
+			IsActive:   true,
+		})
+	}
+	logger.Log.Info("seeded crossword puzzles", zap.Int("count", len(puzzles)))
 }
 
 func seedAchievements() {

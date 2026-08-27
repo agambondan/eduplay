@@ -3,21 +3,24 @@ import {
   AsyncChallenge,
   AsyncChallengeDetail,
   BattleshipMatch,
+  BattleshipQuestion,
   ChallengeResult,
+  ChessMatch,
   CreateBattleshipMatchRequest,
   CreateChallengeRequest,
+  CreateChessMatchRequest,
   CreateTournamentRequest,
   CreateWordChainRequest,
+  ReportTournamentMatchRequest,
   QuickMatchBotResult,
   QuickMatchResult,
-  ReportTournamentMatchRequest,
   RoomResponse,
   RoomSettings,
+  Tournament,
   SubmitChallengeRequest,
   SubmitWordRequest,
-  Tournament,
-  WordChainDetail,
   WordChainGame,
+  WordChainDetail,
   WordSubmitResult,
 } from '@/types/multiplayer';
 import api from './client';
@@ -169,6 +172,29 @@ export const battleshipApi = {
   },
 };
 
+export const chessApi = {
+  list: async () => {
+    const res = await api.get<ApiResponse<ChessMatch[]>>('/chess');
+    return res.data.data;
+  },
+  create: async (data: CreateChessMatchRequest) => {
+    const res = await api.post<ApiResponse<ChessMatch>>('/chess', data);
+    return res.data.data;
+  },
+  get: async (id: string) => {
+    const res = await api.get<ApiResponse<ChessMatch>>(`/chess/${id}`);
+    return res.data.data;
+  },
+  move: async (id: string, move: string) => {
+    const res = await api.post<ApiResponse<ChessMatch>>(`/chess/${id}/move`, { move });
+    return res.data.data;
+  },
+  resign: async (id: string) => {
+    const res = await api.post<ApiResponse<ChessMatch>>(`/chess/${id}/resign`);
+    return res.data.data;
+  },
+};
+
 export const wordChainApi = {
   list: async () => {
     const res = await api.get<ApiResponse<WordChainGame[]>>('/wordchain');
@@ -185,5 +211,55 @@ export const wordChainApi = {
   submitWord: async (id: string, data: SubmitWordRequest) => {
     const res = await api.post<ApiResponse<WordSubmitResult>>(`/wordchain/${id}/word`, data);
     return res.data.data;
+  },
+};
+
+export interface MpLeaderboardEntry {
+  username: string;
+  wins: number;
+  losses: number;
+  draws: number;
+  total_matches: number;
+  win_rate: number;
+  current_streak: number;
+  best_streak: number;
+}
+
+export interface MpUserStats {
+  total_wins: number;
+  total_losses: number;
+  total_draws: number;
+  total_matches: number;
+  win_rate: number;
+  current_streak: number;
+  best_streak: number;
+}
+
+export const mpLeaderboardApi = {
+  byGame: async (gameSlug: string) => {
+    const res = await api.get<ApiResponse<MpLeaderboardEntry[]>>(`/multiplayer/leaderboard/${gameSlug}`);
+    return res.data.data;
+  },
+  global: async () => {
+    const res = await api.get<ApiResponse<MpLeaderboardEntry[]>>('/multiplayer/leaderboard/global');
+    return res.data.data;
+  },
+  myStats: async () => {
+    const res = await api.get<ApiResponse<MpUserStats>>('/multiplayer/leaderboard/user/stats');
+    return res.data.data;
+  },
+};
+
+export const subscribeApi = {
+  create: async () => {
+    const res = await api.post<ApiResponse<{ redirect_url: string; token: string }>>('/subscribe');
+    return res.data.data;
+  },
+  status: async () => {
+    const res = await api.get<ApiResponse<{ plan: string; status: string; expires_at?: string }>>('/subscribe/status');
+    return res.data.data;
+  },
+  cancel: async () => {
+    await api.post('/subscribe/cancel');
   },
 };

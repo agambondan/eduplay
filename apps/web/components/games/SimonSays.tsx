@@ -161,7 +161,7 @@ export default function SimonSays({ isDaily }: Props) {
                 {phase === 'input' && `🎮 Ulangi! (${playerSeq.length}/${sequence.length})`}
             </div>
 
-            <div className='grid grid-cols-2 gap-4'>
+            <div className='grid grid-cols-2 gap-4 select-none' style={{ touchAction: 'none' }}>
                 {COLORS.map((color) => (
                     <MotionButton
                         key={color.id}

@@ -1,14 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-function useIsTouchDevice() {
-  const [isTouch, setIsTouch] = useState(false);
-  useEffect(() => {
-    setIsTouch(window.matchMedia('(pointer: coarse)').matches);
-  }, []);
-  return isTouch;
-}
 import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
@@ -17,6 +9,7 @@ import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
+import { useIsTouchDevice } from '@/lib/hooks/useIsTouchDevice';
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 640;
@@ -433,7 +426,7 @@ export default function BrickBreaker() {
         </button>
       </div>
 
-      <div className="relative w-full max-w-[min(96vw,600px)] overflow-hidden rounded-xl border-4 border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="relative w-full max-w-[600px] overflow-hidden rounded-xl border-4 border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
         <canvas
           ref={canvasRef}
           width={CANVAS_WIDTH}

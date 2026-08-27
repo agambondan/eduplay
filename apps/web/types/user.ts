@@ -5,6 +5,7 @@ export interface User {
   xp: number;
   level: number;
   streak: number;
+  weekly_email_opt_in?: boolean;
   streak_freeze: number;
   last_active: string | null;
   email_verified_at: string | null;

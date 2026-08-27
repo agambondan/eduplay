@@ -13,9 +13,13 @@ func AdminMiddleware() fiber.Handler {
 			return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
 		}
 
-		var role string
-		database.DB.Raw("SELECT role FROM users WHERE id = ?", userId).Scan(&role)
-		if role != "admin" {
+		type userInfo struct {
+			Role     string
+			IsActive bool
+		}
+		var u userInfo
+		err := database.DB.Raw("SELECT role, is_active FROM users WHERE id = ?", userId).Scan(&u).Error
+		if err != nil || u.Role != "admin" || !u.IsActive {
 			return response.Error(c, fiber.StatusForbidden, "Admin access required")
 		}
 

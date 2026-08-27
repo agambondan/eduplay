@@ -45,6 +45,26 @@
 - **Auth:** JWT. Tokens are handled via Axios interceptors in `lib/api/client.ts`.
 - **AI Integration:** Anthropic Claude API used for dynamic question generation (`internal/ai/service.go`).
 
+## Changelog Policy
+
+**Setiap akhir session, update `CHANGELOG.md`** dengan menambahkan entry baru di paling atas.
+
+Format:
+```markdown
+## [YYYY-MM-DD] — {Judul Session}
+
+### Added
+- {Fitur baru yang ditambahkan}
+
+### Fixed
+- {Bug yang diperbaiki}
+
+### Changed
+- {Perubahan yang tidak termasuk Added/Fixed}
+```
+
+Gunakan commit history sebagai referensi. Beberapa commit bisa digabung jadi 1 entry jika masih dalam 1 fitur yang sama.
+
 ## General Workflow
 
 - Check `services/api/.env.example` to ensure necessary environment variables are set locally.

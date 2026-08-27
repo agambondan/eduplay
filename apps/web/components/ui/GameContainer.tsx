@@ -14,6 +14,8 @@ export function GameContainer({ children, maxWidth = 'max-w-2xl', className }: P
 
   return (
     <div
+      role="main"
+      aria-label={isPlaying ? 'Game area' : 'Game menu'}
       className={cn(
         isPlaying
           ? 'flex min-h-dvh w-full flex-col items-center px-2 py-3 sm:px-4 sm:py-4'

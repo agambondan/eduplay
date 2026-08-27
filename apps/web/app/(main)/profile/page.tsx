@@ -47,35 +47,12 @@ export default function ProfilePage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    let count = 0;
-    const tick = () => {
-      count++;
-      if (count === 3) setLoading(false);
-    };
-
-    api
-      .get('/user/stats')
-      .then((res) => {
-        setStats(res.data.data);
-        tick();
-      })
-      .catch(() => tick());
-    api
-      .get('/user/achievements')
-      .then((res) => {
-        setAchievements(res.data.data || []);
-        tick();
-      })
-      .catch(() => tick());
-    api
-      .get('/subscribe/status')
-      .then((res) => {
-        setSubscription(res.data.data);
-        tick();
-      })
-      .catch(() => tick());
-
-    referralApi.getStats().then(setReferral).catch(() => {});
+    Promise.allSettled([
+      api.get('/user/stats').then((res) => setStats(res.data.data)),
+      api.get('/user/achievements').then((res) => setAchievements(res.data.data || [])),
+      api.get('/subscribe/status').then((res) => setSubscription(res.data.data)),
+      referralApi.getStats().then(setReferral),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const handleSubscribe = async () => {

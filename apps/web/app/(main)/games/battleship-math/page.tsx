@@ -604,7 +604,7 @@ function BattleBoard({
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <h2 className="mb-3 text-center text-sm font-bold text-gray-900 dark:text-white">{title}</h2>
-      <div className="mx-auto grid max-w-[360px] grid-cols-[24px_repeat(8,minmax(0,1fr))] gap-1">
+      <div className="mx-auto grid w-full max-w-md grid-cols-[24px_repeat(8,minmax(0,1fr))] gap-1">
         <div />
         {Array.from({ length: BOARD_SIZE }, (_, index) => (
           <div key={index} className="text-center text-xs font-bold text-gray-400">

@@ -252,7 +252,7 @@ export default function OnetGame() {
           {paused ? (
             <div className="flex h-64 items-center justify-center"><p className="text-lg font-semibold text-gray-400">DIJEDA</p></div>
           ) : (
-            <div className="mx-auto grid touch-none select-none gap-1" style={{ gridTemplateColumns: `repeat(${config?.cols || 8}, 1fr)`, maxWidth: `${(config?.cols || 8) * 52}px` }}>
+            <div className="mx-auto grid w-full touch-none select-none gap-1" style={{ gridTemplateColumns: `repeat(${config?.cols || 8}, 1fr)`, maxWidth: `min(${(config?.cols || 8) * 52}px, 100%)` }}>
               {board.map((row, r) =>
                 row.map((cell, c) => {
                   const isSelected = selected?.row === r && selected?.col === c;
@@ -265,7 +265,7 @@ export default function OnetGame() {
                       onClick={() => handleCellClick(r, c)}
                       disabled={isEmpty || removing}
                       className={cn(
-                        'flex h-12 w-12 items-center justify-center rounded-lg text-lg font-bold transition-all duration-150',
+                        'flex aspect-square w-full items-center justify-center rounded-lg text-sm font-bold transition-all duration-150 sm:text-lg',
                         isEmpty && 'invisible',
                         !isEmpty && 'border border-gray-200 bg-white shadow-sm hover:border-rose-400 hover:shadow-md dark:border-slate-600 dark:bg-slate-800',
                         isSelected && 'border-2 border-rose-500 shadow-md ring-2 ring-rose-200 dark:ring-rose-800',

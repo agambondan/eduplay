@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Loader2, Radio, Search, Trophy } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronDown, Loader2, Radio, Search, Swords, Trophy } from 'lucide-react';
 
 import { gamesApi } from '@/lib/api/games';
 import { leaderboardApi } from '@/lib/api/leaderboard';
@@ -129,13 +130,14 @@ function GameSelector({
 export default function LeaderboardPage() {
   const { user } = useAuthStore();
   const { t } = useLocale();
+  const router = useRouter();
   const [tab, setTab] = useState<'global' | 'game'>('global');
   const [period, setPeriod] = useState<'all' | 'weekly'>('all');
   const [selectedGame, setSelectedGame] = useState<string>('');
 
   const { data: games } = useQuery({ queryKey: ['games'], queryFn: gamesApi.list });
 
-  const { data: leadData, isLoading, dataUpdatedAt } = useQuery({
+  const { data: leadData, isLoading, isError, dataUpdatedAt, refetch } = useQuery({
     queryKey: ['leaderboard', tab, selectedGame, period],
     queryFn: () => {
       if (tab === 'global') return leaderboardApi.getGlobalLeaderboard(period);
@@ -143,6 +145,7 @@ export default function LeaderboardPage() {
     },
     enabled: tab === 'global' || !!selectedGame,
     refetchInterval: 30_000,
+    retry: 1,
   });
 
   return (
@@ -217,6 +220,12 @@ export default function LeaderboardPage() {
             <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-indigo-600" />
           )}
         </button>
+        <button
+          onClick={() => router.push('/leaderboard/multiplayer')}
+          className="relative px-2 pb-3 text-sm font-bold text-gray-500 transition-all hover:text-indigo-600"
+        >
+          <Swords className="mr-1 inline h-4 w-4" /> Multiplayer
+        </button>
       </div>
 
       {tab === 'game' && (
@@ -227,7 +236,14 @@ export default function LeaderboardPage() {
         />
       )}
 
-      {isLoading ? (
+      {isError ? (
+        <div className="py-20 text-center">
+          <p className="text-gray-400">{t('common.error')}</p>
+          <button onClick={() => refetch()} className="mt-4 rounded-xl bg-indigo-600 px-6 py-2.5 font-bold text-white">
+            {t('common.retry')}
+          </button>
+        </div>
+      ) : isLoading ? (
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
         </div>

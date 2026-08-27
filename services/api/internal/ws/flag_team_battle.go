@@ -436,7 +436,9 @@ func generateFlagTeamQuestions(theme string) []QuestionPayload {
 
 func loadFlagCountries(theme string) []flagCountry {
 	var rows []model.Country
-	database.DB.Find(&rows)
+	if err := database.DB.Find(&rows).Error; err != nil || len(rows) == 0 {
+		return []flagCountry{}
+	}
 
 	flags := make([]flagCountry, 0, len(rows))
 	for _, row := range rows {

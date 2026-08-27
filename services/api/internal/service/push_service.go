@@ -9,6 +9,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/config"
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
+	"github.com/agambondan/eduplay/services/api/pkg/email"
 	"github.com/agambondan/eduplay/services/api/pkg/logger"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -112,11 +113,27 @@ func SendStreakAlertPush(cfg *config.Config) {
 
 	var users []model.User
 	today := time.Now().Format("2006-01-02")
-	database.DB.Where("streak >= 3 AND (last_active IS NULL OR last_active != ?)", today).Find(&users)
+	database.DB.Where("streak >= 3 AND (last_active IS NULL OR last_active != ?) AND weekly_email_opt_in = true", today).Find(&users)
 
 	for _, u := range users {
 		msg := "Kamu sudah mencapai streak " + strconv.Itoa(u.Streak) + " hari. Ayo main sekarang!"
 		pushSvc.SendToUser(u.ID, "Streak mau putus!", msg, "/")
+	}
+}
+
+func SendStreakEmailReminder(emailCl *email.ResendClient) {
+	if emailCl == nil {
+		return
+	}
+
+	var users []model.User
+	twoDaysAgo := time.Now().Add(-48 * time.Hour)
+	database.DB.Where("streak > 0 AND weekly_email_opt_in = true AND last_active < NOW() - INTERVAL '2 days' AND last_active > ?", twoDaysAgo).Find(&users)
+
+	for _, u := range users {
+		subject := "Streak kamu mau putus!"
+		body := "<p>Halo " + u.Username + ",</p><p>Kami lihat kamu sudah 2 hari tidak bermain. Streak " + strconv.Itoa(u.Streak) + " hari kamu akan hilang jika tidak main hari ini!</p><p>Ayo main sekarang: <a href='https://eduplay.id'>https://eduplay.id</a></p><p>— Tim EduPlay</p>"
+		emailCl.Send(u.Email, subject, body)
 	}
 }
 

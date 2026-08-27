@@ -143,7 +143,7 @@ export default function WordSearch() {
     }
   };
 
-  const onPointerUp = useCallback(async () => {
+  const onPointerUp = useCallback(async (e?: PointerEvent) => {
     if (!isSelecting || !game) return;
     setIsSelecting(false);
 
@@ -172,7 +172,11 @@ export default function WordSearch() {
 
   useEffect(() => {
     window.addEventListener('pointerup', onPointerUp);
-    return () => window.removeEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+    return () => {
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+    };
   }, [onPointerUp]);
 
   if (!isPlaying && !gameOver) {
@@ -225,7 +229,7 @@ export default function WordSearch() {
       <div className="flex flex-col items-start gap-8 md:flex-row">
         {game && (
           <div
-            className="grid select-none grid-cols-10 gap-1 rounded-xl bg-gray-200 p-2 dark:bg-slate-700"
+            className="grid w-full max-w-md select-none grid-cols-10 gap-1 rounded-xl bg-gray-200 p-2 dark:bg-slate-700"
             style={{ touchAction: 'none' }}
           >
             {game.grid.map((row, r) =>
@@ -240,7 +244,7 @@ export default function WordSearch() {
                     onPointerDown={() => onPointerDown(r, c)}
                     onPointerEnter={() => onPointerEnter(r, c)}
                     className={cn(
-                      'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-sm font-bold transition-colors sm:h-10 sm:w-10 sm:text-base',
+                      'flex aspect-square w-full cursor-pointer items-center justify-center rounded-md text-xs font-bold transition-colors sm:text-sm',
                       isFound
                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
                         : isSelected

@@ -24,29 +24,12 @@ export default function AdminPage() {
   const { t } = useLocale();
 
   useEffect(() => {
-    let count = 0;
-    const tick = () => {
-      count++;
-      if (count === 2) setLoading(false);
-    };
-
-    api
-      .get('/user/me')
-      .then((r) => {
-        setUser(r.data.data);
-        tick();
-      })
-      .catch(() => tick());
-    api
-      .get('/admin/dashboard')
-      .then((r) => {
-        setStats(r.data.data);
-        tick();
-      })
-      .catch((e) => {
+    Promise.allSettled([
+      api.get('/user/me').then((r) => setUser(r.data.data)),
+      api.get('/admin/dashboard').then((r) => setStats(r.data.data)).catch((e) => {
         setError(e.response?.data?.message || 'Failed to load');
-        tick();
-      });
+      }),
+    ]).finally(() => setLoading(false));
   }, []);
 
   if (error) {

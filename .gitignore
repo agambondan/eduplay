@@ -34,3 +34,4 @@ test-results/
 Thumbs.db
 *.log
 .dev.pids
+services/api/main

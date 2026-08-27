@@ -22,16 +22,19 @@ export default function DailyChallengePage() {
   const {
     data: challenge,
     isLoading,
+    isError,
     refetch,
   } = useQuery({
     queryKey: ['daily-challenge'],
     queryFn: dailyApi.get,
+    retry: 1,
   });
 
   const { data: history, isLoading: historyLoading } = useQuery({
     queryKey: ['daily-history'],
     queryFn: dailyApi.history,
     enabled: !!user,
+    retry: 1,
   });
 
   if (isLoading) {
@@ -39,6 +42,17 @@ export default function DailyChallengePage() {
       <div className="flex min-h-[60vh] flex-col items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
         <p className="mt-4 text-gray-500">{t('common.loading')}</p>
+      </div>
+    );
+  }
+
+  if (isError && !challenge) {
+    return (
+      <div className="container max-w-md py-20 text-center">
+        <p className="text-gray-400">{t('common.error')}</p>
+        <button onClick={() => refetch()} className="mt-4 rounded-xl bg-indigo-600 px-6 py-2.5 font-bold text-white">
+          {t('common.retry')}
+        </button>
       </div>
     );
   }
@@ -65,14 +79,14 @@ export default function DailyChallengePage() {
 
   if (challenge?.user_submitted) {
     return (
-      <div className="container max-w-2xl py-8">
+      <div className="mx-auto max-w-2xl">
         <div className="mb-8 text-center">
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-8 shadow-sm dark:border-emerald-900/30 dark:bg-emerald-900/20">
             <Trophy className="mx-auto mb-4 h-12 w-12 text-emerald-500" />
             <h1 className="mb-2 text-2xl font-bold text-emerald-900 dark:text-emerald-400">
               {t('daily.complete')}
             </h1>
-            <p className="mb-6 text-emerald-700 dark:text-emerald-500">{t('daily.complete')}</p>
+            <p className="mb-6 text-emerald-700 dark:text-emerald-500">Kembali besok untuk tantangan baru!</p>
             <Link
               href="/games"
               className="block w-full rounded-xl bg-emerald-500 py-3 font-bold text-white transition-colors hover:bg-emerald-600"
@@ -189,7 +203,7 @@ export default function DailyChallengePage() {
   }
 
   return (
-    <div className="container max-w-2xl py-8">
+    <div className="mx-auto max-w-2xl">
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('daily.title')}</h1>
         <p className="mt-1 font-bold text-indigo-600 dark:text-indigo-400">{t('daily.bonus')}</p>

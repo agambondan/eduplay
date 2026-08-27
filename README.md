@@ -19,7 +19,7 @@ EduPlay is a PWA educational mini-game platform combining learning with gamifica
 
 - **Authentication:** Register, Login, JWT with refresh token rotation, Google OAuth.
 - **Profile & Progress:** Dynamic XP/level, daily streaks, achievements, 7-day XP history graph, top-5 games.
-- **20 Games across 5 categories:**
+- **34 Games across 5 categories:**
   - _Math:_ Math Quiz Blitz, Times Table Challenge, Bubble Shooter Math, Brick Breaker
   - _Language:_ Wordle Bahasa Indonesia, Spelling Bee, Crossword Indonesia, Word Search
   - _Geography:_ Flag Quiz, Capital City Quiz
@@ -154,6 +154,13 @@ Images use distroless/base:nonroot (Go) and Next.js standalone output for minima
 |----------|-------------|
 | `NEXT_PUBLIC_API_URL` | Backend URL (e.g. `http://localhost:8080/api/v1`) |
 | `NEXT_PUBLIC_ADSENSE_CLIENT_ID` | Google AdSense ID |
+
+---
+
+## Changelog
+
+Riwayat perubahan project ada di [`CHANGELOG.md`](./CHANGELOG.md).  
+Setiap AI Agent wajib menambahkan entry baru di akhir session.
 
 ---
 

@@ -164,15 +164,15 @@ export default function MemoryMatch({ isDaily }: Props) {
                 </span>
             </div>
             <div
-                className='grid gap-3'
-                style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+                className='grid w-full select-none gap-3'
+                style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, touchAction: 'none' }}
             >
                 {cards.map((card) => (
                     <motion.button
                         key={card.id}
                         onClick={() => handleFlip(card.id)}
                         className={cn(
-                            'flex h-16 w-16 items-center justify-center rounded-xl text-3xl shadow transition-all',
+                            'flex aspect-square w-full items-center justify-center rounded-xl text-2xl shadow transition-all sm:text-3xl',
                             card.matched
                                 ? 'bg-emerald-100 dark:bg-emerald-900/30'
                                 : card.flipped

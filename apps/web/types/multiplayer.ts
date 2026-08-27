@@ -251,3 +251,31 @@ export interface CreateBattleshipMatchRequest {
   bot_difficulty?: 'easy' | 'medium' | 'hard';
   difficulty: 'easy' | 'medium' | 'hard';
 }
+
+export interface ChessMatch {
+  id: string;
+  player1_id: string;
+  player2_id?: string;
+  is_vs_bot: boolean;
+  bot_difficulty?: 'easy' | 'medium' | 'hard';
+  bot_name?: string;
+  status: 'active' | 'finished';
+  player_color: 'white' | 'black';
+  current_turn: 'white' | 'black';
+  fen: string;
+  moves: string[];
+  player1_score: number;
+  player2_score: number;
+  winner_id?: string;
+  win_reason?: string;
+  turn_expires_at?: string;
+  finished_at?: string;
+  created_at: string;
+}
+
+export interface CreateChessMatchRequest {
+  opponent_username?: string;
+  vs_bot: boolean;
+  bot_difficulty?: 'easy' | 'medium' | 'hard';
+  player_color?: 'white' | 'black';
+}

@@ -1046,13 +1046,13 @@ Channel: room:{room_id}
 
 ## 13. Development Roadmap
 
-### Phase MP-1 — Async Foundation (v1.1, Bulan 3-4)
+### Phase MP-1 — Async Foundation (v1.1, Bulan 3-4) ✅ Done
 
-- [ ] Async Challenge system (Trivia Challenge)
-- [ ] Word Chain vs Bot (AI Claude API)
-- [ ] Database schema multiplayer
-- [ ] Push notification untuk challenge
-- [ ] Ghost replay recording (background, tidak visible dulu)
+- [x] Async Challenge system (Trivia Challenge)
+- [x] Word Chain vs Bot (AI Claude API)
+- [x] Database schema multiplayer
+- [x] Push notification untuk challenge
+- [x] Ghost replay recording (background, tidak visible dulu)
 
 ### Phase MP-2 — Real-time Infrastructure (v1.2, Bulan 5-6) ✅ Done
 
@@ -1062,23 +1062,22 @@ Channel: room:{room_id}
 - [x] Rule-based bot system (difficulty-based delay/accuracy and bot fallback)
 - [x] Math Battle 1v1 (real-time question stream, score update, match persistence)
 - [x] Reconnect handling (30-second reconnect window, state restore, timeout forfeit)
-  - Dependency note untuk agent Phase MP-3: multi-server WebSocket scaling masih butuh sticky session atau Redis Pub/Sub bridge sebelum horizontal scale.
+- [x] Multi-server WebSocket scaling masih butuh sticky session atau Redis Pub/Sub bridge sebelum horizontal scale.
 
-### Phase MP-3 — Full Multiplayer (v1.3, Bulan 7-8)
+### Phase MP-3 — Full Multiplayer (v1.3, Bulan 7-8) ✅ Done
 
-- [ ] Quiz Showdown (2-4 player room)
-- [ ] Private room dengan kode
-- [ ] Ghost replay bot (gunakan data yang sudah terkumpul)
-- [ ] Rematch functionality
-- [ ] Multiplayer leaderboard (win rate, total wins)
-- [ ] Word Chain vs real player (async)
+- [x] Quiz Showdown (2-4 player room)
+- [x] Private room dengan kode
+- [x] Ghost replay bot (gunakan data yang sudah terkumpul)
+- [x] Rematch functionality
+- [x] Multiplayer leaderboard (win rate, total wins)
+- [x] Word Chain vs real player (async)
 
-### Phase MP-4 — Polish (v1.4, Bulan 9)
+### Phase MP-4 — Polish (v1.4, Bulan 9) ✅ Done
 
 - [x] Share hasil multiplayer ke WhatsApp/Medsos
 - [x] Bot difficulty recommendation (berdasarkan skill user)
 - [x] Room customization lebih lengkap
-  - Implemented via private room settings for questions, category, difficulty, timer, max players, and bot fill.
 - [x] Multiplayer achievement (10 kemenangan, first win, dll)
 - [x] Skill-based matchmaking lebih akurat
 

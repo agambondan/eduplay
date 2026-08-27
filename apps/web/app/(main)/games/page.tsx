@@ -102,9 +102,10 @@ function GamesContent() {
   const searchParams = useSearchParams();
   const selectedCategory = searchParams.get('cat');
 
-  const { data: games, isLoading } = useQuery({
+  const { data: games, isLoading, isError } = useQuery({
     queryKey: ['games'],
     queryFn: gamesApi.list,
+    retry: 1,
   });
 
   const categoriesWithCount = useMemo(() => {
@@ -122,6 +123,17 @@ function GamesContent() {
     if (!games || !selectedCategory) return [];
     return games.filter((g) => g.category === selectedCategory);
   }, [games, selectedCategory]);
+
+  if (isError) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-gray-400">{t('common.error')}</p>
+        <button onClick={() => window.location.reload()} className="mt-4 rounded-xl bg-indigo-600 px-6 py-2.5 font-bold text-white">
+          {t('common.retry')}
+        </button>
+      </div>
+    );
+  }
 
   if (selectedCategory && CATEGORY_CONFIG[selectedCategory]) {
     const catConfig = CATEGORY_CONFIG[selectedCategory];

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useLocale } from '@/lib/i18n';
 import { adsApi, type DirectAd } from '@/lib/api/ads';
+import { useAdManager } from '@/lib/hooks/useAdManager';
 
 interface BannerAdProps {
     slotId?: string;
@@ -14,9 +15,12 @@ interface BannerAdProps {
 export function BannerAd({ slotId = 'default-banner', format = 'auto' }: BannerAdProps) {
     const { t } = useLocale();
     const adRef = useRef<HTMLModElement>(null);
+    const gptRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
     const [directAd, setDirectAd] = useState<DirectAd | null>(null);
     const [checked, setChecked] = useState(false);
+    const [useGpt, setUseGpt] = useState(false);
+    const { loadGPT, gptLoaded, networkOrder } = useAdManager();
 
     // Try to load a direct ad first; fall back to AdSense if none
     useEffect(() => {
@@ -28,17 +32,41 @@ export function BannerAd({ slotId = 'default-banner', format = 'auto' }: BannerA
             .finally(() => setChecked(true));
     }, [pathname]);
 
-    // Inject AdSense only when there is no direct ad
+    // Inject AdSense / GPT based on mediation order
     useEffect(() => {
-        if (!checked || directAd) return;
-        try {
-            if (process.env.NODE_ENV !== 'development' && typeof window !== 'undefined') {
-                ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-            }
-        } catch {
-            // ignore
+        if (!checked) return;
+        const shouldUseAdsense = !directAd && networkOrder.includes('adsense') &&
+            process.env.NODE_ENV !== 'development';
+        const shouldUseGpt = !directAd && networkOrder.includes('admanager') &&
+            process.env.NODE_ENV !== 'development';
+
+        if (shouldUseGpt) {
+            setUseGpt(true);
+            loadGPT();
+            return;
         }
-    }, [checked, directAd]);
+
+        if (shouldUseAdsense && adRef.current) {
+            try {
+                ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+            } catch {}
+        }
+    }, [checked, directAd, networkOrder, loadGPT]);
+
+    useEffect(() => {
+        if (!useGpt || !gptLoaded || !gptRef.current) return;
+        const el = gptRef.current;
+        try {
+            const adUnit = `/21670785476/eduplay_${slotId.replace(/[^a-z0-9]/g, '_')}`;
+            (window as any).googletag.cmd.push(() => {
+                const slot = (window as any).googletag.defineSlot(adUnit, [[728, 90], [320, 50]], el.id)
+                    ?.addService((window as any).googletag.pubads());
+                (window as any).googletag.pubads().enableSingleRequest();
+                (window as any).googletag.enableServices();
+                (window as any).googletag.display(el.id);
+            });
+        } catch {}
+    }, [useGpt, gptLoaded, slotId]);
 
     if (!checked) return null;
 
@@ -74,6 +102,25 @@ export function BannerAd({ slotId = 'default-banner', format = 'auto' }: BannerA
 
     // Dev placeholder (no AdSense in dev)
     if (process.env.NODE_ENV === 'development') {
+        return (
+            <div className='flex min-h-[90px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-200 p-4 text-gray-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'>
+                <span className='text-sm font-bold uppercase'>{t('ads.banner')}</span>
+                <span className='text-xs'>Slot: {slotId} | Mediasi: {networkOrder.join(' → ')}</span>
+            </div>
+        );
+    }
+
+    // GPT (Google Ad Manager) — preferred fallback
+    if (useGpt) {
+        return (
+            <div className='my-4 flex w-full justify-center overflow-hidden'>
+                <div id={`div-gpt-${slotId.replace(/[^a-z0-9]/g, '_')}`} ref={gptRef} className='min-h-[90px]' />
+            </div>
+        );
+    }
+
+    // Direct ad
+    if (directAd) {
         return (
             <div className='flex min-h-[90px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-200 p-4 text-gray-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'>
                 <span className='text-sm font-bold uppercase'>{t('ads.banner')}</span>

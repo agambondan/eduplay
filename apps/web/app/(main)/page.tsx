@@ -7,10 +7,12 @@ import { useQuery } from '@tanstack/react-query';
 import {
     Award,
     ChevronRight,
+    Flame,
     Gamepad2,
     Medal,
     Play,
     Sparkles,
+    Star,
     TrendingUp,
     Trophy,
 } from 'lucide-react';
@@ -25,12 +27,12 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StreakCounter } from '@/components/ui/StreakCounter';
 import { XPBadge } from '@/components/ui/XPBadge';
 
-function getTimeGreeting(): string {
+function getTimeGreeting(t: (key: string) => string): string {
     const hour = new Date().getHours();
-    if (hour < 11) return 'Selamat Pagi';
-    if (hour < 15) return 'Selamat Siang';
-    if (hour < 18) return 'Selamat Sore';
-    return 'Selamat Malam';
+    if (hour < 11) return t('common.greeting_morning');
+    if (hour < 15) return t('common.greeting_afternoon');
+    if (hour < 18) return t('common.greeting_evening');
+    return t('common.greeting_night');
 }
 
 const RANK_COLORS = [
@@ -99,7 +101,7 @@ export default function DashboardPage() {
                         </div>
                         <div>
                             <p className='text-sm font-medium text-indigo-200'>
-                                {getTimeGreeting()} 👋
+                                {getTimeGreeting(t)}
                             </p>
                             <h1 className='text-2xl font-bold'>{user?.username || 'Pelajar'}</h1>
                             <p className='mt-0.5 flex items-center gap-1 text-sm text-indigo-200'>
@@ -130,26 +132,29 @@ export default function DashboardPage() {
 
             {/* Stats grid */}
             {stats && (
-                <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
+                <div className='grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4'>
                     {[
-                        { label: t('profile.games_played'), value: stats.total_games || 0, icon: '🎮' },
-                        { label: t('profile.total_xp'), value: stats.total_xp || 0, icon: '⭐' },
-                        { label: t('profile.level'), value: level, icon: '🏅' },
-                        { label: t('profile.streak'), value: user?.streak || 0, icon: '🔥' },
-                    ].map((s) => (
-                        <div
-                            key={s.label}
-                            className='rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800'
-                        >
-                            <div className='text-2xl'>{s.icon}</div>
-                            <div className='mt-1 text-xl font-black text-gray-900 dark:text-white'>
-                                {s.value}
+                        { label: t('profile.games_played'), value: stats.total_games || 0, icon: Gamepad2, color: 'text-indigo-500' },
+                        { label: t('profile.total_xp'), value: stats.total_xp || 0, icon: Star, color: 'text-amber-500' },
+                        { label: t('profile.level'), value: level, icon: Medal, color: 'text-emerald-500' },
+                        { label: t('profile.streak'), value: user?.streak || 0, icon: Flame, color: 'text-orange-500' },
+                    ].map((s) => {
+                        const Icon = s.icon;
+                        return (
+                            <div
+                                key={s.label}
+                                className='rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800'
+                            >
+                                <Icon className={`mx-auto h-6 w-6 ${s.color}`} strokeWidth={2.5} />
+                                <div className='mt-1.5 text-xl font-black text-gray-900 dark:text-white'>
+                                    {s.value}
+                                </div>
+                                <div className='text-xs font-medium text-gray-500 dark:text-slate-400'>
+                                    {s.label}
+                                </div>
                             </div>
-                            <div className='text-xs font-medium text-gray-500 dark:text-slate-400'>
-                                {s.label}
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 

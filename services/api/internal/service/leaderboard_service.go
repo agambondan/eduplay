@@ -180,6 +180,24 @@ func (s *leaderboardService) GetGlobalLeaderboard(userID string, limit int64) (*
 					Score:    u.XP,
 					Level:    u.Level,
 				}
+				startPos := maxInt(0, int(rank)-3)
+				endPos := int(rank) + 1
+				nearby, _ := s.repo.GetRangeByRank("leaderboard:global:xp", int64(startPos), int64(endPos))
+				if len(nearby) > 0 {
+					nearbyEntries := make([]repository.Entry, len(nearby))
+					nearbyUserMap := s.batchFetchUsers(nearby)
+					for j, z := range nearby {
+						uid, score := repository.ParseScore(z)
+						n := nearbyUserMap[uid]
+						nearbyEntries[j] = repository.Entry{
+							Rank:     startPos + j + 1,
+							UserID:   uid,
+							Username: n,
+							Score:    score,
+						}
+					}
+					resp.NearbyEntries = nearbyEntries
+				}
 			}
 		}
 

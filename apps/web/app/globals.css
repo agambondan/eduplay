@@ -55,8 +55,12 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     @apply bg-background text-foreground;
+    overscroll-behavior-y: contain;
   }
 }
 

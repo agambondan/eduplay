@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
@@ -11,9 +11,10 @@ import { ScoreBoard } from '@/components/ui/ScoreBoard';
 
 type Board = number[][];
 type Direction = 'up' | 'down' | 'left' | 'right';
+type GridSize = 3 | 4 | 5;
 
-function createEmptyBoard(): Board {
-  return Array.from({ length: 4 }, () => Array(4).fill(0));
+function createEmptyBoard(size: GridSize = 4): Board {
+  return Array.from({ length: size }, () => Array(size).fill(0));
 }
 
 function addRandomTile(board: Board): Board {
@@ -38,6 +39,7 @@ function rotateBoard(board: Board): Board {
 function slideLeft(board: Board): { board: Board; score: number; moved: boolean } {
   let totalScore = 0;
   let moved = false;
+  const n = board.length;
   const newBoard = board.map((row) => {
     const filtered = row.filter((v) => v !== 0);
     const merged: number[] = [];
@@ -53,7 +55,7 @@ function slideLeft(board: Board): { board: Board; score: number; moved: boolean 
         i++;
       }
     }
-    while (merged.length < 4) merged.push(0);
+    while (merged.length < n) merged.push(0);
     if (merged.some((v, idx) => v !== row[idx])) moved = true;
     return merged;
   });
@@ -62,20 +64,22 @@ function slideLeft(board: Board): { board: Board; score: number; moved: boolean 
 
 function move(board: Board, dir: Direction): { board: Board; score: number; moved: boolean } {
   let rotated = board;
+  const n = board.length;
   const rotations: Record<Direction, number> = { left: 0, down: 1, right: 2, up: 3 };
   for (let i = 0; i < rotations[dir]; i++) rotated = rotateBoard(rotated);
   const result = slideLeft(rotated);
   let final = result.board;
-  for (let i = 0; i < (4 - rotations[dir]) % 4; i++) final = rotateBoard(final);
+  for (let i = 0; i < (n - rotations[dir]) % n; i++) final = rotateBoard(final);
   return { board: final, score: result.score, moved: result.moved };
 }
 
 function isGameOver(board: Board): boolean {
-  for (let r = 0; r < 4; r++) {
-    for (let c = 0; c < 4; c++) {
+  const n = board.length;
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
       if (board[r][c] === 0) return false;
-      if (c < 3 && board[r][c] === board[r][c + 1]) return false;
-      if (r < 3 && board[r][c] === board[r + 1][c]) return false;
+      if (c < n - 1 && board[r][c] === board[r][c + 1]) return false;
+      if (r < n - 1 && board[r][c] === board[r + 1][c]) return false;
     }
   }
   return true;
@@ -103,9 +107,13 @@ export default function Game2048() {
   const [board, setBoard] = useState<Board>(createEmptyBoard);
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
+  const [gridSize, setGridSize] = useState<GridSize>(4);
+  const boardRef = useRef<HTMLDivElement>(null);
 
-  const handleStart = () => {
-    let b = createEmptyBoard();
+  const handleStart = (size?: GridSize) => {
+    const s = size || gridSize;
+    setGridSize(s);
+    let b = createEmptyBoard(s);
     b = addRandomTile(b);
     b = addRandomTile(b);
     setBoard(b);
@@ -152,6 +160,8 @@ export default function Game2048() {
   }, [handleMove]);
 
   useEffect(() => {
+    const el = boardRef.current;
+    if (!el) return;
     let startX = 0,
       startY = 0;
     const onStart = (e: TouchEvent) => {
@@ -165,11 +175,14 @@ export default function Game2048() {
       if (Math.abs(dx) > Math.abs(dy)) handleMove(dx > 0 ? 'right' : 'left');
       else handleMove(dy > 0 ? 'down' : 'up');
     };
-    window.addEventListener('touchstart', onStart);
-    window.addEventListener('touchend', onEnd);
+    const onCancel = () => {};
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchend', onEnd, { passive: true });
+    el.addEventListener('touchcancel', onCancel, { passive: true });
     return () => {
-      window.removeEventListener('touchstart', onStart);
-      window.removeEventListener('touchend', onEnd);
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchend', onEnd);
+      el.removeEventListener('touchcancel', onCancel);
     };
   }, [handleMove]);
 
@@ -188,11 +201,19 @@ export default function Game2048() {
           ]}
         />
         <button
-          onClick={handleStart}
+          onClick={() => handleStart()}
           className="rounded-xl bg-emerald-500 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-emerald-600"
         >
-          {t('game.start')}
+          {t('game.start')} ({gridSize}×{gridSize})
         </button>
+        <div className="flex gap-2">
+          {([3, 4, 5] as GridSize[]).map((s) => (
+            <button key={s} onClick={() => handleStart(s)}
+              className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${gridSize === s ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-700 dark:text-slate-300'}`}>
+              {s}×{s}
+            </button>
+          ))}
+        </div>
       </div>
     );
   }
@@ -210,12 +231,13 @@ export default function Game2048() {
         </button>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 rounded-xl bg-gray-300 p-2 dark:bg-slate-600">
+      <div ref={boardRef} className="grid w-full max-w-sm gap-2 rounded-xl bg-gray-300 p-2 dark:bg-slate-600"
+        style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, touchAction: 'none' }}>
         {board.flat().map((val, i) => (
           <div
             key={i}
             className={cn(
-              'flex h-16 w-16 items-center justify-center rounded-lg text-lg font-bold transition-all sm:h-20 sm:w-20',
+              'flex aspect-square w-full items-center justify-center rounded-lg text-lg font-bold transition-all sm:text-xl',
               TILE_COLORS[val] || 'bg-purple-600 text-lg text-white'
             )}
           >

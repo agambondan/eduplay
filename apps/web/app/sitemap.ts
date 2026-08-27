@@ -31,6 +31,9 @@ const games = [
   'number-match',
   'fraction-visualizer',
   'onet',
+  'chess',
+  'crossword-coop',
+  'math-relay',
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -45,6 +48,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/support',
   ];
 
+  const blogSlugs = [
+    'belajar-matematika-seru-dengan-game-edukasi',
+    'manfaat-bermain-puzzle-untuk-kecerdasan-otak',
+    'mengenal-wordle-bahasa-indonesia',
+  ];
+
   return [
     ...staticPages.map((path) => ({
       url: `${BASE_URL}${path}`,
@@ -57,6 +66,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.9,
+    })),
+    { url: `${BASE_URL}/blog`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.8 },
+    ...blogSlugs.map((slug) => ({
+      url: `${BASE_URL}/blog/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
     })),
   ];
 }

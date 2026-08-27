@@ -256,7 +256,7 @@ export default function SnakeGame({ isDaily }: Props) {
         ref={canvasRef}
         width={W}
         height={H}
-        className="h-auto w-[min(96vw,70dvh,520px)] rounded-xl border border-slate-700 shadow-xl"
+        className="h-auto w-full max-w-[min(520px,70dvh)] rounded-xl border border-slate-700 shadow-xl"
         style={{ touchAction: 'none' }}
       />
       <div className="grid grid-cols-3 gap-2 md:hidden">

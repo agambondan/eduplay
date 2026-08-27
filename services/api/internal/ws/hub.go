@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
+	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -19,11 +21,15 @@ import (
 	"github.com/google/uuid"
 )
 
+const redisPubSubChannel = "ws:pubsub"
+
 type AchievementChecker interface {
 	CheckMPFirstWin(userID string) error
 	CheckMP10Wins(userID string) error
 	CheckMPBotSlayer(userID string) error
 }
+
+type GhostBotProvider func(gameID, difficulty string, userScore int) (*GhostBotPlayer, error)
 
 type Hub struct {
 	cfg        *config.Config
@@ -32,21 +38,85 @@ type Hub struct {
 	Register   chan *Client
 	Unregister chan *Client
 	achSvc     AchievementChecker
+	ghostFn    GhostBotProvider
+	pubSub     *redisPubSubBridge
 	mu         sync.RWMutex
+	serverID   string
 }
 
 func NewHub(cfg *config.Config, roomMgr *RoomManager) *Hub {
-	return &Hub{
+	h := &Hub{
 		cfg:        cfg,
 		Clients:    make(map[string]*Client),
 		Rooms:      roomMgr,
 		Register:   make(chan *Client, 256),
 		Unregister: make(chan *Client, 256),
+		serverID:   uuid.New().String()[:8],
 	}
+	h.pubSub = newRedisPubSubBridge(h)
+	return h
+}
+
+func (h *Hub) StartPubSub() {
+	h.pubSub.Start()
+}
+
+func (h *Hub) PublishToRoom(roomID string, msgType string, payload interface{}) {
+	data, _ := json.Marshal(map[string]interface{}{
+		"type":    msgType,
+		"payload": payload,
+		"room_id": roomID,
+	})
+	database.RDB.Publish(context.Background(), redisPubSubChannel, string(data))
+}
+
+type redisPubSubBridge struct {
+	hub  *Hub
+	done chan struct{}
+}
+
+func newRedisPubSubBridge(hub *Hub) *redisPubSubBridge {
+	return &redisPubSubBridge{hub: hub, done: make(chan struct{})}
+}
+
+func (ps *redisPubSubBridge) Start() {
+	pubsub := database.RDB.Subscribe(context.Background(), redisPubSubChannel)
+	go func() {
+		ch := pubsub.Channel()
+		for {
+			select {
+			case msg := <-ch:
+				var envelope struct {
+					Type    string          `json:"type"`
+					Payload json.RawMessage `json:"payload"`
+					RoomID  string          `json:"room_id"`
+				}
+				if err := json.Unmarshal([]byte(msg.Payload), &envelope); err != nil {
+					continue
+				}
+				gameRoom, ok := ps.hub.Rooms.Get(envelope.RoomID)
+				if !ok {
+					continue
+				}
+				gameRoom.Broadcast(envelope.Type, envelope.Payload)
+			case <-ps.done:
+				pubsub.Close()
+				return
+			}
+		}
+	}()
+}
+
+func (ps *redisPubSubBridge) Stop() {
+	close(ps.done)
 }
 
 func (h *Hub) SetAchievementChecker(ach AchievementChecker) {
 	h.achSvc = ach
+}
+
+func (h *Hub) SetGhostBotProvider(fn GhostBotProvider) {
+	h.ghostFn = fn
 }
 
 func (h *Hub) checkAchievements(userID string) {
@@ -143,15 +213,18 @@ func (h *Hub) WSHandler() fiber.Handler {
 
 func (h *Hub) validateToken(tokenStr string) (string, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
 		return []byte(h.cfg.JWT.Secret), nil
-	})
+	}, jwt.WithValidMethods([]string{"HS256"}))
 	if err != nil || !token.Valid {
 		return "", err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", err
+		return "", errors.New("invalid claims")
 	}
 
 	sub, _ := claims["sub"].(string)
@@ -199,6 +272,28 @@ func (h *Hub) handleMessage(client *Client, msg WSMessage) {
 			return
 		}
 		h.handleSudokuCell(client, payload.RoomID, payload.Row, payload.Col, payload.Value)
+
+	case "crossword_cell":
+		var payload struct {
+			RoomID string `json:"room_id"`
+			Row    int    `json:"row"`
+			Col    int    `json:"col"`
+			Letter string `json:"letter"`
+		}
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+			return
+		}
+		h.handleCrosswordCell(client, payload.RoomID, payload.Row, payload.Col, payload.Letter)
+
+	case "chess_move":
+		var payload struct {
+			RoomID string `json:"room_id"`
+			Move   string `json:"move"`
+		}
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+			return
+		}
+		h.handleChessMove(client, payload.RoomID, payload.Move)
 
 	case "submit_flag_answer":
 		var payload SubmitFlagAnswerPayload
@@ -313,15 +408,8 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 
 		if room.State == "waiting" && room.IsFull() {
 			go room.StartGame(h, h.cfg)
-		} else if room.State == "waiting" && room.Bot == nil && (!isTournamentRoom || hasTournamentBot) {
-			room.AddBot()
-			if room.Bot != nil {
-				room.Broadcast("bot_joined", BotInfo{
-					ID:         room.Bot.UserID,
-					Username:   room.Bot.DisplayName,
-					Difficulty: room.Bot.Difficulty,
-				})
-			}
+		} else if room.State == "waiting" && room.Bot == nil && room.GhostPlayer == nil && (!isTournamentRoom || hasTournamentBot) {
+			h.tryAddGhostOrBot(room, client.UserID)
 			time.Sleep(500 * time.Millisecond)
 			go room.StartGame(h, h.cfg)
 		}
@@ -352,18 +440,10 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 		if p, exists := room.Players[client.UserID]; exists {
 			p.Client = client
 		}
-		if room.Bot == nil &&
-			len(room.Players) == 1 {
-			bot := NewRuleBasedBot(room.Settings.Difficulty, "wordle")
-			room.Bot = bot
-			if room.Bots == nil {
-				room.Bots = make(map[string]*RuleBasedBot)
-			}
-			room.Bots[bot.UserID] = bot
-			room.Players[bot.UserID] = &Player{
-				ID: bot.UserID, Username: bot.DisplayName, Level: 1, Score: 0,
-				Correct: 0, Wrong: 0, JoinedAt: time.Now(), AnsweredQuestions: make(map[string]bool),
-			}
+		if room.Bot == nil && room.GhostPlayer == nil && len(room.Players) == 1 {
+			room.mu.Unlock()
+			h.tryAddGhostOrBot(room, client.UserID)
+			room.mu.Lock()
 		}
 		room.mu.Unlock()
 
@@ -412,6 +492,11 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 		if p, exists := room.Players[client.UserID]; exists {
 			p.Client = client
 		}
+		if room.Bot == nil && room.GhostPlayer == nil && len(room.Players) == 1 {
+			room.mu.Unlock()
+			h.tryAddGhostOrBot(room, client.UserID)
+			room.mu.Lock()
+		}
 		room.mu.Unlock()
 
 		oldRoomID := client.RoomID
@@ -430,6 +515,183 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 
 		if room.State == "waiting" && room.IsFull() {
 			go h.startSudokuRace(room)
+		}
+	} else if strings.HasPrefix(roomID, "chess:") {
+		room, ok := h.Rooms.Get(roomID)
+		if !ok {
+			gameID := h.getGameID("chess")
+			room = h.Rooms.CreateRoom(roomID, "chess", RoomSettings{
+				GameSlug:   "chess",
+				Difficulty: roomDifficulty(roomID, "chess"),
+				MaxPlayers: 2,
+			}, gameID)
+		}
+
+		var u model.User
+		database.DB.First(&u, "id = ?", client.UserID)
+		reconnected := room.HasPlayer(client.UserID)
+		h.Rooms.JoinRoom(roomID, client.UserID, u.Username, u.Level)
+		if reconnected {
+			h.Rooms.CancelReconnectTimer(roomID, client.UserID)
+		}
+
+		room.mu.Lock()
+		if room.ClientMap == nil {
+			room.ClientMap = make(map[string]*Client)
+		}
+		room.ClientMap[client.UserID] = client
+		if p, exists := room.Players[client.UserID]; exists {
+			p.Client = client
+		}
+		if room.Bot == nil && room.GhostPlayer == nil && len(room.Players) == 1 {
+			room.mu.Unlock()
+			h.tryAddGhostOrBot(room, client.UserID)
+			room.mu.Lock()
+		}
+		room.mu.Unlock()
+
+		oldRoomID := client.RoomID
+		if oldRoomID != "" && oldRoomID != roomID {
+			h.Rooms.LeaveRoom(oldRoomID, client.UserID)
+		}
+		client.RoomID = roomID
+		client.SendMessage("room_joined", map[string]interface{}{"room_id": roomID, "players": room.GetPlayers(), "reconnected": reconnected})
+		client.SendMessage("room_state", room.CurrentStatePayload())
+
+		if reconnected {
+			room.BroadcastExcept(client.UserID, "player_reconnected", map[string]string{
+				"player_id": client.UserID,
+			})
+		}
+
+		if room.State == "waiting" && room.IsFull() {
+			go h.startChessGame(room)
+		}
+	} else if strings.HasPrefix(roomID, "crossword_duel:") || strings.HasPrefix(roomID, "crossword_coop:") {
+		isCoop := strings.HasPrefix(roomID, "crossword_coop:")
+		gameSlug := "crossword-duel"
+		roomType := "crossword_duel"
+		maxPlayers := 2
+		if isCoop {
+			gameSlug = "crossword-coop"
+			roomType = "crossword_coop"
+			maxPlayers = 4
+		}
+
+		room, ok := h.Rooms.Get(roomID)
+		if !ok {
+			gameID := h.getGameID(gameSlug)
+			settings := RoomSettings{
+				GameSlug:   gameSlug,
+				Difficulty: roomDifficulty(roomID, roomType),
+				MaxPlayers: maxPlayers,
+			}
+			room = h.Rooms.CreateRoom(roomID, roomType, settings, gameID)
+		}
+
+		var u model.User
+		database.DB.First(&u, "id = ?", client.UserID)
+		reconnected := room.HasPlayer(client.UserID)
+		h.Rooms.JoinRoom(roomID, client.UserID, u.Username, u.Level)
+		if reconnected {
+			h.Rooms.CancelReconnectTimer(roomID, client.UserID)
+		}
+
+		room.mu.Lock()
+		if room.ClientMap == nil {
+			room.ClientMap = make(map[string]*Client)
+		}
+		room.ClientMap[client.UserID] = client
+		if p, exists := room.Players[client.UserID]; exists {
+			p.Client = client
+		}
+		if room.Bot == nil && room.GhostPlayer == nil && len(room.Players) == 1 && !isCoop {
+			room.mu.Unlock()
+			h.tryAddGhostOrBot(room, client.UserID)
+			room.mu.Lock()
+		}
+		room.mu.Unlock()
+
+		oldRoomID := client.RoomID
+		if oldRoomID != "" && oldRoomID != roomID {
+			h.Rooms.LeaveRoom(oldRoomID, client.UserID)
+		}
+		client.RoomID = roomID
+		client.SendMessage("room_joined", map[string]interface{}{"room_id": roomID, "players": room.GetPlayers(), "reconnected": reconnected})
+
+		if reconnected {
+			room.BroadcastExcept(client.UserID, "player_reconnected", map[string]string{
+				"player_id": client.UserID,
+			})
+		}
+
+		if room.State == "waiting" && room.IsFull() {
+			diff := room.Settings.Difficulty
+			if diff == "" {
+				diff = "medium"
+			}
+			puzzle := getRandomCrosswordPuzzle(diff)
+			room.mu.Lock()
+			room.GameData = map[string]interface{}{
+				"puzzle":        puzzle,
+				"filled_cells":  map[string]string{},
+				"player_filled": map[string]int{},
+				"coop":          isCoop,
+			}
+			room.State = "playing"
+			room.mu.Unlock()
+
+			room.Broadcast("game_starting", map[string]int{"countdown": 3})
+			time.Sleep(2 * time.Second)
+			room.Broadcast("crossword_start", puzzle)
+		}
+	} else if strings.HasPrefix(roomID, "math_relay:") {
+		room, ok := h.Rooms.Get(roomID)
+		if !ok {
+			gameID := h.getGameID("math-relay")
+			settings := RoomSettings{
+				GameSlug:   "math-relay",
+				Difficulty: roomDifficulty(roomID, "math_relay"),
+				MaxPlayers: 4,
+				Questions:  20,
+				Timer:      8,
+			}
+			room = h.Rooms.CreateRoom(roomID, "math_relay", settings, gameID)
+		}
+
+		var u model.User
+		database.DB.First(&u, "id = ?", client.UserID)
+		reconnected := room.HasPlayer(client.UserID)
+		h.Rooms.JoinRoom(roomID, client.UserID, u.Username, u.Level)
+		if reconnected {
+			h.Rooms.CancelReconnectTimer(roomID, client.UserID)
+		}
+
+		room.mu.Lock()
+		if room.ClientMap == nil {
+			room.ClientMap = make(map[string]*Client)
+		}
+		room.ClientMap[client.UserID] = client
+		if p, exists := room.Players[client.UserID]; exists {
+			p.Client = client
+		}
+		room.mu.Unlock()
+
+		oldRoomID := client.RoomID
+		if oldRoomID != "" && oldRoomID != roomID {
+			h.Rooms.LeaveRoom(oldRoomID, client.UserID)
+		}
+		client.RoomID = roomID
+		client.SendMessage("room_joined", map[string]interface{}{"room_id": roomID, "players": room.GetPlayers(), "reconnected": reconnected})
+
+		if reconnected {
+			room.BroadcastExcept(client.UserID, "player_reconnected", map[string]string{
+				"player_id": client.UserID,
+			})
+		}
+
+		if room.State == "waiting" && room.IsFull() {
+			go h.startMathRelay(room)
 		}
 	} else if strings.HasPrefix(roomID, "quiz_showdown:") {
 		roomData, hasRoomData := loadRoomDataFromCode(roomID, "quiz_showdown")
@@ -759,7 +1021,7 @@ func (h *Hub) handleWordleGuess(client *Client, roomID, word string) {
 				break
 			}
 		}
-		if allDone || len(room.GameData) > 0 {
+		if allDone {
 			room.Broadcast("game_over", GameOverPayload{
 				WinnerID: client.UserID,
 				XPEarned: 50,
@@ -796,14 +1058,18 @@ func (h *Hub) startSudokuRace(room *GameRoom) {
 	})
 
 	go func() {
-		time.Sleep(10 * time.Minute)
-		room.mu.Lock()
-		if room.State == "playing" {
-			room.State = "finished"
-			room.mu.Unlock()
-			room.Broadcast("game_over", GameOverPayload{})
-		} else {
-			room.mu.Unlock()
+		select {
+		case <-time.After(10 * time.Minute):
+			room.mu.Lock()
+			if room.State == "playing" {
+				room.State = "finished"
+				room.FinishedAt = nowPtr()
+				room.mu.Unlock()
+				room.Broadcast("game_over", GameOverPayload{XPEarned: 25})
+			} else {
+				room.mu.Unlock()
+			}
+		case <-room.done:
 		}
 	}()
 }
@@ -842,8 +1108,15 @@ func (h *Hub) handleSudokuCell(client *Client, roomID string, row, col, value in
 	}
 	progress[client.UserID] = sudokuProgress(&puzzle)
 	room.GameData["progress"] = progress
-
 	pct := progress[client.UserID]
+
+	isComplete := isSudokuComplete(&puzzle, &solution)
+
+	progressSnapshot := make(map[string]int, len(progress))
+	for k, v := range progress {
+		progressSnapshot[k] = v
+	}
+
 	room.mu.Unlock()
 
 	client.SendMessage("sudoku_cell_ok", map[string]interface{}{
@@ -854,14 +1127,38 @@ func (h *Hub) handleSudokuCell(client *Client, roomID string, row, col, value in
 		"progress":  pct,
 	})
 
-	if isSudokuComplete(&puzzle, &solution) {
+	if isComplete {
 		room.mu.Lock()
 		room.State = "finished"
+		room.FinishedAt = nowPtr()
+
+		var results []PlayerResult
+		for _, p := range room.Players {
+			filled := 0
+			if p.ID == client.UserID {
+				filled = 81
+			} else if pct, ok := progressSnapshot[p.ID]; ok {
+				filled = pct * 81 / 100
+			}
+			results = append(results, PlayerResult{
+				PlayerID: p.ID,
+				Username: p.Username,
+				Score:    filled,
+				Correct:  filled,
+				IsWinner: p.ID == client.UserID,
+			})
+		}
 		room.mu.Unlock()
+
 		room.Broadcast("game_over", GameOverPayload{
+			Results:  results,
 			WinnerID: client.UserID,
 			XPEarned: 100,
 		})
+
+		if !strings.HasPrefix(client.UserID, "bot_") {
+			h.checkAchievements(client.UserID)
+		}
 	}
 }
 
@@ -872,6 +1169,439 @@ func (h *Hub) handleSubmitAnswer(client *Client, payload SubmitAnswerPayload) {
 		return
 	}
 	room.SubmitAnswer(client.UserID, payload.QuestionID, payload.Answer, payload.TimeTaken)
+}
+
+func (h *Hub) tryAddGhostOrBot(room *GameRoom, userID string) {
+	if h.ghostFn != nil {
+		var avgScore int
+		database.DB.Raw(`
+			SELECT COALESCE(AVG(gs.score), 0)
+			FROM game_sessions gs
+			JOIN games g ON g.id = gs.game_id
+			WHERE gs.user_id = ? AND g.slug = ?
+		`, userID, room.Settings.GameSlug).Scan(&avgScore)
+
+		ghost, err := h.ghostFn(room.GameID, room.Settings.Difficulty, int(avgScore))
+		if err == nil && ghost != nil {
+			room.mu.Lock()
+			room.GhostPlayer = ghost
+			room.Players[ghost.UserID] = &Player{
+				ID: ghost.UserID, Username: ghost.DisplayName, Level: 1,
+				Score: 0, Correct: 0, Wrong: 0, JoinedAt: time.Now(),
+			}
+			room.mu.Unlock()
+			room.Broadcast("bot_joined", BotInfo{
+				ID:         ghost.UserID,
+				Username:   ghost.DisplayName,
+				Difficulty: room.Settings.Difficulty,
+			})
+			return
+		}
+	}
+
+	bot := room.AddBot()
+	if bot != nil {
+		room.Broadcast("bot_joined", BotInfo{
+			ID:         bot.UserID,
+			Username:   bot.DisplayName,
+			Difficulty: bot.Difficulty,
+		})
+	}
+}
+
+func (h *Hub) startChessGame(room *GameRoom) {
+	room.mu.Lock()
+	players := make([]string, 0, len(room.Players))
+	for _, p := range room.Players {
+		players = append(players, p.ID)
+	}
+	playerWhite := ""
+	playerBlack := ""
+	if len(players) > 0 {
+		playerWhite = players[0]
+	}
+	if len(players) > 1 {
+		playerBlack = players[1]
+	}
+
+	room.State = "playing"
+	room.GameData = map[string]interface{}{
+		"fen":          "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+		"moves":        []string{},
+		"player_white": playerWhite,
+		"player_black": playerBlack,
+		"current_turn": "white",
+	}
+	room.mu.Unlock()
+
+	room.Broadcast("game_starting", map[string]int{"countdown": 3})
+	time.Sleep(2 * time.Second)
+	room.Broadcast("chess_start", map[string]interface{}{
+		"fen":          "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+		"player_white": playerWhite,
+		"player_black": playerBlack,
+	})
+
+	go func() {
+		time.Sleep(30 * time.Minute)
+		room.mu.Lock()
+		if room.State == "playing" {
+			room.State = "finished"
+			room.FinishedAt = nowPtr()
+			room.mu.Unlock()
+			room.Broadcast("game_over", GameOverPayload{XPEarned: 25})
+		} else {
+			room.mu.Unlock()
+		}
+	}()
+}
+
+func (h *Hub) handleChessMove(client *Client, roomID, move string) {
+	room, ok := h.Rooms.Get(roomID)
+	if !ok {
+		return
+	}
+
+	room.mu.Lock()
+	if room.State != "playing" {
+		room.mu.Unlock()
+		return
+	}
+
+	if _, ok := room.Players[client.UserID]; !ok {
+		room.mu.Unlock()
+		return
+	}
+
+	playerWhite, _ := room.GameData["player_white"].(string)
+	playerBlack, _ := room.GameData["player_black"].(string)
+	currentTurn, _ := room.GameData["current_turn"].(string)
+	if currentTurn == "" {
+		currentTurn = "white"
+	}
+
+	isWhiteTurn := currentTurn == "white"
+	isPlayersTurn := false
+	if isWhiteTurn && client.UserID == playerWhite {
+		isPlayersTurn = true
+	} else if !isWhiteTurn && client.UserID == playerBlack {
+		isPlayersTurn = true
+	} else if room.Bot != nil || room.GhostPlayer != nil {
+		isPlayersTurn = true
+	}
+	if !isPlayersTurn {
+		room.mu.Unlock()
+		client.SendMessage("error", map[string]string{"message": "Bukan giliranmu"})
+		return
+	}
+
+	movesRaw, _ := room.GameData["moves"].([]string)
+	if movesRaw == nil {
+		movesRaw = []string{}
+	}
+	movesRaw = append(movesRaw, move)
+
+	nextTurn := "black"
+	if currentTurn == "black" {
+		nextTurn = "white"
+	}
+	room.GameData["moves"] = movesRaw
+	room.GameData["current_turn"] = nextTurn
+
+	room.BroadcastExcept(client.UserID, "chess_move", map[string]interface{}{
+		"player_id": client.UserID,
+		"move":      move,
+	})
+
+	room.mu.Unlock()
+
+	client.SendMessage("chess_move_ok", map[string]interface{}{
+		"move": move,
+	})
+
+}
+
+func splitFen(fen string) []string {
+	result := make([]string, 0, 6)
+	current := ""
+	for _, c := range fen {
+		if c == ' ' {
+			result = append(result, current)
+			current = ""
+		} else {
+			current += string(c)
+		}
+	}
+	if current != "" {
+		result = append(result, current)
+	}
+	return result
+}
+
+func (h *Hub) handleCrosswordCell(client *Client, roomID string, row, col int, letter string) {
+	room, ok := h.Rooms.Get(roomID)
+	if !ok {
+		return
+	}
+
+	room.mu.Lock()
+	if room.State != "playing" {
+		room.mu.Unlock()
+		return
+	}
+
+	filledCells, _ := room.GameData["filled_cells"].(map[string]string)
+	if filledCells == nil {
+		filledCells = map[string]string{}
+	}
+
+	key := fmt.Sprintf("%d-%d", row, col)
+	filledCells[key] = letter
+	room.GameData["filled_cells"] = filledCells
+
+	playerFilled, _ := room.GameData["player_filled"].(map[string]int)
+	if playerFilled == nil {
+		playerFilled = map[string]int{}
+	}
+	playerFilled[client.UserID] = playerFilled[client.UserID] + 1
+	room.GameData["player_filled"] = playerFilled
+
+	totalCells := 0
+	if puzzleRaw, ok := room.GameData["puzzle"].(map[string]interface{}); ok {
+		if gridRaw, ok := puzzleRaw["grid"].([]interface{}); ok {
+			for _, rowRaw := range gridRaw {
+				if r, ok := rowRaw.([]interface{}); ok {
+					for _, c := range r {
+						if cell, ok := c.(string); ok && cell != "#" {
+							totalCells++
+						}
+					}
+				}
+			}
+		}
+	}
+
+	currentFilled := len(filledCells)
+	isCoop, _ := room.GameData["coop"].(bool)
+	room.mu.Unlock()
+
+	room.Broadcast("crossword_cell", map[string]interface{}{
+		"player_id":    client.UserID,
+		"row":          row,
+		"col":          col,
+		"letter":       letter,
+		"player_count": playerFilled[client.UserID],
+	})
+
+	if totalCells > 0 && currentFilled >= totalCells {
+		room.mu.Lock()
+		if room.State == "playing" {
+			room.State = "finished"
+			room.FinishedAt = nowPtr()
+
+			var results []PlayerResult
+			var mvpID string
+			topFilled := 0
+			for _, p := range room.Players {
+				f := playerFilled[p.ID]
+				results = append(results, PlayerResult{
+					PlayerID: p.ID,
+					Username: p.Username,
+					Score:    f,
+					Correct:  f,
+				})
+				if f > topFilled {
+					topFilled = f
+					mvpID = p.ID
+				}
+			}
+
+			winnerID := mvpID
+			if !isCoop {
+				winnerID = client.UserID
+			}
+
+			room.mu.Unlock()
+			room.Broadcast("game_over", GameOverPayload{
+				Results:  results,
+				WinnerID: winnerID,
+				XPEarned: 100,
+			})
+		} else {
+			room.mu.Unlock()
+		}
+	}
+}
+
+func (h *Hub) startMathRelay(room *GameRoom) {
+	difficulty := room.Settings.Difficulty
+	if difficulty == "" {
+		difficulty = "medium"
+	}
+	totalQ := room.Settings.Questions
+	if totalQ <= 0 {
+		totalQ = 20
+	}
+
+	room.mu.Lock()
+	players := make([]string, 0, len(room.Players))
+	for _, p := range room.Players {
+		players = append(players, p.ID)
+	}
+	room.State = "playing"
+
+	questions := make([]QuestionPayload, totalQ)
+	for i := 0; i < totalQ; i++ {
+		questions[i] = room.generateMathQuestion(difficulty, i+1, totalQ)
+	}
+	room.Questions = questions
+	room.CurrentQ = 0
+	room.GameData = map[string]interface{}{
+		"players":        players,
+		"current_player": 0,
+		"questions_per":  5,
+		"scores":         map[string]int{},
+		"correct":        map[string]int{},
+		"answered":       map[int]bool{},
+	}
+	room.mu.Unlock()
+
+	room.Broadcast("game_starting", map[string]int{"countdown": 3})
+	time.Sleep(2 * time.Second)
+
+	room.Broadcast("relay_start", map[string]interface{}{
+		"total_questions": totalQ,
+		"questions_per":   5,
+		"players":         players,
+	})
+	time.Sleep(1 * time.Second)
+
+	for i := 0; i < totalQ; i++ {
+		room.mu.Lock()
+		if room.State != "playing" {
+			room.mu.Unlock()
+			break
+		}
+		room.CurrentQ = i
+		q := questions[i]
+		playerIdx := i / 5
+		if playerIdx >= len(players) {
+			playerIdx = len(players) - 1
+		}
+		currentPlayerID := players[playerIdx]
+		room.mu.Unlock()
+
+		room.Broadcast("relay_question", map[string]interface{}{
+			"question":        q,
+			"current_player":  currentPlayerID,
+			"question_number": i + 1,
+			"total":           totalQ,
+		})
+
+		deadline := time.Now().Add(8 * time.Second)
+		answered := false
+
+		for time.Now().Before(deadline) {
+			select {
+			case <-room.done:
+				return
+			default:
+			}
+
+			room.mu.RLock()
+			answeredMap, _ := room.GameData["answered"].(map[int]bool)
+			isAnswered := answeredMap != nil && answeredMap[i]
+			room.mu.RUnlock()
+
+			if isAnswered {
+				answered = true
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		if !answered {
+			room.Broadcast("relay_timeout", map[string]interface{}{
+				"player_id":       currentPlayerID,
+				"question_number": i + 1,
+			})
+		}
+	}
+
+	room.mu.Lock()
+	room.State = "finished"
+	room.FinishedAt = nowPtr()
+	scores, _ := room.GameData["scores"].(map[string]int)
+	correctMap, _ := room.GameData["correct"].(map[string]int)
+	room.mu.Unlock()
+
+	results := make([]PlayerResult, 0, len(players))
+	var winnerID string
+	topScore := -1
+	for _, pid := range players {
+		sc := scores[pid]
+		results = append(results, PlayerResult{
+			PlayerID: pid,
+			Username: room.getPlayerName(pid),
+			Score:    sc,
+			Correct:  correctMap[pid],
+		})
+		if sc > topScore {
+			topScore = sc
+			winnerID = pid
+		}
+		if strings.HasPrefix(pid, "bot_") {
+			continue
+		}
+	}
+
+	room.Broadcast("game_over", GameOverPayload{
+		Results:  results,
+		WinnerID: winnerID,
+		XPEarned: 50,
+	})
+
+	if winnerID != "" && !strings.HasPrefix(winnerID, "bot_") {
+		h.checkAchievements(winnerID)
+	}
+}
+
+func getRandomCrosswordPuzzle(difficulty string) map[string]interface{} {
+	type crosswordRow struct {
+		ID        string
+		Title     string
+		GridSize  int
+		GridJSON  string
+		CluesJSON string
+	}
+
+	var puzzles []crosswordRow
+	q := database.DB.Model(&model.CrosswordPuzzle{}).Where("is_active = true")
+	if difficulty != "" {
+		q = q.Where("difficulty = ?", difficulty)
+	}
+	if err := q.Find(&puzzles).Error; err != nil || len(puzzles) == 0 {
+		return map[string]interface{}{
+			"id":    "default",
+			"title": "TTS",
+			"grid":  [][]interface{}{},
+			"clues": []interface{}{},
+		}
+	}
+
+	p := puzzles[rand.Intn(len(puzzles))]
+	var grid interface{}
+	var clues interface{}
+	json.Unmarshal([]byte(p.GridJSON), &grid)
+	json.Unmarshal([]byte(p.CluesJSON), &clues)
+
+	return map[string]interface{}{
+		"id":       p.ID,
+		"title":    p.Title,
+		"grid":     grid,
+		"gridSize": p.GridSize,
+		"clues":    clues,
+	}
 }
 
 func (h *Hub) getGameID(slug string) string {

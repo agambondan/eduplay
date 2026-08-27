@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Bell, Check, Globe, Loader2, Monitor, Moon, Shield, Sun, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Bell, Check, Globe, Loader2, Monitor, Moon, Shield, Sun, Trash2, Zap } from 'lucide-react';
 import api from '@/lib/api/client';
 import { useLocale } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/stores/authStore';
@@ -14,7 +14,7 @@ export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const { theme, setTheme } = useThemeStore();
-  const { t } = useLocale();
+  const { t, locale, setLocale } = useLocale();
 
   const [username, setUsername] = useState(user?.username || '');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -22,6 +22,8 @@ export default function SettingsPage() {
 
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [weeklyEmail, setWeeklyEmail] = useState(user?.weekly_email_opt_in || false);
+  const [emailLoading, setEmailLoading] = useState(false);
 
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState('');
@@ -176,6 +178,45 @@ export default function SettingsPage() {
             )}
           </button>
         </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-slate-700">
+          <div>
+            <div className="font-medium text-gray-900 dark:text-white">Email Mingguan</div>
+            <div className="text-sm text-gray-500 dark:text-slate-400">
+              Rekap mingguan: game, XP, streak & achievement
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              setEmailLoading(true);
+              try {
+                const newVal = !weeklyEmail;
+                await api.patch('/user/me', { weekly_email_opt_in: newVal });
+                setWeeklyEmail(newVal);
+              } catch {}
+              setEmailLoading(false);
+            }}
+            disabled={emailLoading}
+            className={`relative h-6 w-11 rounded-full transition-colors ${weeklyEmail ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-slate-600'}`}
+            role="switch"
+            aria-checked={weeklyEmail}
+          >
+            {emailLoading ? (
+              <Loader2 className="absolute inset-0 m-auto h-4 w-4 animate-spin text-gray-500" />
+            ) : (
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${weeklyEmail ? 'left-5' : 'left-0.5'}`} />
+            )}
+          </button>
+        </div>
+      </section>
+
+      {/* Subscription */}
+      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+          <Zap className="h-5 w-5 text-amber-500" /> Premium
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400">Nikmati EduPlay tanpa iklan! Dukung pengembangan platform.</p>
+        <SubscribeSection />
       </section>
 
       {/* Language */}
@@ -183,7 +224,21 @@ export default function SettingsPage() {
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <Globe className="h-5 w-5" /> {t('settings.language')}
         </h2>
-        <p className="text-sm text-gray-500 dark:text-slate-400">{t('settings.language_desc')}</p>
+        <p className="mb-4 text-sm text-gray-500 dark:text-slate-400">{t('settings.language_desc')}</p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setLocale('id')}
+            className={`flex-1 rounded-xl border-2 px-4 py-3 text-center font-bold transition-all ${locale === 'id' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300' : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-400'}`}
+          >
+            🇮🇩 Indonesia
+          </button>
+          <button
+            onClick={() => setLocale('en')}
+            className={`flex-1 rounded-xl border-2 px-4 py-3 text-center font-bold transition-all ${locale === 'en' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300' : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-400'}`}
+          >
+            🇬🇧 English
+          </button>
+        </div>
       </section>
 
       {/* Danger Zone */}
@@ -227,4 +282,48 @@ export default function SettingsPage() {
       </section>
     </div>
   );
+}
+
+function SubscribeSection() {
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState<{ plan?: string; status?: string; expires_at?: string } | null>(null)
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    import('@/lib/api/multiplayer').then(({ subscribeApi }) => {
+      subscribeApi.status().then((s) => setStatus(s)).catch(() => {}).finally(() => setChecking(false))
+    })
+  }, [])
+
+  const handleSubscribe = async () => {
+    setLoading(true)
+    try {
+      const { subscribeApi } = await import('@/lib/api/multiplayer')
+      const result = await subscribeApi.create()
+      if (result.redirect_url) {
+        window.open(result.redirect_url, '_blank')
+      }
+    } catch {}
+    setLoading(false)
+  }
+
+  if (checking) return <div className="mt-3 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
+
+  if (status?.status === 'active') {
+    return (
+      <div className="mt-3 rounded-xl bg-emerald-50 p-4 text-center dark:bg-emerald-950">
+        <p className="font-bold text-emerald-700 dark:text-emerald-300">Premium Aktif</p>
+        {status.expires_at && <p className="mt-1 text-xs text-gray-500">Berlaku hingga: {new Date(status.expires_at).toLocaleDateString('id-ID')}</p>}
+        <Check className="mx-auto mt-2 h-6 w-6 text-emerald-500" />
+      </div>
+    )
+  }
+
+  return (
+    <button onClick={handleSubscribe} disabled={loading}
+      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50">
+      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
+      Langganan Premium — Bebas Iklan
+    </button>
+  )
 }

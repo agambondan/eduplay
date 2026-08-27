@@ -48,14 +48,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
       <div
-        className={`fixed inset-0 z-30 bg-black/50 md:hidden ${
+        className={`fixed inset-0 z-30 bg-black/50 backdrop-blur-sm md:hidden ${
           sidebarOpen ? 'block' : 'hidden'
         }`}
         onClick={() => setSidebarOpen(false)}
       />
 
       <aside
-        className={`fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-gray-200 bg-white transition-transform dark:border-slate-700 dark:bg-slate-800 md:sticky md:top-0 md:block md:translate-x-0 ${
+        className={`fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-gray-200 bg-white shadow-xl transition-transform duration-200 dark:border-slate-700 dark:bg-slate-800 md:sticky md:top-0 md:block md:translate-x-0 md:shadow-none ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -65,7 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="text-gray-400 hover:text-gray-600 md:hidden dark:hover:text-slate-300"
+            className="touch-manipulation rounded-lg p-1.5 text-gray-400 hover:text-gray-600 md:hidden dark:hover:text-slate-300"
           >
             <X className="h-5 w-5" />
           </button>
@@ -83,7 +83,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
+                className={`touch-manipulation flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
                     : 'text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700'
@@ -108,10 +108,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       <main className="flex-1">
-        <div className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-gray-200 bg-white/80 px-4 backdrop-blur md:hidden dark:border-slate-700 dark:bg-slate-900/80">
+        <div className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-gray-200 bg-white/90 px-4 backdrop-blur md:hidden dark:border-slate-700 dark:bg-slate-900/90">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200"
+            className="touch-manipulation rounded-lg p-2 text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200"
+            aria-label="Open sidebar"
           >
             <Menu className="h-5 w-5" />
           </button>

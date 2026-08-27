@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"sort"
@@ -203,6 +204,7 @@ type GameRoom struct {
 	Spectators          map[string]*Client
 	Bots                map[string]*RuleBasedBot
 	Bot                 *RuleBasedBot
+	GhostPlayer         *GhostBotPlayer
 	State               string
 	Questions           []QuestionPayload
 	CurrentQ            int
@@ -430,11 +432,19 @@ func (r *GameRoom) StartGame(hub *Hub, cfg *config.Config) {
 }
 
 func (r *GameRoom) runBotPlayers(hub *Hub) {
-	if len(r.Bots) == 0 {
-		return
-	}
+	r.mu.RLock()
+	botList := make([]*RuleBasedBot, 0, len(r.Bots))
 	for _, bot := range r.Bots {
+		botList = append(botList, bot)
+	}
+	hasGhost := r.GhostPlayer != nil
+	r.mu.RUnlock()
+
+	for _, bot := range botList {
 		go r.runBotPlayer(bot)
+	}
+	if hasGhost {
+		go r.GhostPlayer.Run(r)
 	}
 }
 
@@ -511,6 +521,20 @@ func (r *GameRoom) SubmitAnswer(userID, questionID, answer string, timeTaken int
 		player.Wrong++
 	}
 
+	if r.GameType == "math_relay" {
+		if scores, ok := r.GameData["scores"].(map[string]int); ok {
+			scores[userID] = scores[userID] + scoreDelta
+		}
+		if correctMap, ok := r.GameData["correct"].(map[string]int); ok {
+			if isCorrect {
+				correctMap[userID] = correctMap[userID] + 1
+			}
+		}
+		if answeredMap, ok := r.GameData["answered"].(map[int]bool); ok {
+			answeredMap[r.CurrentQ] = true
+		}
+	}
+
 	r.Broadcast("answer_result", AnswerResultPayload{
 		PlayerID:   userID,
 		IsCorrect:  isCorrect,
@@ -546,32 +570,158 @@ func (r *GameRoom) getCorrectAnswer(questionID string) string {
 func (r *GameRoom) generateQuestions(cfg *config.Config) []QuestionPayload {
 	difficulty := r.Settings.Difficulty
 	totalQ := r.Settings.Questions
+	category := r.Settings.Category
 	if totalQ <= 0 {
 		totalQ = 15
 	}
+
 	questions := make([]QuestionPayload, totalQ)
 
-	for i := 0; i < totalQ; i++ {
-		questions[i] = r.generateQuestionPayload(difficulty, i+1, totalQ)
+	switch category {
+	case "geography":
+		r.generateGeographyQuestions(questions, totalQ)
+	case "language":
+		r.generateLanguageQuestions(questions, totalQ)
+	default:
+		for i := 0; i < totalQ; i++ {
+			roll := rand.Intn(3)
+			if roll == 0 {
+				r.generateGeographyQuestions(questions[i:i+1], 1)
+			} else if roll == 1 {
+				r.generateLanguageQuestions(questions[i:i+1], 1)
+			} else {
+				q := r.generateMathQuestion(difficulty, i+1, totalQ)
+				questions[i] = q
+			}
+		}
 	}
-
 	return questions
 }
 
-func (r *GameRoom) generateQuestionPayload(difficulty string, questionNumber, total int) QuestionPayload {
+func (r *GameRoom) generateMathQuestion(difficulty string, questionNumber, total int) QuestionPayload {
 	a, b := r.generateNumbers(difficulty)
 	op := r.pickOperator(difficulty)
 	correct := r.calculate(a, b, op)
-
 	q := QuestionPayload{
 		ID:             uuid.New().String(),
 		Text:           r.buildQuestion(a, b, op),
 		QuestionNumber: questionNumber,
 		Total:          total,
-		CorrectAnswer:  itoa(correct),
 	}
 	q.Options = r.generateOptions(correct)
+	correctVal := itoa(correct)
+	for i, opt := range q.Options {
+		if opt == correctVal {
+			q.CorrectAnswer = itoa(i)
+			break
+		}
+	}
 	return q
+}
+
+func (r *GameRoom) generateGeographyQuestions(questions []QuestionPayload, totalQ int) {
+	var countries []model.Country
+	if err := database.DB.Find(&countries).Error; err != nil || len(countries) == 0 {
+		for i := range questions {
+			questions[i] = r.generateMathQuestion("medium", i+1, totalQ)
+		}
+		return
+	}
+	for i := range questions {
+		q := questions[i]
+		if len(countries) == 0 {
+			q = r.generateMathQuestion("medium", i+1, totalQ)
+			questions[i] = q
+			continue
+		}
+		idx := rand.Intn(len(countries))
+		country := countries[idx]
+
+		correct := country.Capital
+		options := []string{correct}
+
+		taken := map[string]bool{correct: true}
+		for len(options) < 4 {
+			other := countries[rand.Intn(len(countries))]
+			if !taken[other.Capital] && other.Capital != "" {
+				options = append(options, other.Capital)
+				taken[other.Capital] = true
+			}
+		}
+		rand.Shuffle(len(options), func(i, j int) { options[i], options[j] = options[j], options[i] })
+
+		var correctIdx int
+		for j, opt := range options {
+			if opt == correct {
+				correctIdx = j
+				break
+			}
+		}
+
+		f := ""
+		if country.FlagEmoji != "" {
+			f = country.FlagEmoji + " "
+		}
+		q = QuestionPayload{
+			ID:             uuid.New().String(),
+			Text:           f + "Ibu kota " + country.Name + " adalah...?",
+			Options:        options,
+			CorrectAnswer:  fmt.Sprintf("%d", correctIdx),
+			QuestionNumber: i + 1,
+			Total:          totalQ,
+		}
+		questions[i] = q
+	}
+}
+
+func (r *GameRoom) generateLanguageQuestions(questions []QuestionPayload, totalQ int) {
+	var words []model.WordleWord
+	if err := database.DB.Where("language = ?", "id").Find(&words).Error; err != nil || len(words) == 0 {
+		for i := range questions {
+			questions[i] = r.generateMathQuestion("medium", i+1, totalQ)
+		}
+		return
+	}
+	for i := range questions {
+		q := questions[i]
+		if len(words) == 0 {
+			q = r.generateMathQuestion("medium", i+1, totalQ)
+			questions[i] = q
+			continue
+		}
+
+		idx := rand.Intn(len(words))
+		correctWord := words[idx].Word
+		options := []string{correctWord}
+
+		taken := map[string]bool{correctWord: true}
+		for len(options) < 4 {
+			other := words[rand.Intn(len(words))]
+			if !taken[other.Word] {
+				options = append(options, other.Word)
+				taken[other.Word] = true
+			}
+		}
+		rand.Shuffle(len(options), func(i, j int) { options[i], options[j] = options[j], options[i] })
+
+		var correctIdx int
+		for j, opt := range options {
+			if opt == correctWord {
+				correctIdx = j
+				break
+			}
+		}
+
+		q = QuestionPayload{
+			ID:             uuid.New().String(),
+			Text:           "Manakah kata Bahasa Indonesia yang benar?",
+			Options:        options,
+			CorrectAnswer:  fmt.Sprintf("%d", correctIdx),
+			QuestionNumber: i + 1,
+			Total:          totalQ,
+		}
+		questions[i] = q
+	}
 }
 
 func (r *GameRoom) generateNumbers(diff string) (int, int) {
@@ -797,7 +947,7 @@ func (r *GameRoom) runSuddenDeath() {
 			r.mu.Unlock()
 			break
 		}
-		q := r.generateQuestionPayload(difficulty, baseQuestion+i, baseQuestion+i)
+		q := r.generateMathQuestion(difficulty, baseQuestion+i, baseQuestion+i)
 		r.Questions = append(r.Questions, q)
 		r.CurrentQ = len(r.Questions) - 1
 		r.mu.Unlock()
@@ -948,6 +1098,15 @@ func (r *GameRoom) hasBotParticipant(results []PlayerResult) bool {
 		}
 	}
 	return false
+}
+
+func (r *GameRoom) getPlayerName(userID string) string {
+	for _, p := range r.Players {
+		if p.ID == userID {
+			return p.Username
+		}
+	}
+	return "Player"
 }
 
 func nowPtr() *time.Time {

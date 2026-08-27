@@ -266,13 +266,17 @@ export default function Nonogram() {
   };
 
   useEffect(() => {
-    const handlePointerUp = () => {
+    const handlePointerEnd = () => {
       setIsDragging(false);
       setDragAction(null);
     };
 
-    window.addEventListener('pointerup', handlePointerUp);
-    return () => window.removeEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointerup', handlePointerEnd);
+    window.addEventListener('pointercancel', handlePointerEnd);
+    return () => {
+      window.removeEventListener('pointerup', handlePointerEnd);
+      window.removeEventListener('pointercancel', handlePointerEnd);
+    };
   }, []);
 
   if (!isPlaying && !gameOver) {
@@ -374,23 +378,26 @@ export default function Nonogram() {
       </div>
 
       {puzzle && (
-        <div className="max-w-full overflow-auto p-4">
-          <div className="inline-block select-none" style={{ touchAction: 'none' }}>
+        <div className="w-full">
+          <div className="mx-auto w-full max-w-lg select-none" style={{ touchAction: 'none' }}>
             {/* Top Clues */}
-            <div className="ml-[60px] flex sm:ml-[80px]">
+            <div className="flex pl-14">
               {puzzle.colClues.map((clueCol, c) => (
                 <div
                   key={`col-${c}`}
-                  className="flex h-24 w-8 flex-col items-center justify-end border-r border-gray-200 bg-gray-50 pb-2 sm:h-32 sm:w-10 dark:border-slate-700 dark:bg-slate-800/50"
+                  className="flex flex-1 items-end justify-center border-r border-gray-200 bg-gray-50 pb-1 pt-2 dark:border-slate-700 dark:bg-slate-800/50"
+                  style={{ minHeight: 'clamp(4rem,15vw,8rem)' }}
                 >
-                  {clueCol.map((num, i) => (
-                    <span
-                      key={i}
-                      className="text-xs font-bold leading-tight text-gray-700 sm:text-sm dark:text-slate-300"
-                    >
-                      {num === 0 ? '' : num}
-                    </span>
-                  ))}
+                  <div className="flex flex-col items-center gap-px">
+                    {clueCol.map((num, i) => (
+                      <span
+                        key={i}
+                        className="text-[10px] font-bold leading-tight text-gray-700 sm:text-xs dark:text-slate-300"
+                      >
+                        {num === 0 ? '' : num}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -400,12 +407,12 @@ export default function Nonogram() {
               {board.map((row, r) => (
                 <div key={`row-${r}`} className="flex">
                   {/* Left Clues */}
-                  <div className="flex h-8 w-[60px] items-center justify-end border-b border-gray-200 bg-gray-50 pr-2 sm:h-10 sm:w-[80px] dark:border-slate-700 dark:bg-slate-800/50">
-                    <div className="flex gap-1.5">
+                  <div className="flex w-14 flex-shrink-0 items-center justify-end border-b border-gray-200 bg-gray-50 pr-1.5 dark:border-slate-700 dark:bg-slate-800/50">
+                    <div className="flex flex-wrap justify-end gap-x-1">
                       {puzzle.rowClues[r].map((num, i) => (
                         <span
                           key={i}
-                          className="text-xs font-bold text-gray-700 sm:text-sm dark:text-slate-300"
+                          className="text-[10px] font-bold leading-tight text-gray-700 sm:text-xs dark:text-slate-300"
                         >
                           {num === 0 ? '' : num}
                         </span>
@@ -420,7 +427,7 @@ export default function Nonogram() {
                       onPointerDown={(e) => onPointerDown(r, c, e)}
                       onPointerEnter={() => onPointerEnter(r, c)}
                       className={cn(
-                        'flex h-8 w-8 cursor-pointer items-center justify-center border-b border-r transition-colors sm:h-10 sm:w-10',
+                        'flex flex-1 cursor-pointer items-center justify-center border-b border-r transition-colors',
                         (c + 1) % 5 === 0
                           ? 'border-r-gray-400 dark:border-r-slate-500'
                           : 'border-gray-200 dark:border-slate-700',
@@ -431,9 +438,10 @@ export default function Nonogram() {
                           ? 'bg-indigo-600 dark:bg-indigo-500'
                           : 'bg-white hover:bg-gray-100 dark:bg-slate-900 dark:hover:bg-slate-800'
                       )}
+                      style={{ aspectRatio: '1' }}
                     >
                       {cellState === 'crossed' && (
-                        <span className="select-none text-xl font-bold leading-none text-rose-500">
+                        <span className="select-none text-sm font-bold leading-none text-rose-500 sm:text-base">
                           ×
                         </span>
                       )}

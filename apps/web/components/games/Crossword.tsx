@@ -179,13 +179,13 @@ export default function Crossword() {
       </div>
 
       <div className="flex flex-col gap-8 md:flex-row">
-        <div className="grid grid-cols-5 gap-1 rounded-lg border-2 border-gray-900 bg-gray-900 p-1 shadow-xl">
+        <div className="grid w-full max-w-xs grid-cols-5 gap-1 rounded-lg border-2 border-gray-900 bg-gray-900 p-1 shadow-xl">
           {grid.map((row, r) =>
             row.map((cell, c) => (
               <div
                 key={`${r}-${c}`}
                 className={cn(
-                  'relative flex h-12 w-12 items-center justify-center transition-all sm:h-14 sm:w-14',
+                  'relative flex aspect-square w-full items-center justify-center transition-all',
                   cell.isBlack ? 'bg-gray-900' : 'bg-white dark:bg-slate-800'
                 )}
               >

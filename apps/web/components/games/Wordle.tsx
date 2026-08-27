@@ -112,6 +112,7 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
   const [usedLetters, setUsedLetters] = useState<Record<string, LetterStatus>>({});
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
   const [gridCopied, setGridCopied] = useState(false);
+  const [hardMode, setHardMode] = useState(false);
 
   const handleStart = () => {
     setTargetWord(getRandomWord(WORD_LIST));
@@ -124,6 +125,30 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
     setResult(null);
     startGame('medium');
   };
+
+  const validateHardMode = useCallback(
+    (guess: string): string | null => {
+      if (!hardMode || guesses.length === 0) return null;
+      for (const prev of guesses) {
+        for (let i = 0; i < 5; i++) {
+          if (prev[i].status === 'correct' && guess[i] !== prev[i].letter) {
+            return `Huruf ${prev[i].letter} harus di posisi ${i + 1}`;
+          }
+        }
+      }
+      const requiredLetters = new Set<string>()
+      for (const prev of guesses) {
+        for (const cell of prev) {
+          if (cell.status === 'present') requiredLetters.add(cell.letter)
+        }
+      }
+      for (const letter of requiredLetters) {
+        if (!guess.includes(letter)) return `Harus pakai huruf ${letter} yang sudah ditemukan`
+      }
+      return null
+    },
+    [hardMode, guesses]
+  )
 
   const evaluateGuess = useCallback(
     (guess: string): LetterCell[] => {
@@ -158,6 +183,12 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
 
   const handleSubmitGuess = useCallback(async () => {
     if (currentGuess.length !== 5 || gameOver) return;
+
+    const hardError = validateHardMode(currentGuess);
+    if (hardError) {
+      alert(hardError);
+      return;
+    }
 
     const evaluated = evaluateGuess(currentGuess);
     const newGuesses = [...guesses, evaluated];
@@ -282,6 +313,10 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
         >
           {t('game.start')}
         </button>
+        <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+          <input type="checkbox" checked={hardMode} onChange={(e) => setHardMode(e.target.checked)} className="rounded" />
+          Hard Mode — wajib gunakan huruf yang sudah ditemukan
+        </label>
       </div>
     );
   }

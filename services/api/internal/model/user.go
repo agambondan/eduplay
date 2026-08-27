@@ -29,6 +29,7 @@ type User struct {
 	GoogleID          *string    `gorm:"uniqueIndex;size:255" json:"-"`
 	Role              string     `gorm:"size:20;default:'user'" json:"role"`
 	IsActive          bool       `gorm:"default:true" json:"is_active"`
+	WeeklyEmailOptIn  bool       `gorm:"default:false" json:"weekly_email_opt_in"`
 	ReferralCode      string     `gorm:"uniqueIndex;size:10" json:"referral_code"`
 	ReferredBy        *string    `gorm:"size:10" json:"referred_by,omitempty"`
 	CreatedAt         time.Time  `json:"created_at"`

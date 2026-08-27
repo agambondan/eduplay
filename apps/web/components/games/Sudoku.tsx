@@ -11,10 +11,10 @@ import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
 
 type Board = (number | null)[][];
-type Difficulty = 'easy' | 'medium' | 'hard';
+type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
 
-const CLUES: Record<Difficulty, number> = { easy: 38, medium: 30, hard: 24 };
-const TIME: Record<Difficulty, number> = { easy: 600, medium: 450, hard: 300 };
+const CLUES: Record<string, number> = { easy: 38, medium: 30, hard: 24, expert: 18 };
+const TIME: Record<Difficulty, number> = { easy: 600, medium: 450, hard: 300, expert: 600 };
 const MAX_ERRORS = 3;
 const DIFF_LABEL: Record<Difficulty, { label: string; color: string; desc: string }> = {
   easy: {
@@ -34,6 +34,12 @@ const DIFF_LABEL: Record<Difficulty, { label: string; color: string; desc: strin
     color:
       'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700',
     desc: '24 angka diberikan',
+  },
+  expert: {
+    label: 'Expert',
+    color:
+      'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700',
+    desc: '18 angka diberikan — paling sulit!',
   },
 };
 
@@ -124,7 +130,7 @@ export default function Sudoku() {
     setErrorCount(0);
     setGameOver(false);
     setResult(null);
-    startGame(diff);
+    startGame(diff as any);
   };
 
   const handleCellClick = (r: number, c: number) => {
@@ -244,7 +250,7 @@ export default function Sudoku() {
           role="radiogroup"
           aria-label={t('game.difficulty.easy')}
         >
-          {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => {
+          {(['easy', 'medium', 'hard', 'expert'] as Difficulty[]).map((d) => {
             const cfg = DIFF_LABEL[d];
             return (
               <button
@@ -326,8 +332,8 @@ export default function Sudoku() {
       </div>
 
       {/* Board */}
-      <div className="w-full overflow-hidden rounded-lg border-2 border-gray-800 dark:border-slate-400">
-        <div className="grid grid-cols-9" role="grid" aria-label="Papan Sudoku 9x9">
+      <div className="w-full overflow-hidden rounded-lg border-2 border-gray-800 dark:border-slate-400" style={{ touchAction: 'none' }}>
+        <div className="grid grid-cols-9 select-none" role="grid" aria-label="Papan Sudoku 9x9">
           {current.map((row, r) =>
             row.map((cell, c) => {
               const isGiven = puzzle[r]?.[c] !== null;
@@ -386,7 +392,7 @@ export default function Sudoku() {
 
       {/* Number pad */}
       <div
-        className="grid w-full grid-cols-5 gap-2"
+        className="grid w-full max-w-sm grid-cols-5 gap-2"
         role="group"
         aria-label={t('game.input_number')}
       >
@@ -396,7 +402,7 @@ export default function Sudoku() {
             onClick={() => handleNumberInput(n)}
             aria-label={`Isi angka ${n}`}
             className={cn(
-              'aspect-square rounded-xl border-2 border-indigo-200 bg-white text-lg font-bold text-indigo-700 transition-all hover:border-indigo-500 hover:bg-indigo-50 active:scale-95 dark:border-slate-600 dark:bg-slate-800 dark:text-indigo-400 dark:hover:border-indigo-400',
+              'flex min-h-[44px] items-center justify-center rounded-xl border-2 border-indigo-200 bg-white text-lg font-bold text-indigo-700 transition-all hover:border-indigo-500 hover:bg-indigo-50 active:scale-95 dark:border-slate-600 dark:bg-slate-800 dark:text-indigo-400 dark:hover:border-indigo-400',
               selNum === n &&
                 'border-indigo-500 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-950/40'
             )}
@@ -407,9 +413,9 @@ export default function Sudoku() {
         <button
           onClick={() => handleNumberInput(null)}
           aria-label={t('game.erase')}
-          className="aspect-square rounded-xl border-2 border-gray-200 bg-white text-gray-500 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-500 active:scale-95 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-red-500 dark:hover:text-red-400"
+          className="flex min-h-[44px] items-center justify-center rounded-xl border-2 border-gray-200 bg-white text-gray-500 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-500 active:scale-95 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-red-500 dark:hover:text-red-400"
         >
-          <Delete className="mx-auto h-5 w-5" />
+          <Delete className="h-5 w-5" />
         </button>
       </div>
 

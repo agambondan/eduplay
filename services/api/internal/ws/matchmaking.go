@@ -203,6 +203,14 @@ func RoomPrefixForGame(gameSlug string) string {
 		return "wordle_duel"
 	case "sudoku", "sudoku-race":
 		return "sudoku_race"
+	case "chess":
+		return "chess"
+	case "crossword", "crossword-duel":
+		return "crossword_duel"
+	case "crossword-coop":
+		return "crossword_coop"
+	case "math-relay":
+		return "math_relay"
 	case "flag-team-battle":
 		return "flag_team_battle"
 	case "quiz-showdown":
