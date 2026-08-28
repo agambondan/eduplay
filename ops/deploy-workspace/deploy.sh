@@ -41,6 +41,9 @@ set -euo pipefail
 # the registry under its commit sha, which is the same thing without leaving
 # duplicate tags pinning old images on disk.
 #     DEPLOY_WAIT        seconds to wait after a restart before reporting (default 8)
+#     DEPLOY_MIGRATE_CMD command run on the VPS inside DEPLOY_REMOTE_DIR just
+#                        before the restart, e.g. a one-shot migration
+#                        container. Unset means no migration step.
 # ============================================================
 
 ACTION="${1:-deploy}"
@@ -158,9 +161,23 @@ do_ship() {
        && docker rmi $REGISTRY/$bare:prod $REGISTRY/$bare:$tag" >>"$LOGFILE" 2>&1
 }
 
+# Postgres schema is not migrated when the app boots, so without a step here a
+# deploy can ship code that expects columns the database does not have yet.
+# Runs before the restart so a failure stops the rollout with the old container
+# still serving.
+do_migrate() {
+  [ -n "${DEPLOY_MIGRATE_CMD:-}" ] || return 0
+  need DEPLOY_REMOTE_DIR
+  log "migrating in $DEPLOY_REMOTE_DIR"
+  if ! remote "cd '$DEPLOY_REMOTE_DIR' && $DEPLOY_MIGRATE_CMD" >>"$LOGFILE" 2>&1; then
+    die "migration failed — see $LOGFILE; the running container was left alone"
+  fi
+}
+
 do_restart() {
   need DEPLOY_REMOTE_DIR DEPLOY_SERVICE
   reachable
+  do_migrate
   # --force-recreate is not optional here. Compose decides whether to replace a
   # container from a hash of the service definition, and the definition names
   # the image ("eduplay-web:prod") rather than pinning its id. Retagging :prod
