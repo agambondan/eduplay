@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
+import { openGraphFor } from '@/lib/site';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/terms-of-service' },
+  openGraph: openGraphFor('/terms-of-service'),
   title: 'Syarat & Ketentuan — EduPlay',
   description: 'Syarat dan ketentuan penggunaan platform EduPlay.',
 };

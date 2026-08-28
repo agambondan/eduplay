@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
+import { openGraphFor } from '@/lib/site';
 
 export const metadata: Metadata = {
-  title: 'Peringkat | EduPlay',
+  alternates: { canonical: '/leaderboard' },
+  openGraph: openGraphFor('/leaderboard'),
+  title: 'Peringkat',
   description:
     'Lihat peringkat pemain terbaik di semua game EduPlay. Bersaing untuk menjadi yang teratas!',
 };

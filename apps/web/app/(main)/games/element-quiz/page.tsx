@@ -1,24 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import ElementQuiz from '@/components/games/dynamic/ElementQuizDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Element Quiz | EduPlay',
-    description: 'Tebak nama unsur kimia dari simbolnya!',
-    openGraph: {
-      title: 'Element Quiz | EduPlay',
-      description: 'Tebak nama unsur kimia dari simbolnya!',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Element Quiz | EduPlay',
-      description: 'Tebak nama unsur kimia dari simbolnya!',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('element-quiz');
 
 export default function ElementQuizPage() {
   return (

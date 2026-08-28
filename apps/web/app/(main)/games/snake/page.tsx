@@ -1,25 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import SnakeGame from '@/components/games/dynamic/SnakeGameDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Snake Classic | EduPlay',
-    description:
-      'Game snake klasik — makan bola, panjangkan ular, jangan sampai menabrak dirimu sendiri!',
-    openGraph: {
-      title: 'Snake Classic | EduPlay',
-      description: 'Game snake klasik yang seru dan adiktif.',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Snake Classic | EduPlay',
-      description: 'Game snake klasik yang seru dan adiktif.',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('snake');
 
 export default function SnakePage() {
   return (

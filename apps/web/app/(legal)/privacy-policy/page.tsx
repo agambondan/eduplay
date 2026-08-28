@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
+import { openGraphFor } from '@/lib/site';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/privacy-policy' },
+  openGraph: openGraphFor('/privacy-policy'),
   title: 'Kebijakan Privasi — EduPlay',
   description:
     'Kebijakan privasi platform EduPlay terkait pengumpulan dan penggunaan data pengguna.',

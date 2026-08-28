@@ -1,24 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import WordSearch from '@/components/games/dynamic/WordSearchDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Word Search | EduPlay',
-    description: 'Asah ketelitianmu dengan mencari kata-kata tersembunyi!',
-    openGraph: {
-      title: 'Word Search | EduPlay',
-      description: 'Asah ketelitianmu dengan mencari kata-kata tersembunyi!',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Word Search | EduPlay',
-      description: 'Asah ketelitianmu dengan mencari kata-kata tersembunyi!',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('word-search');
 
 export default function WordSearchPage() {
   return (

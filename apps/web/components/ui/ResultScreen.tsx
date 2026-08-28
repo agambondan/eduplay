@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Copy, Home, LogIn, RotateCcw, Share2, Star, TrendingUp, Trophy } from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
+import { SITE_URL } from '@/lib/site';
 import { useAuthStore } from '@/lib/stores/authStore';
 
 interface Achievement {
@@ -70,7 +71,7 @@ export function ResultScreen({
     const url =
       typeof window !== 'undefined'
         ? `${window.location.origin}/games/${gameSlug}`
-        : `https://eduplay.id/games/${gameSlug}`;
+        : `${SITE_URL}/games/${gameSlug}`;
     return { text, url };
   };
 

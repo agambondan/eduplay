@@ -1,8 +1,13 @@
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site';
+
 export function WebAppJsonLd() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'EduPlay',
+    name: SITE_NAME,
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    inLanguage: 'id-ID',
     applicationCategory: 'EducationalApplication',
     operatingSystem: 'Web Browser',
     offers: {
@@ -34,7 +39,7 @@ export function GameJsonLd({
     '@type': 'Game',
     name,
     description,
-    url: `https://eduplay.id/games/${gameSlug}`,
+    url: `${SITE_URL}/games/${gameSlug}`,
     applicationCategory: 'GameApplication',
     offers: {
       '@type': 'Offer',

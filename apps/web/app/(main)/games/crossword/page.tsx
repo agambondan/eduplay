@@ -1,24 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import Crossword from '@/components/games/dynamic/CrosswordDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Crossword Indonesia | EduPlay',
-    description: 'Uji wawasan kosakata dengan Teka-Teki Silang!',
-    openGraph: {
-      title: 'Crossword Indonesia | EduPlay',
-      description: 'Uji wawasan kosakata dengan Teka-Teki Silang!',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Crossword Indonesia | EduPlay',
-      description: 'Uji wawasan kosakata dengan Teka-Teki Silang!',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('crossword');
 
 export default function CrosswordPage() {
   return (

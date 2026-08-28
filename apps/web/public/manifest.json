@@ -1,5 +1,5 @@
 {
-  "name": "EduPlay — Educational Mini Games",
+  "name": "EduPlay \u2014 Educational Mini Games",
   "short_name": "EduPlay",
   "description": "Platform mini game edukatif untuk pelajar SD hingga SMA",
   "start_url": "/",
@@ -11,13 +11,26 @@
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
+  ],
+  "id": "/",
+  "lang": "id",
+  "categories": [
+    "education",
+    "games",
+    "kids"
   ]
 }

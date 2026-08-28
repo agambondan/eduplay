@@ -1,24 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import Sudoku from '@/components/games/dynamic/SudokuDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Sudoku | EduPlay',
-    description: 'Asah logika dengan teka-teki Sudoku!',
-    openGraph: {
-      title: 'Sudoku | EduPlay',
-      description: 'Asah logika dengan teka-teki Sudoku!',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Sudoku | EduPlay',
-      description: 'Asah logika dengan teka-teki Sudoku!',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('sudoku');
 
 export default function SudokuPage() {
   return (

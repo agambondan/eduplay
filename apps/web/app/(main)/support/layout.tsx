@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
+import { openGraphFor } from '@/lib/site';
 
 export const metadata: Metadata = {
-  title: 'Bantuan | EduPlay',
+  alternates: { canonical: '/support' },
+  openGraph: openGraphFor('/support'),
+  title: 'Bantuan',
   description: 'Hubungi tim dukungan EduPlay untuk laporan bug, saran, atau pertanyaan.',
 };
 

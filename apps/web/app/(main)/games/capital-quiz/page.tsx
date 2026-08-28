@@ -1,24 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import CapitalQuiz from '@/components/games/dynamic/CapitalQuizDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Capital City Quiz | EduPlay',
-    description: 'Tebak ibukota negara-negara di dunia!',
-    openGraph: {
-      title: 'Capital City Quiz | EduPlay',
-      description: 'Tebak ibukota negara-negara di dunia!',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Capital City Quiz | EduPlay',
-      description: 'Tebak ibukota negara-negara di dunia!',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('capital-quiz');
 
 export default function CapitalQuizPage() {
   return (

@@ -1,40 +1,9 @@
 import { MetadataRoute } from 'next';
+import { GAME_SEO } from '@/lib/games-seo';
+import { SITE_URL as BASE_URL } from '@/lib/site';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://eduplay.id';
-
-const games = [
-  'math-quiz',
-  'times-table',
-  'mental-math',
-  'bubble-shooter',
-  'wordle',
-  'spelling-bee',
-  'word-search',
-  'crossword',
-  'flag-quiz',
-  'capital-quiz',
-  'sudoku',
-  '2048',
-  'nonogram',
-  'element-quiz',
-  'timeline-history',
-  'brick-breaker',
-  'math-battle',
-  'math-tournament',
-  'memory-match',
-  'typing-speed',
-  'simon-says',
-  'snake',
-  'trivia-challenge',
-  'word-chain',
-  'battleship-math',
-  'number-match',
-  'fraction-visualizer',
-  'onet',
-  'chess',
-  'crossword-coop',
-  'math-relay',
-];
+// Single source of truth: every route under app/(main)/games has a GAME_SEO entry.
+const games = Object.keys(GAME_SEO);
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages = [

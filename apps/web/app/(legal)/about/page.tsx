@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BookOpen, Shield, Trophy, Zap } from 'lucide-react';
+import { openGraphFor } from '@/lib/site';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/about' },
+  openGraph: openGraphFor('/about'),
   title: 'Tentang EduPlay — Platform Game Edukasi',
   description:
     'EduPlay adalah platform game edukasi online gratis untuk pelajar SD hingga SMA. Belajar matematika, bahasa, geografi, dan logika sambil bermain.',

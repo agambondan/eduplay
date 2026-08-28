@@ -1,24 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import BubbleShooter from '@/components/games/dynamic/BubbleShooterDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Bubble Shooter Math | EduPlay',
-    description: 'Tembak bubble dan jumlahkan angka dengan tepat!',
-    openGraph: {
-      title: 'Bubble Shooter Math | EduPlay',
-      description: 'Tembak bubble dan jumlahkan angka dengan tepat!',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Bubble Shooter Math | EduPlay',
-      description: 'Tembak bubble dan jumlahkan angka dengan tepat!',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('bubble-shooter');
 
 export default function BubbleShooterPage() {
   return (

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import { OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site';
 import { CookieBanner } from '@/components/layout/CookieBanner';
 import { ConsentAwareScripts } from '@/components/layout/CookieConsentProvider';
 import { Providers } from '@/components/layout/Providers';
@@ -18,29 +19,58 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://eduplay.id'),
-  title: 'EduPlay — Educational Mini Games',
-  description: 'Platform mini game edukatif untuk pelajar SD hingga SMA',
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
+  title: {
+    default: 'EduPlay — Game Edukatif Gratis untuk Pelajar',
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    'game edukatif',
+    'game edukasi anak',
+    'belajar sambil bermain',
+    'game matematika',
+    'kuis online',
+    'game asah otak',
+    'wordle indonesia',
+    'sudoku online',
+    'belajar SD SMP SMA',
+  ],
   manifest: '/manifest.json',
   alternates: {
     canonical: '/',
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+  },
   openGraph: {
     type: 'website',
     locale: 'id_ID',
-    siteName: 'EduPlay',
-    url: '/',
+    siteName: SITE_NAME,
+    url: SITE_URL,
+    title: 'EduPlay — Game Edukatif Gratis untuk Pelajar',
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@eduplay_id',
+    title: 'EduPlay — Game Edukatif Gratis untuk Pelajar',
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE.url],
   },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'default' },
+  formatDetection: { telephone: false },
   icons: {
     icon: [
+      { url: '/favicon.ico', sizes: 'any' },
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
     ],
-    apple: '/icons/icon-192x192.png',
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
 };
 

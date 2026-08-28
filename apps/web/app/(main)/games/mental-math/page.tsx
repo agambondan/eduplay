@@ -1,24 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import MentalMath from '@/components/games/dynamic/MentalMathDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Mental Math Speed | EduPlay',
-    description: 'Uji kecepatan berhitungmu dengan mengetik jawaban secepat mungkin!',
-    openGraph: {
-      title: 'Mental Math Speed | EduPlay',
-      description: 'Uji kecepatan berhitungmu dengan mengetik jawaban secepat mungkin!',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Mental Math Speed | EduPlay',
-      description: 'Uji kecepatan berhitungmu dengan mengetik jawaban secepat mungkin!',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('mental-math');
 
 export default function MentalMathPage() {
   return (

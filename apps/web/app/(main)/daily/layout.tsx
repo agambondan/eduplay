@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
+import { openGraphFor } from '@/lib/site';
 
 export const metadata: Metadata = {
-  title: 'Daily Challenge | EduPlay',
+  alternates: { canonical: '/daily' },
+  openGraph: openGraphFor('/daily'),
+  title: 'Daily Challenge',
   description:
     'Main daily challenge setiap hari untuk bonus XP 2x! Tantangan soal baru setiap hari.',
 };

@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Profil | EduPlay',
+  alternates: { canonical: '/profile' },
+  robots: { index: false, follow: false },
+  title: 'Profil',
   description: 'Lihat profil, XP, level, streak, dan pencapaian kamu di EduPlay.',
 };
 

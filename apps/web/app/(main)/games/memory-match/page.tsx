@@ -1,25 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import MemoryMatch from '@/components/games/dynamic/MemoryMatchDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Memory Match | EduPlay',
-    description:
-      'Cocokkan pasangan kartu dalam waktu tercepat. Latih daya ingat dan konsentrasimu!',
-    openGraph: {
-      title: 'Memory Match | EduPlay',
-      description: 'Cocokkan pasangan kartu dalam waktu tercepat.',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Memory Match | EduPlay',
-      description: 'Cocokkan pasangan kartu dalam waktu tercepat.',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('memory-match');
 
 export default function MemoryMatchPage() {
   return (

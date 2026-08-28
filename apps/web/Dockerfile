@@ -14,6 +14,10 @@ ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=""
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY=""
 ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY
+# Baked into the bundle: canonical origin used for metadataBase, og:url,
+# canonical links, robots.txt and sitemap.xml. Must match the public domain.
+ARG NEXT_PUBLIC_SITE_URL=https://games.jangkauin.site
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 RUN npm run build
 
 FROM node:24-alpine AS runner

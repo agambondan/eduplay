@@ -1,24 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import MathQuiz from '@/components/games/dynamic/MathQuizDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Math Quiz Blitz | EduPlay',
-    description: 'Uji kecepatan berhitungmu dalam 60 detik!',
-    openGraph: {
-      title: 'Math Quiz Blitz | EduPlay',
-      description: 'Uji kecepatan berhitungmu dalam 60 detik!',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Math Quiz Blitz | EduPlay',
-      description: 'Uji kecepatan berhitungmu dalam 60 detik!',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('math-quiz');
 
 export default function MathQuizPage() {
   return (

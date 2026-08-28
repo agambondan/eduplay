@@ -1,25 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import TypingSpeed from '@/components/games/dynamic/TypingSpeedDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Typing Speed | EduPlay',
-    description:
-      'Uji kecepatan mengetikmu! Ketik kata-kata Bahasa Indonesia secepat mungkin dalam 60 detik.',
-    openGraph: {
-      title: 'Typing Speed | EduPlay',
-      description: 'Uji kecepatan mengetikmu dalam 60 detik.',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Typing Speed | EduPlay',
-      description: 'Uji kecepatan mengetikmu dalam 60 detik.',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('typing-speed');
 
 export default function TypingSpeedPage() {
   return (

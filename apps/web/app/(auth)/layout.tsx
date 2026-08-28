@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
+import { openGraphFor } from '@/lib/site';
 import Footer from '@/components/layout/Footer';
 import MobileNav from '@/components/layout/MobileNav';
 import Navbar from '@/components/layout/Navbar';
 
 export const metadata: Metadata = {
-  title: 'Masuk | EduPlay — Game Edukasi Online',
+  alternates: { canonical: '/login' },
+  openGraph: openGraphFor('/login'),
+  title: 'Masuk',
   description:
     'Daftar atau masuk ke akun EduPlay untuk mulai bermain game edukasi online gratis. Matematika, bahasa, geografi, dan logika.',
 };

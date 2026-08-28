@@ -1,25 +1,10 @@
 import { Metadata } from 'next';
+import { gameMetadata } from '@/lib/games-seo';
 import SimonSays from '@/components/games/dynamic/SimonSaysDynamic';
 import { GameJsonLd } from '@/components/seo/JsonLd';
 import { GameContainer } from '@/components/ui/GameContainer';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Simon Says | EduPlay',
-    description:
-      'Ingat dan ulangi urutan warna yang menyala. Sampai berapa level kamu bisa bertahan?',
-    openGraph: {
-      title: 'Simon Says | EduPlay',
-      description: 'Ingat dan ulangi urutan warna yang menyala.',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Simon Says | EduPlay',
-      description: 'Ingat dan ulangi urutan warna yang menyala.',
-    },
-  };
-}
+export const metadata: Metadata = gameMetadata('simon-says');
 
 export default function SimonSaysPage() {
   return (
