@@ -12,6 +12,10 @@ interface BannerAdProps {
   format?: 'auto' | 'fluid' | 'rectangle';
 }
 
+// GPT is a page-wide singleton, so this must be enabled once per page load,
+// not once per banner.
+let singleRequestEnabled = false;
+
 export function BannerAd({ slotId = 'default-banner', format = 'auto' }: BannerAdProps) {
   const { t } = useLocale();
   const adRef = useRef<HTMLModElement>(null);
@@ -20,6 +24,9 @@ export function BannerAd({ slotId = 'default-banner', format = 'auto' }: BannerA
   const [directAd, setDirectAd] = useState<DirectAd | null>(null);
   const [checked, setChecked] = useState(false);
   const [useGpt, setUseGpt] = useState(false);
+  // An ad network that returns nothing still leaves a reserved 90px hole in the
+  // page. Track "the network answered, and it had nothing" so we can collapse it.
+  const [unfilled, setUnfilled] = useState(false);
   const { loadGPT, gptLoaded, networkOrder } = useAdManager();
 
   // Try to load a direct ad first; fall back to AdSense if none
@@ -56,10 +63,14 @@ export function BannerAd({ slotId = 'default-banner', format = 'auto' }: BannerA
   useEffect(() => {
     if (!useGpt || !gptLoaded || !gptRef.current) return;
     const el = gptRef.current;
+    const gt = (window as any).googletag;
+    let slot: any = null;
+    let onRenderEnded: ((event: any) => void) | null = null;
+
     try {
       const adUnit = `/21670785476/eduplay_${slotId.replace(/[^a-z0-9]/g, '_')}`;
-      (window as any).googletag.cmd.push(() => {
-        const slot = (window as any).googletag
+      gt.cmd.push(() => {
+        slot = gt
           .defineSlot(
             adUnit,
             [
@@ -68,13 +79,50 @@ export function BannerAd({ slotId = 'default-banner', format = 'auto' }: BannerA
             ],
             el.id
           )
-          ?.addService((window as any).googletag.pubads());
-        (window as any).googletag.pubads().enableSingleRequest();
-        (window as any).googletag.enableServices();
-        (window as any).googletag.display(el.id);
+          ?.addService(gt.pubads());
+        if (!slot) return;
+
+        // Fires once the network has answered for this slot. isEmpty means it
+        // had no ad to give, which is the case we want to collapse.
+        onRenderEnded = (event: any) => {
+          if (event.slot !== slot) return;
+          setUnfilled(Boolean(event.isEmpty));
+        };
+        gt.pubads().addEventListener('slotRenderEnded', onRenderEnded);
+
+        // enableSingleRequest must run once, before services are enabled;
+        // calling it per slot makes GPT log an error and ignore it.
+        if (!singleRequestEnabled) {
+          gt.pubads().enableSingleRequest();
+          singleRequestEnabled = true;
+        }
+        gt.enableServices();
+        gt.display(el.id);
       });
     } catch {}
+
+    return () => {
+      try {
+        gt.cmd.push(() => {
+          if (onRenderEnded) gt.pubads().removeEventListener('slotRenderEnded', onRenderEnded);
+          if (slot) gt.destroySlots([slot]);
+        });
+      } catch {}
+    };
   }, [useGpt, gptLoaded, slotId]);
+
+  // AdSense reports the same thing by stamping the <ins> element instead.
+  useEffect(() => {
+    const el = adRef.current;
+    if (!el) return;
+    const read = () => {
+      if (el.getAttribute('data-ad-status') === 'unfilled') setUnfilled(true);
+    };
+    read();
+    const observer = new MutationObserver(read);
+    observer.observe(el, { attributes: true, attributeFilter: ['data-ad-status'] });
+    return () => observer.disconnect();
+  }, [checked, directAd, useGpt]);
 
   if (!checked) return null;
 
@@ -120,10 +168,15 @@ export function BannerAd({ slotId = 'default-banner', format = 'auto' }: BannerA
     );
   }
 
+  // Hidden rather than unmounted: the ad network still holds a reference to
+  // these nodes, and display:none collapses the reserved height and the margin
+  // just the same.
+  const shell = unfilled ? 'hidden' : 'my-4 flex w-full justify-center overflow-hidden';
+
   // GPT (Google Ad Manager) — preferred fallback
   if (useGpt) {
     return (
-      <div className="my-4 flex w-full justify-center overflow-hidden">
+      <div className={shell}>
         <div
           id={`div-gpt-${slotId.replace(/[^a-z0-9]/g, '_')}`}
           ref={gptRef}
@@ -133,19 +186,9 @@ export function BannerAd({ slotId = 'default-banner', format = 'auto' }: BannerA
     );
   }
 
-  // Direct ad
-  if (directAd) {
-    return (
-      <div className="flex min-h-[90px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-200 p-4 text-gray-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-        <span className="text-sm font-bold uppercase">{t('ads.banner')}</span>
-        <span className="text-xs">Slot: {slotId} (AdSense fallback)</span>
-      </div>
-    );
-  }
-
   // AdSense fallback
   return (
-    <div className="my-4 flex w-full justify-center overflow-hidden">
+    <div className={shell}>
       <ins
         ref={adRef}
         className="adsbygoogle"
