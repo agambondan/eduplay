@@ -4,6 +4,22 @@ Production is `https://games.jangkauin.site`, served from a VPS. Deploys are
 manual: build on your laptop, ship the image to the VPS registry, roll the
 container.
 
+Day to day this is driven from the workspace, which deploys every project on
+the VPS rather than just this one:
+
+```bash
+cd ~/works/me
+make help                   # every command
+make eduplay                # API + web
+make eduplay-web            # one service
+make eduplay.status
+make eduplay-web.rollback
+```
+
+`~/works/me/deploy.sh` is generic and takes its target from the environment;
+`~/works/me/Makefile` supplies it per command. `scripts/deploy.sh` in this repo
+does the same job self-contained, for when you only have this checkout:
+
 ```bash
 scripts/deploy.sh api       # API only
 scripts/deploy.sh web       # web only
@@ -12,7 +28,7 @@ scripts/deploy.sh status    # what is running, what is in the registry
 scripts/deploy.sh rollback web
 ```
 
-That script is the whole procedure. The rest of this page explains what it does
+Either script is the whole procedure. The rest of this page explains what it does
 and why, so you can do it by hand when something breaks.
 
 ## What is actually wired up
