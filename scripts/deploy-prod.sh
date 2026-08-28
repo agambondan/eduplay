@@ -2,10 +2,29 @@
 set -euo pipefail
 
 # ============================================================
-# EduPlay — Production Deployment Script
+# OBSOLETE — do not run. See docs/DEPLOY.md.
 # ============================================================
-# Jalankan di SERVER PRODUCTION (VPS) sebagai root atau sudo
+# This provisioned the abandoned eduplay.id + nginx + GitHub Actions setup.
+# eduplay.id now serves someone else's site, so the acme.sh step below would
+# try to issue certificates for a domain we do not control, and the crontab it
+# installs would keep retrying. Production is games.jangkauin.site, deployed
+# with scripts/deploy.sh. Kept only for reference.
 # ============================================================
+
+cat >&2 <<'OBSOLETE'
+[✗] scripts/deploy-prod.sh is obsolete and will not run.
+
+    It targets eduplay.id, which is no longer ours. Production is
+    games.jangkauin.site.
+
+    Use:  scripts/deploy.sh all
+    Read: docs/DEPLOY.md
+OBSOLETE
+exit 1
+
+# ------------------------------------------------------------
+# Original script preserved below for reference only.
+# ------------------------------------------------------------
 
 DOMAIN="${DOMAIN:-eduplay.id}"
 EMAIL="${EMAIL:-admin@eduplay.id}"

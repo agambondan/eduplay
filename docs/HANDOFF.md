@@ -171,7 +171,7 @@ games/
 | Auth      | JWT (golang-jwt v5) + bcrypt                | Access 15m, Refresh 7d         |
 | Payments  | Midtrans (Indonesia)                        | Subscription/premium           |
 | Email     | Resend API                                  | Transactional + weekly summary |
-| CI/CD     | GitHub Actions                              | Docker → GHCR → SSH deploy     |
+| CI/CD     | none (manual)                               | see `docs/DEPLOY.md`; the GitHub Actions workflows are unwired |
 
 ### 3.3 Game Implementation Pattern
 
