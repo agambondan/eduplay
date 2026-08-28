@@ -18,7 +18,12 @@ ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY
 # canonical links, robots.txt and sitemap.xml. Must match the public domain.
 ARG NEXT_PUBLIC_SITE_URL=https://games.jangkauin.site
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
-RUN npm run build
+# npm resolves sharp's optional deps for both libc flavours, so the standalone
+# output ships a glibc libvips (~16MB) that can never load on this musl runtime.
+# Drop it here rather than in the runner: deleting in a later layer leaves the
+# bytes in the earlier one and the image does not actually get smaller.
+RUN npm run build \
+    && { [ ! -d .next/standalone/node_modules/@img ] || find .next/standalone/node_modules/@img -maxdepth 1 -name '*linux*' ! -name '*musl*' -exec rm -rf {} + ; }
 
 FROM node:24-alpine AS runner
 WORKDIR /app

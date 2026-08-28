@@ -18,7 +18,7 @@ const CSP = [
   "img-src 'self' data: blob: https://*",
   "font-src 'self' https://fonts.gstatic.com",
   "connect-src 'self' https://accounts.google.com https://*",
-  "frame-src 'self' https://pagead2.googlesyndication.com https://www.google.com https://accounts.google.com https://*.safeframe.googlesyndication.com https://googleads.g.doubleclick.net https://cm.g.doubleclick.net",
+  "frame-src 'self' https://pagead2.googlesyndication.com https://www.google.com https://accounts.google.com https://*.safeframe.googlesyndication.com https://googleads.g.doubleclick.net https://cm.g.doubleclick.net https://ep2.adtrafficquality.google",
 ].join('; ');
 
 export function proxy(request: NextRequest) {
