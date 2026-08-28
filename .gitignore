@@ -35,3 +35,4 @@ Thumbs.db
 *.log
 .dev.pids
 services/api/main
+eduplay-oauth.json
