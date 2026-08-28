@@ -44,6 +44,9 @@ set -euo pipefail
 #     DEPLOY_MIGRATE_CMD command run on the VPS inside DEPLOY_REMOTE_DIR just
 #                        before the restart, e.g. a one-shot migration
 #                        container. Unset means no migration step.
+#     DEPLOY_SYNC_PATHS  space separated repo-relative paths copied to
+#                        DEPLOY_REMOTE_DIR before the migration. For content a
+#                        compose bind mount shadows out of the image.
 # ============================================================
 
 ACTION="${1:-deploy}"
@@ -165,6 +168,23 @@ do_ship() {
 # deploy can ship code that expects columns the database does not have yet.
 # Runs before the restart so a failure stops the rollout with the old container
 # still serving.
+# Content the image carries can still be shadowed at runtime: this project
+# bind-mounts ./data over /app/data, so a seed file baked into the image is
+# invisible and the host copy silently wins. Ship those paths across first.
+do_sync() {
+  [ -n "${DEPLOY_SYNC_PATHS:-}" ] || return 0
+  need DEPLOY_REPO DEPLOY_REMOTE_DIR
+  local repo; repo="$(repo_path)"
+  local p
+  for p in $DEPLOY_SYNC_PATHS; do
+    [[ -e "$repo/$p" ]] || die "sync path not found: $repo/$p"
+    log "syncing $p to $DEPLOY_REMOTE_DIR"
+    tar czf - -C "$repo" "$p" \
+      | remote "cd '$DEPLOY_REMOTE_DIR' && tar xzf -" >>"$LOGFILE" 2>&1 \
+      || die "syncing $p failed — see $LOGFILE"
+  done
+}
+
 do_migrate() {
   [ -n "${DEPLOY_MIGRATE_CMD:-}" ] || return 0
   need DEPLOY_REMOTE_DIR
@@ -177,6 +197,7 @@ do_migrate() {
 do_restart() {
   need DEPLOY_REMOTE_DIR DEPLOY_SERVICE
   reachable
+  do_sync
   do_migrate
   # --force-recreate is not optional here. Compose decides whether to replace a
   # container from a hash of the service definition, and the definition names

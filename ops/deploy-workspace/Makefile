@@ -37,6 +37,7 @@ THOLLABUL_API := DEPLOY_REPO=thollabul-ilmi \
                  DEPLOY_IMAGE=tholabul-ilmi-api:prod \
                  DEPLOY_REMOTE_DIR=/works/me/thollabul-ilmi \
                  DEPLOY_SERVICE=tholabul-ilmi-api \
+                 DEPLOY_SYNC_PATHS=data/static \
                  DEPLOY_MIGRATE_CMD="docker compose run --rm --no-deps --entrypoint /app/main tholabul-ilmi-api -environment container -migrate"
 
 THOLLABUL_WEB := DEPLOY_REPO=thollabul-ilmi \
