@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, Calendar, ChevronRight, Search, Tag, User } from 'lucide-react';
 import api from '@/lib/api/client';
 import { useLocale } from '@/lib/i18n';
-import { Calendar, User, Tag, ChevronRight, ArrowLeft, Search } from 'lucide-react';
 
 interface BlogPost {
   id: string;
@@ -31,7 +31,7 @@ interface ListResponse {
 const CAT_NAMES: Record<string, string> = {
   'tips-belajar': 'Tips Belajar',
   'panduan-game': 'Panduan Game',
-  'berita': 'Berita',
+  berita: 'Berita',
 };
 
 export default function BlogPage() {
@@ -45,7 +45,8 @@ export default function BlogPage() {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: '10' });
     if (cat) params.set('cat', cat);
-    api.get(`/blog?${params}`)
+    api
+      .get(`/blog?${params}`)
       .then((r) => setData(r.data.data))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -62,13 +63,18 @@ export default function BlogPage() {
     <div className="mx-auto max-w-4xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Blog EduPlay</h1>
-        <p className="mt-2 text-gray-500 dark:text-slate-400">Tips belajar, panduan game, dan artikel edukatif</p>
+        <p className="mt-2 text-gray-500 dark:text-slate-400">
+          Tips belajar, panduan game, dan artikel edukatif
+        </p>
       </div>
 
       {data && data.categories.length > 0 && (
         <div className="mb-8 flex flex-wrap gap-2">
           <button
-            onClick={() => { setCat(''); setPage(1); }}
+            onClick={() => {
+              setCat('');
+              setPage(1);
+            }}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${!cat ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'}`}
           >
             Semua
@@ -76,7 +82,10 @@ export default function BlogPage() {
           {data.categories.map((c) => (
             <button
               key={c}
-              onClick={() => { setCat(c); setPage(1); }}
+              onClick={() => {
+                setCat(c);
+                setPage(1);
+              }}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${cat === c ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300'}`}
             >
               {CAT_NAMES[c] || c}
@@ -101,8 +110,12 @@ export default function BlogPage() {
                 className="group block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
               >
                 <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 dark:text-slate-500">
-                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {formatDate(post.published_at)}</span>
-                  <span className="flex items-center gap-1"><User className="h-3 w-3" /> {post.author}</span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" /> {formatDate(post.published_at)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <User className="h-3 w-3" /> {post.author}
+                  </span>
                   {post.category && (
                     <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300">
                       {CAT_NAMES[post.category] || post.category}
@@ -112,11 +125,18 @@ export default function BlogPage() {
                 <h2 className="mt-3 text-xl font-bold text-gray-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
                   {post.title}
                 </h2>
-                {post.excerpt && <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-slate-400">{post.excerpt}</p>}
+                {post.excerpt && (
+                  <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-slate-400">
+                    {post.excerpt}
+                  </p>
+                )}
                 {post.tags && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {post.tags.split(',').map((tag) => (
-                      <span key={tag} className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-slate-700 dark:text-slate-400">
+                      <span
+                        key={tag}
+                        className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-slate-700 dark:text-slate-400"
+                      >
                         #{tag.trim()}
                       </span>
                     ))}

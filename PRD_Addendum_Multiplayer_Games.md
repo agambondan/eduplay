@@ -1,13 +1,15 @@
 # PRD Addendum — Additional Multiplayer Games
+
 ## EduPlay Platform
 
 **Addendum Version:** 1.0.0
 **Status:** Draft
 **Last Updated:** 2026-05-20
 **Parent Documents:**
-  - PRD_EduPlay_v2.md
-  - PRD_Addendum_Multiplayer_Bot.md
-**Author:** Product Team
+
+- PRD_EduPlay_v2.md
+- PRD_Addendum_Multiplayer_Bot.md
+  **Author:** Product Team
 
 ---
 
@@ -17,6 +19,7 @@ Dokumen ini adalah lanjutan dari PRD_Addendum_Multiplayer_Bot.md.
 Berisi 9 game multiplayer tambahan yang belum dicoverin di addendum sebelumnya.
 
 **Game yang sudah ada di Addendum v1:**
+
 - Math Battle (Real-time 1v1)
 - Quiz Showdown (Room 2-4 player)
 - Word Chain / Sambung Kata (Async)
@@ -50,6 +53,7 @@ Berisi 9 game multiplayer tambahan yang belum dicoverin di addendum sebelumnya.
 ## Game 1: Wordle Duel (Real-time 1v1)
 
 ### Deskripsi
+
 Dua player menebak kata Bahasa Indonesia 5 huruf yang **sama** secara bersamaan. Keduanya bisa melihat jumlah percobaan lawan secara real-time (bukan hurufnya). Siapa lebih cepat menebak dengan percobaan lebih sedikit = menang.
 
 ### Mechanic Detail
@@ -103,15 +107,18 @@ Jika salah satu gagal (6x salah) → lawan yang masih berjalan otomatis menang
 ```
 
 ### Bot System
+
 - **Ghost Replay Bot:** Putar ulang rekaman game Wordle solo user lain
 - Bot memiliki timing percobaan yang natural (tidak terlalu cepat)
 - Jika tidak ada ghost → Rule-based bot dengan akurasi per difficulty
 
 ### Mode Tambahan
+
 - **Hard Mode Duel:** Wajib gunakan clue yang sudah ditemukan
 - **Speed Duel:** Hanya 3 percobaan, siapa cepat menang
 
 ### Ad Slots
+
 - Banner di lobby
 - Interstitial setelah match selesai
 
@@ -122,6 +129,7 @@ Jika salah satu gagal (6x salah) → lawan yang masih berjalan otomatis menang
 ## Game 2: Sudoku Race (Real-time 1v1)
 
 ### Deskripsi
+
 Dua player mengerjakan **Sudoku puzzle yang sama** secara bersamaan. Siapa selesai duluan menang. Persentase progress lawan terlihat di layar.
 
 ### Mechanic Detail
@@ -148,6 +156,7 @@ Resign tersedia kapanpun
 | Bonus: menang dengan selisih > 50% progress | +30  |         |
 
 ### Difficulty Matching
+
 - Matchmaking hanya pertemukan player dengan difficulty yang sama
 - Easy vs Easy, Medium vs Medium, dst
 - Jika tidak ada lawan di difficulty yang sama → expand setelah 15 detik
@@ -173,11 +182,13 @@ Resign tersedia kapanpun
 ```
 
 ### Bot System
+
 - **Ghost Replay Bot:** Rekaman penyelesaian Sudoku user lain (paling cocok untuk game ini)
 - Bot "mengisi sel" sesuai rekaman dengan timing yang alami
 - Progress bot terlihat naik secara bertahap dan natural
 
 ### Ad Slots
+
 - Banner di lobby
 - Rewarded ad: Reveal 1 sel (sama seperti solo mode)
 - Interstitial setelah selesai
@@ -189,6 +200,7 @@ Resign tersedia kapanpun
 ## Game 3: Battleship Math (Turn-based 1v1)
 
 ### Deskripsi
+
 Versi klasik Battleship (Tembak-tembakan kapal) dengan twist edukatif: untuk menembak koordinat, player harus **menjawab soal matematika** terlebih dahulu. Jawaban benar = tembakan valid. Jawaban salah = giliran hangus.
 
 ### Mechanic Detail
@@ -242,16 +254,19 @@ Win: tenggelamkan semua kapal lawan
 | Menang               | +200               |
 
 ### Turn Timer
+
 - 30 detik untuk pilih koordinat + jawab soal
 - Jika timeout → giliran otomatis hangus
 
 ### Bot System
+
 - **Rule-based bot:** Strategi tembak yang berbeda per difficulty
   - Easy: Random shot
   - Medium: Hunt & target (cari pola kapal)
   - Hard: Probability-based targeting
 
 ### Async Support
+
 - Bisa dimainkan async (tidak harus online bersamaan)
 - Notifikasi saat giliran kamu
 - Turn expire: 24 jam
@@ -261,15 +276,15 @@ Win: tenggelamkan semua kapal lawan
 Battleship Math menggunakan REST turn-based state supaya bisa dimainkan async dan
 bisa dilanjutkan lintas sesi.
 
-| Method | Endpoint                         | Fungsi                                      |
-| ------ | -------------------------------- | ------------------------------------------- |
-| GET    | `/api/v1/battleship`             | List match milik user                       |
-| POST   | `/api/v1/battleship`             | Buat match vs bot atau tantang username     |
-| GET    | `/api/v1/battleship/:id`         | Ambil detail match dan board yang di-mask   |
-| POST   | `/api/v1/battleship/:id/target`  | Pilih koordinat dan buat soal server-side   |
-| POST   | `/api/v1/battleship/:id/shot`    | Submit jawaban dan proses HIT/MISS          |
-| POST   | `/api/v1/battleship/:id/reveal`  | Rewarded reveal area 3x3 di radar lawan     |
-| POST   | `/api/v1/battleship/:id/resign`  | Menyerah dan selesaikan match               |
+| Method | Endpoint                        | Fungsi                                    |
+| ------ | ------------------------------- | ----------------------------------------- |
+| GET    | `/api/v1/battleship`            | List match milik user                     |
+| POST   | `/api/v1/battleship`            | Buat match vs bot atau tantang username   |
+| GET    | `/api/v1/battleship/:id`        | Ambil detail match dan board yang di-mask |
+| POST   | `/api/v1/battleship/:id/target` | Pilih koordinat dan buat soal server-side |
+| POST   | `/api/v1/battleship/:id/shot`   | Submit jawaban dan proses HIT/MISS        |
+| POST   | `/api/v1/battleship/:id/reveal` | Rewarded reveal area 3x3 di radar lawan   |
+| POST   | `/api/v1/battleship/:id/resign` | Menyerah dan selesaikan match             |
 
 Validasi jawaban dan posisi kapal dilakukan di server. Board lawan selalu
 di-mask sampai match selesai. Hasil match dicatat ke tabel multiplayer umum
@@ -278,6 +293,7 @@ Server juga menyimpan timer jawaban 30 detik, turn expiry 24 jam, dan mengirim
 push notification saat giliran berpindah ke player manusia yang lain.
 
 ### Ad Slots
+
 - Banner di game screen
 - Interstitial saat kapal tenggelam (natural break)
 - Rewarded: Reveal area kapal lawan (1x per game)
@@ -289,9 +305,11 @@ push notification saat giliran berpindah ke player manusia yang lain.
 ## Game 4: Chess (Turn-based 1v1)
 
 ### Deskripsi
+
 Catur klasik dengan bidak abstrak (geometri, bukan gambar kuda/raja/ratu yang bergambar). Tersedia mode vs Bot dengan 4 tingkat kesulitan menggunakan algoritma Minimax + Alpha-Beta Pruning.
 
 ### Visual Design
+
 ```
 Bidak menggunakan simbol teks/unicode standar:
 ♔ ♕ ♖ ♗ ♘ ♙  (Putih)
@@ -302,6 +320,7 @@ Tidak ada gambar/ilustrasi bidak yang bergambar makhluk
 ```
 
 ### Mechanic
+
 - Catur standar FIDE (semua aturan: castling, en passant, promotion)
 - Waktu: Classical (10+5), Blitz (3+2), Bullet (1+0)
 - Draw by repetition, stalemate, insufficient material otomatis dideteksi
@@ -322,37 +341,38 @@ Tidak ada gambar/ilustrasi bidak yang bergambar makhluk
 import { Chess } from 'chess.js';
 
 function minimax(chess: Chess, depth: number, alpha: number, beta: number, isMax: boolean): number {
-    if (depth === 0 || chess.isGameOver()) {
-        return evaluateBoard(chess);
+  if (depth === 0 || chess.isGameOver()) {
+    return evaluateBoard(chess);
+  }
+  const moves = chess.moves();
+  if (isMax) {
+    let maxEval = -Infinity;
+    for (const move of moves) {
+      chess.move(move);
+      const eval_ = minimax(chess, depth - 1, alpha, beta, false);
+      chess.undo();
+      maxEval = Math.max(maxEval, eval_);
+      alpha = Math.max(alpha, eval_);
+      if (beta <= alpha) break; // Alpha-beta pruning
     }
-    const moves = chess.moves();
-    if (isMax) {
-        let maxEval = -Infinity;
-        for (const move of moves) {
-            chess.move(move);
-            const eval_ = minimax(chess, depth - 1, alpha, beta, false);
-            chess.undo();
-            maxEval = Math.max(maxEval, eval_);
-            alpha = Math.max(alpha, eval_);
-            if (beta <= alpha) break;  // Alpha-beta pruning
-        }
-        return maxEval;
-    } else {
-        let minEval = Infinity;
-        for (const move of moves) {
-            chess.move(move);
-            const eval_ = minimax(chess, depth - 1, alpha, beta, true);
-            chess.undo();
-            minEval = Math.min(minEval, eval_);
-            beta = Math.min(beta, eval_);
-            if (beta <= alpha) break;
-        }
-        return minEval;
+    return maxEval;
+  } else {
+    let minEval = Infinity;
+    for (const move of moves) {
+      chess.move(move);
+      const eval_ = minimax(chess, depth - 1, alpha, beta, true);
+      chess.undo();
+      minEval = Math.min(minEval, eval_);
+      beta = Math.min(beta, eval_);
+      if (beta <= alpha) break;
     }
+    return minEval;
+  }
 }
 ```
 
 ### Multiplayer Mode
+
 - Real-time (WebSocket) untuk time control cepat (Blitz, Bullet)
 - Async (REST API) untuk Classical
 - Spectator mode (v2)
@@ -381,6 +401,7 @@ function minimax(chess: Chess, depth: number, alpha: number, beta: number, isMax
 ```
 
 ### Monetization Notes
+
 - Audience Chess: demografis dewasa + educated → **CPM tertinggi** dibanding game lain
 - Rewarded ads: Unlock "hints" (highlight best move)
 - Interstitial: setelah game selesai
@@ -392,15 +413,18 @@ function minimax(chess: Chess, depth: number, alpha: number, beta: number, isMax
 ## Game 5: Math Relay (Co-op Team)
 
 ### Deskripsi
+
 Game **kooperatif** tim 2-4 orang. Soal math muncul berurutan — Player 1 jawab soal 1-5, Player 2 jawab soal 6-10, dst, seperti lari estafet. Skor tim = total poin semua member. Bisa juga vs Tim lain.
 
 ### Mode
 
 **Mode A: Co-op Pure**
+
 - 1 tim (2-4 orang), kejar skor tertinggi bersama
 - Cocok untuk teman sekelas
 
 **Mode B: Team vs Team**
+
 - 2 tim @ 2 orang
 - Tim yang paling cepat + benar = menang
 
@@ -422,6 +446,7 @@ Antar giliran: tampilkan progress tim di scoreboard kecil
 ```
 
 ### Role Randomization (Optional)
+
 - Tiap player dapat "spesialisasi" random: Perkalian / Pembagian / Penjumlahan / Pengurangan
 - Soal yang diterima sesuai spesialisasi masing-masing
 - Membuat tim menjadi lebih interesting dan perlu koordinasi
@@ -457,10 +482,12 @@ Antar giliran: tampilkan progress tim di scoreboard kecil
 ```
 
 ### Bot Fill
+
 - Jika tim tidak genap → bot mengisi slot kosong
 - Bot difficulty mengikuti rata-rata level player tim
 
 ### Ad Slots
+
 - Banner di lobby
 - Interstitial saat pergantian babak
 - Rewarded: Waktu tambahan 5 detik untuk soal tertentu
@@ -472,6 +499,7 @@ Antar giliran: tampilkan progress tim di scoreboard kecil
 ## Game 6: Collaborative Crossword (Co-op 2-4 Player)
 
 ### Deskripsi
+
 Satu puzzle TTS (Teka-Teki Silang) Bahasa Indonesia dikerjakan **bersama-sama** oleh 2-4 player. Siapa yang mengisi kotak lebih banyak = MVP. Tidak ada kalah/menang tim — semua menang jika puzzle selesai.
 
 ### Mechanic Detail
@@ -506,6 +534,7 @@ Player A ketik di kotak 3-Horizontal
 ```
 
 ### Puzzle Generator
+
 - Puzzle di-generate dari database kata KBBI
 - Clue bisa diambil dari:
   - Database clue yang sudah disiapkan (P0)
@@ -534,10 +563,12 @@ Player A ketik di kotak 3-Horizontal
 ```
 
 ### Bot System
+
 - Jika kurang player → bot mengisi slot, menjawab soal dengan delay natural
 - Bot tidak "terlalu pintar" agar player manusia tetap bisa berkontribusi
 
 ### Ad Slots
+
 - Banner di bawah puzzle
 - Interstitial saat puzzle selesai
 - Rewarded: Reveal 1 huruf dari kata yang sedang dikerjakan
@@ -549,21 +580,25 @@ Player A ketik di kotak 3-Horizontal
 ## Game 7: Flag Quiz Team Battle (Tim vs Tim)
 
 ### Deskripsi
+
 Dua tim saling berhadapan dalam kuis bendera negara. Soal muncul bergantian ke masing-masing tim. Tim yang lebih banyak menjawab benar dengan lebih cepat = menang.
 
 ### Format
 
 **2v2:**
+
 - Tim A (2 orang) vs Tim B (2 orang)
 - Soal muncul bersamaan ke kedua tim
 - Siapa yang paling cepat pencet jawaban benar mewakili timnya
 
 **Buzzer Mode:**
+
 - Soal muncul untuk SEMUA player sekaligus
 - Siapa paling cepat pencet jawaban = mewakili timnya
 - Benar = +10 untuk tim, Salah = -5 untuk tim
 
 **Round Mode:**
+
 - 10 soal per ronde, bergantian siapa yang "tembak duluan"
 - Cocok untuk permainan yang lebih strategis
 
@@ -577,6 +612,7 @@ Dua tim saling berhadapan dalam kuis bendera negara. Soal muncul bergantian ke m
 | Streak 3 benar berturut-turut                | +10 bonus |
 
 ### Regional Themes
+
 - **All World:** 195 negara
 - **Asia Focus:** 48 negara Asia
 - **ASEAN Special:** 10 negara ASEAN (lebih familiar)
@@ -591,11 +627,13 @@ Dua tim saling berhadapan dalam kuis bendera negara. Soal muncul bergantian ke m
 > MIT agar detail coat of arms tetap akurat untuk quiz.
 
 ### Bot System
+
 - Rule-based bot dengan timing dan akurasi per difficulty
 - Easy Bot: lambat + sering salah bendera yang mirip
 - Hard Bot: cepat, hampir tidak pernah salah
 
 ### Ad Slots
+
 - Banner di lobby
 - Interstitial setiap 10 soal (natural break antar ronde)
 
@@ -619,6 +657,7 @@ Dua tim saling berhadapan dalam kuis bendera negara. Soal muncul bergantian ke m
 > round ~60 detik di engine Math Battle yang berbasis timer per soal.
 
 ### Deskripsi
+
 Tournament bracket elimination system. 8 atau 16 player mendaftar, lalu bertanding dalam format Math Battle (soal math head-to-head). Kalah = eliminated. Menang semua = Champion.
 
 ### Format Tournament
@@ -639,50 +678,56 @@ Bracket 8 Player:
 ### Tournament Modes
 
 **Open Tournament (Daily/Weekly):**
+
 - Dibuka pada waktu tertentu (misal Sabtu 15:00 WIB)
 - Registrasi 30 menit sebelum mulai
 - Bracket auto-generated saat peserta sudah cukup
 
 **Quick Tournament (On Demand):**
+
 - Buat tournament sendiri, invite teman via kode
 - Minimum 4 player, maksimum 16 player
 - Mulai kapanpun saat host ready
 
 ### Match Format (Per Round)
+
 - Format: Math Battle standard (15 soal, 60 detik)
 - Difficulty: sama untuk semua, dipilih saat buat tournament
 - Tiebreaker: sudden death — siapa duluan jawab benar 1 soal
 
 ### Tournament Phases
 
-| Phase          | Waktu         | Keterangan           |
-| -------------- | ------------- | -------------------- |
-| Registrasi     | 30 menit      | Player daftar        |
-| Seeding        | Otomatis      | Berdasarkan XP/rank  |
-| Quarter Final  | 5 menit/match | 4 match bersamaan    |
-| Semi Final     | 5 menit/match | 2 match bersamaan    |
-| Grand Final    | 5 menit       | 1 match              |
-| Total Duration | ~25-30 menit  |                      |
+| Phase          | Waktu         | Keterangan          |
+| -------------- | ------------- | ------------------- |
+| Registrasi     | 30 menit      | Player daftar       |
+| Seeding        | Otomatis      | Berdasarkan XP/rank |
+| Quarter Final  | 5 menit/match | 4 match bersamaan   |
+| Semi Final     | 5 menit/match | 2 match bersamaan   |
+| Grand Final    | 5 menit       | 1 match             |
+| Total Duration | ~25-30 menit  |                     |
 
 ### Rewards
 
-| Posisi      | Reward                               |
-| ----------- | ------------------------------------ |
+| Posisi       | Reward                               |
+| ------------ | ------------------------------------ |
 | 🥇 Champion  | 500 XP + Badge "Tournament Champion" |
 | 🥈 Runner Up | 300 XP + Badge "Tournament Finalist" |
 | 🥉 3rd Place | 150 XP                               |
-| Peserta     | 50 XP (partisipasi)                  |
+| Peserta      | 50 XP (partisipasi)                  |
 
 ### Spectator Mode
+
 - Player yang sudah eliminated bisa nonton match yang masih berlangsung
 - Live skor update via WebSocket
 - Minimal ads saat spectating → banner only
 
 ### Bot Fill
+
 - Jika slot tidak penuh saat tournament mulai → bot mengisi slot kosong
 - Bot ditandai jelas "(Bot)" di bracket
 
 ### Ad Slots
+
 - Banner di tournament lobby dan bracket view
 - Interstitial antar ronde (natural break ~5 menit)
 - High CPM karena high engagement event
@@ -694,6 +739,7 @@ Bracket 8 Player:
 ## Game 9: Leaderboard Challenge (Passive Multiplayer)
 
 ### Deskripsi
+
 Bukan game baru — ini adalah **social layer** di atas game solo yang sudah ada. Player bisa menantang teman secara spesifik dengan **"Coba kalahkan skorku di [game]!"** dan share link tantangan.
 
 ### Mechanic Detail
@@ -727,6 +773,7 @@ Hasil: "Kamu menang! Skor kamu: 450, Skor mereka: 380"
 ```
 
 ### WhatsApp Share Preview
+
 ```
 🎮 EduPlay Challenge!
 Budi_123 menantangmu di Math Quiz Blitz!
@@ -753,10 +800,12 @@ eduplay.id/challenge/abc123xyz
 - Halaman "Tantanganku" di Profile — lihat semua challenge yang aktif/selesai
 
 ### Leaderboard Integration
+
 - Challenge tidak masuk leaderboard utama
 - Ada "Personal Leaderboard" — ranking khusus antara kamu dan orang-orang yang pernah kamu tantang
 
 ### Ad Slots
+
 - Interstitial setelah hasil challenge keluar
 - Banner di challenge result page
 - Share page tidak ada ads (agar orang mau share)
@@ -771,20 +820,20 @@ eduplay.id/challenge/abc123xyz
 
 | Priority | Game                    | Version | Alasan                                     |
 | -------- | ----------------------- | ------- | ------------------------------------------ |
-| 🔴 P0     | Leaderboard Challenge   | v1.1    | Viral mechanic paling mudah, REST API only |
-| 🔴 P0     | Wordle Duel             | v1.2    | Leverage game Wordle yang sudah ada        |
-| 🟡 P1     | Sudoku Race             | v1.2    | Leverage game Sudoku yang sudah ada        |
-| 🟡 P1     | Math Relay              | v1.3    | Co-op unik, diferensiasi dari kompetitor   |
-| 🟡 P1     | Flag Quiz Team Battle   | v1.3    | Leverage data bendera yang sudah ada       |
-| 🟢 P2     | Battleship Math         | v1.3    | Edu twist yang menarik, perlu effort lebih |
-| 🟢 P2     | Collaborative Crossword | v1.4    | Complex real-time sync, butuh puzzle DB    |
-| 🔵 P3     | Chess                   | v1.3    | High CPM, butuh chess engine               |
-| 🔵 P3     | Math Tournament         | v2.0    | Infrastructure paling kompleks             |
+| 🔴 P0    | Leaderboard Challenge   | v1.1    | Viral mechanic paling mudah, REST API only |
+| 🔴 P0    | Wordle Duel             | v1.2    | Leverage game Wordle yang sudah ada        |
+| 🟡 P1    | Sudoku Race             | v1.2    | Leverage game Sudoku yang sudah ada        |
+| 🟡 P1    | Math Relay              | v1.3    | Co-op unik, diferensiasi dari kompetitor   |
+| 🟡 P1    | Flag Quiz Team Battle   | v1.3    | Leverage data bendera yang sudah ada       |
+| 🟢 P2    | Battleship Math         | v1.3    | Edu twist yang menarik, perlu effort lebih |
+| 🟢 P2    | Collaborative Crossword | v1.4    | Complex real-time sync, butuh puzzle DB    |
+| 🔵 P3    | Chess                   | v1.3    | High CPM, butuh chess engine               |
+| 🔵 P3    | Math Tournament         | v2.0    | Infrastructure paling kompleks             |
 
 ### Summary All Multiplayer Games (Addendum 1 + 2)
 
-| #   | Game                    | Mode           | Version | Bot?                 |
-| --- | ----------------------- | -------------- | ------- | -------------------- |
+| #   | Game                    | Mode           | Version | Bot?                  |
+| --- | ----------------------- | -------------- | ------- | --------------------- |
 | 1   | Math Battle             | Real-time 1v1  | v1.1    | ✅ Rule-based + Ghost |
 | 2   | Quiz Showdown           | Room 2-4p      | v1.1    | ✅ Rule-based         |
 | 3   | Word Chain              | Async 1v1      | v1.1    | ✅ Claude AI          |
@@ -858,7 +907,7 @@ POST /api/v1/tournaments/:id/matches/:match_id/report
 
 ---
 
-*Addendum ini adalah lanjutan dari PRD_Addendum_Multiplayer_Bot.md*
-*Selalu baca kedua addendum bersama untuk gambaran lengkap sistem multiplayer.*
+_Addendum ini adalah lanjutan dari PRD_Addendum_Multiplayer_Bot.md_
+_Selalu baca kedua addendum bersama untuk gambaran lengkap sistem multiplayer._
 
-*Last Updated: 2026-05-20 | Addendum Version: 1.0.0*
+_Last Updated: 2026-05-20 | Addendum Version: 1.0.0_

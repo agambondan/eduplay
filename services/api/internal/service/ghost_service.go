@@ -15,10 +15,10 @@ type GhostBotService interface {
 }
 
 type GhostBotMatch struct {
-	GhostID      string        `json:"ghost_id"`
-	PlayerName   string        `json:"player_name"`
-	Score        int           `json:"score"`
-	TotalCorrect int           `json:"total_correct"`
+	GhostID      string             `json:"ghost_id"`
+	PlayerName   string             `json:"player_name"`
+	Score        int                `json:"score"`
+	TotalCorrect int                `json:"total_correct"`
 	Events       []model.GhostEvent `json:"events"`
 }
 

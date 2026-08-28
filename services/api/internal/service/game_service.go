@@ -64,7 +64,8 @@ func NewGameService(repo repository.GameRepository, achSvc interface {
 	CheckFirstGame(userID string) error
 	CheckAllGames(userID string) error
 	CheckTop10(userID string) error
-}, leadSvc LeaderboardService) GameService {
+}, leadSvc LeaderboardService,
+) GameService {
 	return &gameService{repo: repo, achSvc: achSvc, leadSvc: leadSvc}
 }
 

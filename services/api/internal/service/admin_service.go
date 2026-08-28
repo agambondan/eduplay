@@ -346,7 +346,7 @@ func (s *AdminService) ListTournaments() ([]TournamentListItem, error) {
 			Status: t.Status, MaxPlayers: t.MaxPlayers,
 			PlayerCount: count,
 			StartedAt:   t.StartedAt, FinishedAt: t.FinishedAt,
-			CreatedAt:   t.CreatedAt,
+			CreatedAt: t.CreatedAt,
 		}
 	}
 	return items, nil

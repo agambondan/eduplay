@@ -84,9 +84,7 @@ export default function FlagQuiz() {
       const q = aiQuestions.shift();
       if (q) {
         const converted = convertAIQuestion(q);
-        const flag = FLAGS.find(
-          (f) => f.country.toLowerCase() === converted.country.toLowerCase()
-        );
+        const flag = FLAGS.find((f) => f.country.toLowerCase() === converted.country.toLowerCase());
         if (flag && converted.options) {
           setQuestion({ correct: flag, options: converted.options });
           setAiQuestions([...aiQuestions]);
@@ -156,7 +154,10 @@ export default function FlagQuiz() {
           steps={[
             { emoji: '🏳️', text: 'Bendera negara ditampilkan dalam bentuk visual geometri' },
             { emoji: '🔤', text: 'Pilih nama negara yang benar dari 4 pilihan yang tersedia' },
-            { emoji: '⚡', text: 'Setiap jawaban benar menambah skor, jawaban salah mengurangi waktu!' },
+            {
+              emoji: '⚡',
+              text: 'Setiap jawaban benar menambah skor, jawaban salah mengurangi waktu!',
+            },
           ]}
         />
         <div className="flex items-center gap-2">

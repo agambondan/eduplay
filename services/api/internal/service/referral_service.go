@@ -13,9 +13,9 @@ type ReferralService struct{}
 func NewReferralService() *ReferralService { return &ReferralService{} }
 
 type ReferralStats struct {
-	ReferralCode  string `json:"referral_code"`
-	TotalReferrals int   `json:"total_referrals"`
-	TotalXPEarned  int   `json:"total_xp_earned"`
+	ReferralCode   string `json:"referral_code"`
+	TotalReferrals int    `json:"total_referrals"`
+	TotalXPEarned  int    `json:"total_xp_earned"`
 }
 
 func (s *ReferralService) GetStats(userID uuid.UUID) (*ReferralStats, error) {
@@ -28,7 +28,7 @@ func (s *ReferralService) GetStats(userID uuid.UUID) (*ReferralStats, error) {
 	database.DB.Model(&model.Referral{}).Where("referrer_id = ? AND xp_awarded = true", userID).Count(&count)
 
 	return &ReferralStats{
-		ReferralCode:  user.ReferralCode,
+		ReferralCode:   user.ReferralCode,
 		TotalReferrals: int(count),
 		TotalXPEarned:  int(count) * model.ReferralBonusXP,
 	}, nil

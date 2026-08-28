@@ -11,16 +11,16 @@ import {
   CreateChessMatchRequest,
   CreateTournamentRequest,
   CreateWordChainRequest,
-  ReportTournamentMatchRequest,
   QuickMatchBotResult,
   QuickMatchResult,
+  ReportTournamentMatchRequest,
   RoomResponse,
   RoomSettings,
-  Tournament,
   SubmitChallengeRequest,
   SubmitWordRequest,
-  WordChainGame,
+  Tournament,
   WordChainDetail,
+  WordChainGame,
   WordSubmitResult,
 } from '@/types/multiplayer';
 import api from './client';
@@ -237,7 +237,9 @@ export interface MpUserStats {
 
 export const mpLeaderboardApi = {
   byGame: async (gameSlug: string) => {
-    const res = await api.get<ApiResponse<MpLeaderboardEntry[]>>(`/multiplayer/leaderboard/${gameSlug}`);
+    const res = await api.get<ApiResponse<MpLeaderboardEntry[]>>(
+      `/multiplayer/leaderboard/${gameSlug}`
+    );
     return res.data.data;
   },
   global: async () => {
@@ -256,7 +258,10 @@ export const subscribeApi = {
     return res.data.data;
   },
   status: async () => {
-    const res = await api.get<ApiResponse<{ plan: string; status: string; expires_at?: string }>>('/subscribe/status');
+    const res =
+      await api.get<ApiResponse<{ plan: string; status: string; expires_at?: string }>>(
+        '/subscribe/status'
+      );
     return res.data.data;
   },
   cancel: async () => {

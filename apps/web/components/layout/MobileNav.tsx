@@ -2,7 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarCheck, Gamepad2, Home, Shield, Trophy, User as UserIcon, Users } from 'lucide-react';
+import {
+  CalendarCheck,
+  Gamepad2,
+  Home,
+  Shield,
+  Trophy,
+  User as UserIcon,
+  Users,
+} from 'lucide-react';
 import { useLocale } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { cn } from '@/lib/utils/cn';

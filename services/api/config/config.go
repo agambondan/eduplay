@@ -46,8 +46,8 @@ type Config struct {
 		PrivateKey string
 	}
 	Midtrans struct {
-		ServerKey string
-		ClientKey string
+		ServerKey    string
+		ClientKey    string
 		IsProduction bool
 	}
 	FrontendURL string

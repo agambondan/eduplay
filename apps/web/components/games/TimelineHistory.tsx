@@ -45,7 +45,10 @@ function generateOptions(correctYear: number): number[] {
   return [...opts].sort((a, b) => a - b);
 }
 
-function generateLocalQuestion(EVENTS: TimelineEvent[]): { event: TimelineEvent; options: number[] } {
+function generateLocalQuestion(EVENTS: TimelineEvent[]): {
+  event: TimelineEvent;
+  options: number[];
+} {
   const target = EVENTS[Math.floor(Math.random() * EVENTS.length)];
   return { event: target, options: generateOptions(target.year) };
 }

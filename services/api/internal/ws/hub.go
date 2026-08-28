@@ -1318,7 +1318,6 @@ func (h *Hub) handleChessMove(client *Client, roomID, move string) {
 	client.SendMessage("chess_move_ok", map[string]interface{}{
 		"move": move,
 	})
-
 }
 
 func splitFen(fen string) []string {

@@ -1,18 +1,29 @@
 'use client';
 
+import { GameOverResult, QuickMatchResult } from '@/types/multiplayer';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowLeft, Flag, Loader2, RotateCcw, Shield, Swords, Trophy, Wifi, WifiOff, Zap } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import {
+  ArrowLeft,
+  Flag,
+  Loader2,
+  RotateCcw,
+  Shield,
+  Swords,
+  Trophy,
+  Wifi,
+  WifiOff,
+  Zap,
+} from 'lucide-react';
 import { multiplayerApi } from '@/lib/api/multiplayer';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { cn } from '@/lib/utils/cn';
-import { GameContainer } from '@/components/ui/GameContainer';
-import { ShareButton } from '@/components/ui/ShareButton';
-import { GameOverResult, QuickMatchResult } from '@/types/multiplayer';
 import { BannerAd } from '@/components/ads/BannerAd';
 import { InterstitialAd } from '@/components/ads/InterstitialAd';
+import { GameContainer } from '@/components/ui/GameContainer';
+import { ShareButton } from '@/components/ui/ShareButton';
 
 type Screen = 'menu' | 'room';
 type GameState = 'waiting' | 'countdown' | 'playing' | 'finished';
@@ -118,7 +129,8 @@ function MenuScreen({ onStart }: { onStart: (result: QuickMatchResult) => void }
                 Flag Quiz Team Battle
               </h1>
               <p className="mt-2 max-w-xl text-gray-500 dark:text-slate-400">
-                Buzzer bendera 2v2 real-time. Server mengunci jawaban tercepat, menghitung skor tim, dan mengisi slot kosong dengan bot.
+                Buzzer bendera 2v2 real-time. Server mengunci jawaban tercepat, menghitung skor tim,
+                dan mengisi slot kosong dengan bot.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -134,7 +146,9 @@ function MenuScreen({ onStart }: { onStart: (result: QuickMatchResult) => void }
               Setup Match
             </div>
 
-            {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+            {error && (
+              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>
+            )}
 
             <div className="grid grid-cols-3 gap-2">
               {['easy', 'medium', 'hard'].map((value) => (
@@ -174,7 +188,11 @@ function MenuScreen({ onStart }: { onStart: (result: QuickMatchResult) => void }
                 disabled={searchMutation.isPending}
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
               >
-                {searchMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Wifi className="h-5 w-5" />}
+                {searchMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Wifi className="h-5 w-5" />
+                )}
                 Cari Tim
               </button>
               <button
@@ -182,7 +200,11 @@ function MenuScreen({ onStart }: { onStart: (result: QuickMatchResult) => void }
                 disabled={botMutation.isPending}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
               >
-                {botMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Shield className="h-5 w-5" />}
+                {botMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Shield className="h-5 w-5" />
+                )}
                 Main dengan Bot
               </button>
             </div>
@@ -239,69 +261,66 @@ function BattleRoom({ matchInfo, onBack }: { matchInfo: QuickMatchResult; onBack
     return () => window.clearTimeout(timer);
   }, [countdown, gameState]);
 
-  const handleMessage = useCallback(
-    (msg: { type: string; payload: any }) => {
-      switch (msg.type) {
-        case 'room_joined':
-        case 'players_updated':
-          if (msg.payload.players) setPlayers(msg.payload.players);
-          setStatus('Menunggu pemain dan bot...');
-          break;
-        case 'player_joined':
-          setPlayers((current) => {
-            if (current.some((player) => player.id === msg.payload.id)) return current;
-            return [...current, msg.payload];
-          });
-          break;
-        case 'flag_team_assigned':
-          setTeams(msg.payload.teams ?? {});
-          setTeamScores(msg.payload.team_scores ?? { A: 0, B: 0 });
-          setStatus('Tim siap. Match segera dimulai.');
-          break;
-        case 'game_starting':
-          setGameState('countdown');
-          setCountdown(msg.payload.countdown ?? 3);
-          break;
-        case 'flag_question':
-          setGameState('playing');
-          setCurrentQuestion(msg.payload);
-          setAnswerLocked(false);
-          setLastResult(null);
-          setStatus('Buzz jawaban tercepat untuk timmu.');
-          questionStartedAt.current = Date.now();
-          break;
-        case 'flag_answer_result': {
-          const result = msg.payload as FlagAnswerResult;
-          setLastResult(result);
-          setTeamScores(result.team_scores);
-          if (result.resolved || result.team === myTeamRef.current) setAnswerLocked(true);
-          setStatus(result.message);
-          break;
-        }
-        case 'flag_round_timeout':
-          setAnswerLocked(true);
-          setTeamScores(msg.payload.team_scores ?? { A: 0, B: 0 });
-          setStatus(`Waktu habis. Jawaban: ${msg.payload.correct_answer}`);
-          break;
-        case 'game_over':
-          setGameState('finished');
-          setGameResult(msg.payload);
-          setShowInterstitial(true);
-          if (msg.payload.team_scores) setTeamScores(msg.payload.team_scores);
-          break;
-        case 'player_disconnected':
-          setStatus('Salah satu pemain terputus, menunggu reconnect.');
-          break;
-        case 'player_reconnected':
-          setStatus('Pemain reconnect.');
-          break;
-        case 'error':
-          setStatus(msg.payload.message || msg.payload.code || 'Terjadi error');
-          break;
+  const handleMessage = useCallback((msg: { type: string; payload: any }) => {
+    switch (msg.type) {
+      case 'room_joined':
+      case 'players_updated':
+        if (msg.payload.players) setPlayers(msg.payload.players);
+        setStatus('Menunggu pemain dan bot...');
+        break;
+      case 'player_joined':
+        setPlayers((current) => {
+          if (current.some((player) => player.id === msg.payload.id)) return current;
+          return [...current, msg.payload];
+        });
+        break;
+      case 'flag_team_assigned':
+        setTeams(msg.payload.teams ?? {});
+        setTeamScores(msg.payload.team_scores ?? { A: 0, B: 0 });
+        setStatus('Tim siap. Match segera dimulai.');
+        break;
+      case 'game_starting':
+        setGameState('countdown');
+        setCountdown(msg.payload.countdown ?? 3);
+        break;
+      case 'flag_question':
+        setGameState('playing');
+        setCurrentQuestion(msg.payload);
+        setAnswerLocked(false);
+        setLastResult(null);
+        setStatus('Buzz jawaban tercepat untuk timmu.');
+        questionStartedAt.current = Date.now();
+        break;
+      case 'flag_answer_result': {
+        const result = msg.payload as FlagAnswerResult;
+        setLastResult(result);
+        setTeamScores(result.team_scores);
+        if (result.resolved || result.team === myTeamRef.current) setAnswerLocked(true);
+        setStatus(result.message);
+        break;
       }
-    },
-    []
-  );
+      case 'flag_round_timeout':
+        setAnswerLocked(true);
+        setTeamScores(msg.payload.team_scores ?? { A: 0, B: 0 });
+        setStatus(`Waktu habis. Jawaban: ${msg.payload.correct_answer}`);
+        break;
+      case 'game_over':
+        setGameState('finished');
+        setGameResult(msg.payload);
+        setShowInterstitial(true);
+        if (msg.payload.team_scores) setTeamScores(msg.payload.team_scores);
+        break;
+      case 'player_disconnected':
+        setStatus('Salah satu pemain terputus, menunggu reconnect.');
+        break;
+      case 'player_reconnected':
+        setStatus('Pemain reconnect.');
+        break;
+      case 'error':
+        setStatus(msg.payload.message || msg.payload.code || 'Terjadi error');
+        break;
+    }
+  }, []);
 
   const connect = useCallback(() => {
     if (reconnectTimer.current) {
@@ -313,8 +332,14 @@ function BattleRoom({ matchInfo, onBack }: { matchInfo: QuickMatchResult; onBack
       setStatus('Login diperlukan untuk memainkan multiplayer.');
       return;
     }
-    const apiBase = (process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/api\/v1\/?$/, '');
-    const ws = new WebSocket(`${apiBase.replace('http', 'ws')}/api/v1/ws/game/${matchInfo.room_id}?token=${token}`);
+    const apiBase = (
+      process.env.NEXT_PUBLIC_WS_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      'http://localhost:8080/api/v1'
+    ).replace(/\/api\/v1\/?$/, '');
+    const ws = new WebSocket(
+      `${apiBase.replace('http', 'ws')}/api/v1/ws/game/${matchInfo.room_id}?token=${token}`
+    );
 
     ws.onopen = () => {
       setConnected(true);
@@ -353,7 +378,10 @@ function BattleRoom({ matchInfo, onBack }: { matchInfo: QuickMatchResult; onBack
 
   const submitAnswer = (answer: string) => {
     if (!currentQuestion || answerLocked || gameState !== 'playing') return;
-    const elapsedMs = Math.max(100, questionStartedAt.current ? Date.now() - questionStartedAt.current : 100);
+    const elapsedMs = Math.max(
+      100,
+      questionStartedAt.current ? Date.now() - questionStartedAt.current : 100
+    );
     setAnswerLocked(true);
     wsRef.current?.send(
       JSON.stringify({
@@ -368,7 +396,10 @@ function BattleRoom({ matchInfo, onBack }: { matchInfo: QuickMatchResult; onBack
     );
   };
 
-  const myTeamPlayers = useMemo(() => players.filter((player) => teams[player.id] === myTeam), [myTeam, players, teams]);
+  const myTeamPlayers = useMemo(
+    () => players.filter((player) => teams[player.id] === myTeam),
+    [myTeam, players, teams]
+  );
   const opponentPlayers = useMemo(
     () => players.filter((player) => teams[player.id] === opponentTeam),
     [opponentTeam, players, teams]
@@ -428,11 +459,18 @@ function BattleRoom({ matchInfo, onBack }: { matchInfo: QuickMatchResult; onBack
     <GameContainer maxWidth="max-w-4xl">
       <div className="space-y-5 pt-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
+          >
             <ArrowLeft className="h-4 w-4" /> Batal
           </button>
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            {connected ? <Wifi className="h-4 w-4 text-emerald-500" /> : <WifiOff className="h-4 w-4 text-red-500" />}
+            {connected ? (
+              <Wifi className="h-4 w-4 text-emerald-500" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-red-500" />
+            )}
             {connected ? 'Terhubung' : 'Reconnect...'}
           </div>
         </div>
@@ -454,8 +492,18 @@ function BattleRoom({ matchInfo, onBack }: { matchInfo: QuickMatchResult; onBack
 
         {(gameState === 'playing' || gameState === 'countdown') && (
           <div className="grid grid-cols-2 gap-3">
-            <ScorePanel label="Tim Kamu" score={myTeam ? teamScores[myTeam] : 0} tone="emerald" players={myTeamPlayers} />
-            <ScorePanel label="Tim Lawan" score={opponentTeam ? teamScores[opponentTeam] : 0} tone="rose" players={opponentPlayers} />
+            <ScorePanel
+              label="Tim Kamu"
+              score={myTeam ? teamScores[myTeam] : 0}
+              tone="emerald"
+              players={myTeamPlayers}
+            />
+            <ScorePanel
+              label="Tim Lawan"
+              score={opponentTeam ? teamScores[opponentTeam] : 0}
+              tone="rose"
+              players={opponentPlayers}
+            />
           </div>
         )}
 
@@ -468,7 +516,9 @@ function BattleRoom({ matchInfo, onBack }: { matchInfo: QuickMatchResult; onBack
                 </p>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">Buzzer Battle</h1>
               </div>
-              <p className="max-w-xs text-right text-sm font-medium text-gray-500 dark:text-slate-300">{status}</p>
+              <p className="max-w-xs text-right text-sm font-medium text-gray-500 dark:text-slate-300">
+                {status}
+              </p>
             </div>
 
             <div className="flex flex-col items-center gap-5">
@@ -540,7 +590,9 @@ function ScorePanel({
         <div>
           <p className="text-sm font-semibold text-gray-900 dark:text-white">{label}</p>
           <p className="text-xs text-gray-500 dark:text-slate-400">
-            {players.length > 0 ? players.map((player) => player.username).join(' / ') : 'Menunggu slot'}
+            {players.length > 0
+              ? players.map((player) => player.username).join(' / ')
+              : 'Menunggu slot'}
           </p>
         </div>
       </div>

@@ -174,7 +174,9 @@ export default function FriendsPage() {
                       {u.username[0].toUpperCase()}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{u.username}</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">
+                        {u.username}
+                      </p>
                       <p className="text-xs text-gray-500">
                         Level {u.level} &middot; {u.xp} XP
                       </p>

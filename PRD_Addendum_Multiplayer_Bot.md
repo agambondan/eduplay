@@ -1,4 +1,5 @@
 # PRD Addendum — Multiplayer & Bot System
+
 ## EduPlay Platform
 
 **Addendum Version:** 1.0.0
@@ -35,6 +36,7 @@
 Multiplayer adalah salah satu driver terkuat untuk **virality dan retention**. Ketika user bisa mengajak teman bermain, platform mendapatkan organic growth melalui word-of-mouth. Namun, multiplayer memiliki satu tantangan utama: **"Empty Lobby Problem"** — saat user base masih kecil, sulit menemukan lawan nyata.
 
 Dokumen ini mendeskripsikan:
+
 1. Game multiplayer yang akan ditambahkan ke EduPlay
 2. Sistem bot sebagai fallback saat tidak ada lawan nyata
 3. Matchmaking system yang seamless
@@ -49,6 +51,7 @@ Dokumen ini mendeskripsikan:
 ### 1.3 Scope Addendum
 
 **In Scope:**
+
 - 4 game multiplayer (2 real-time, 2 async)
 - Rule-based bot untuk semua game multiplayer
 - Ghost replay bot (dari rekaman user nyata)
@@ -58,6 +61,7 @@ Dokumen ini mendeskripsikan:
 - Private room (main dengan teman via kode room)
 
 **Out of Scope:**
+
 - Team/guild system
 - Tournament bracket
 - Spectator mode
@@ -69,6 +73,7 @@ Dokumen ini mendeskripsikan:
 ## 2. Multiplayer Game Catalog
 
 ### Constraint Desain (sama dengan game solo)
+
 - ❌ Tidak ada gambar manusia atau makhluk hidup
 - ✅ Visual: geometri, angka, huruf, kartu, ikon abstrak
 - ✅ Session length: 2-5 menit per match
@@ -91,6 +96,7 @@ Dokumen ini mendeskripsikan:
 | **Ad Slots**      | Banner di lobby, interstitial setelah match selesai                                                                                                            |
 
 **UI Layout:**
+
 ```
 ┌─────────────────────────────────┐
 │  KAMU         vs        LAWAN   │
@@ -119,6 +125,7 @@ Dokumen ini mendeskripsikan:
 | **Ad Slots**    | Banner di lobby, interstitial setelah game                                                                                          |
 
 **Room Flow:**
+
 ```
 Host buat room → Kode: "ABC123"
                       │
@@ -252,6 +259,7 @@ func (b *RuleBasedBot) AnswerQuestion(question Question) BotAnswer {
 **Konsep:** Rekam setiap sesi game user nyata, simpan sebagai "ghost data". Saat butuh bot, putar ulang rekaman tersebut.
 
 **Data yang Direkam:**
+
 ```go
 type GhostData struct {
     ID         UUID
@@ -273,6 +281,7 @@ type GhostEvent struct {
 ```
 
 **Cara Kerja:**
+
 ```
 Saat user main solo:
   → Rekam semua event + timing ke GhostData
@@ -287,6 +296,7 @@ Saat butuh bot:
 ```
 
 **Query untuk ambil ghost:**
+
 ```sql
 SELECT * FROM ghost_replays
 WHERE game_id = $1
@@ -299,6 +309,7 @@ LIMIT 1;
 ### 3.4 AI Bot (Claude API) — Word Chain
 
 **Sistem Prompt:**
+
 ```
 Kamu adalah pemain game Sambung Kata Bahasa Indonesia.
 Aturan:
@@ -313,10 +324,12 @@ Huruf awal yang harus kamu pakai: "{HURUF_AWAL}"
 ```
 
 **Fallback jika Claude API gagal:**
+
 - Pre-built dictionary KBBI per huruf awal
 - Pick random dari dictionary yang belum dipakai
 
 **Rate Limiting:**
+
 - Max 1 request per giliran bot
 - Cache respons tidak perlu (setiap kata unik)
 - Timeout: 3 detik — jika lewat, pakai dictionary fallback
@@ -405,6 +418,7 @@ Host klik "Mulai" → Game start
 ```
 
 **Room Settings (Quiz Showdown):**
+
 - Jumlah soal: 10 / 20 / 30
 - Kategori: Math / Language / Geography / Mix
 - Timer per soal: 5 / 10 / 15 detik
@@ -417,6 +431,7 @@ Host klik "Mulai" → Game start
 ### 5.1 Tech Stack WebSocket
 
 **Backend (Go):**
+
 - Library: `gorilla/websocket`
 - Room management: In-memory + Redis pub/sub
 - Satu goroutine per koneksi WebSocket
@@ -481,10 +496,12 @@ var rooms sync.Map  // room_id → *GameRoom
 ### 5.4 Skalabilitas WebSocket
 
 Untuk v1 (single server):
+
 - Semua room di-manage in-memory (sync.Map)
 - Redis untuk signaling antar goroutine
 
 Untuk v2+ (multi-server):
+
 - Redis pub/sub sebagai message broker antar server
 - Sticky sessions (user selalu ke server yang sama)
 - Atau migrate ke dedicated WebSocket service
@@ -625,6 +642,7 @@ Game Detail Page
 - Skor vs bot **tetap masuk personal stats** dan berikan XP (lebih sedikit dari vs human)
 
 **Contoh copy yang baik:**
+
 ```
 ❌ "Tidak ada pemain online saat ini"
 ✅ "Belum ada lawan online. Mau uji kemampuan vs bot dulu?"
@@ -695,11 +713,11 @@ func validateTiming(timeTaken time.Duration) bool {
 
 | Tipe Match                    | Masuk Leaderboard? | XP   |
 | ----------------------------- | ------------------ | ---- |
-| vs Real Player (Ranked)       | ✅ Ya               | 100% |
-| vs Real Player (Private Room) | ❌ Tidak            | 75%  |
-| vs Rule-Based Bot             | ❌ Tidak            | 50%  |
-| vs Ghost Bot                  | ❌ Tidak            | 60%  |
-| vs AI Bot                     | ❌ Tidak            | 50%  |
+| vs Real Player (Ranked)       | ✅ Ya              | 100% |
+| vs Real Player (Private Room) | ❌ Tidak           | 75%  |
+| vs Rule-Based Bot             | ❌ Tidak           | 50%  |
+| vs Ghost Bot                  | ❌ Tidak           | 60%  |
+| vs AI Bot                     | ❌ Tidak           | 50%  |
 
 ---
 
@@ -955,34 +973,38 @@ WS /ws/game/:room_id
 | Custom `useWebSocket` hook | -                | Wrapper dengan auto-reconnect |
 
 **useWebSocket Hook:**
+
 ```typescript
 function useWebSocket(roomId: string) {
-    const [socket, setSocket] = useState<WebSocket | null>(null);
-    const [messages, setMessages] = useState<WSMessage[]>([]);
-    const [status, setStatus] = useState<'connecting'|'connected'|'disconnected'>();
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [messages, setMessages] = useState<WSMessage[]>([]);
+  const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>();
 
-    useEffect(() => {
-        const ws = new WebSocket(
-            `${process.env.NEXT_PUBLIC_WS_URL}/ws/game/${roomId}?token=${getToken()}`
-        );
+  useEffect(() => {
+    const ws = new WebSocket(
+      `${process.env.NEXT_PUBLIC_WS_URL}/ws/game/${roomId}?token=${getToken()}`
+    );
 
-        ws.onopen = () => setStatus('connected');
-        ws.onmessage = (e) => setMessages(prev => [...prev, JSON.parse(e.data)]);
-        ws.onclose = () => {
-            setStatus('disconnected');
-            // Auto-reconnect setelah 2 detik
-            setTimeout(() => reconnect(), 2000);
-        };
+    ws.onopen = () => setStatus('connected');
+    ws.onmessage = (e) => setMessages((prev) => [...prev, JSON.parse(e.data)]);
+    ws.onclose = () => {
+      setStatus('disconnected');
+      // Auto-reconnect setelah 2 detik
+      setTimeout(() => reconnect(), 2000);
+    };
 
-        setSocket(ws);
-        return () => ws.close();
-    }, [roomId]);
+    setSocket(ws);
+    return () => ws.close();
+  }, [roomId]);
 
-    const send = useCallback((type: string, payload: any) => {
-        socket?.send(JSON.stringify({ type, payload }));
-    }, [socket]);
+  const send = useCallback(
+    (type: string, payload: any) => {
+      socket?.send(JSON.stringify({ type, payload }));
+    },
+    [socket]
+  );
 
-    return { send, messages, status };
+  return { send, messages, status };
 }
 ```
 
@@ -1002,11 +1024,13 @@ function useWebSocket(roomId: string) {
 ### 12.2 Optimasi
 
 **In-Memory Room State:**
+
 - Rooms disimpan di `sync.Map` (in-memory) untuk akses O(1)
 - Tidak query database saat game berlangsung
 - Hanya write ke database saat game selesai (batch write)
 
 **Goroutine per Room:**
+
 ```go
 // Setiap room punya goroutine sendiri untuk handle pesan
 func (r *GameRoom) Run() {
@@ -1022,6 +1046,7 @@ func (r *GameRoom) Run() {
 ```
 
 **Bot Goroutine:**
+
 ```go
 // Bot berjalan sebagai goroutine yang simulate player behavior
 func (b *RuleBasedBot) Play(room *GameRoom) {
@@ -1124,7 +1149,7 @@ var botNames = map[string][]string{
 
 ---
 
-*Addendum ini merupakan dokumen pelengkap dari PRD_EduPlay_v2.md*
-*Setiap perubahan harus dikomunikasikan ke tim terkait.*
+_Addendum ini merupakan dokumen pelengkap dari PRD_EduPlay_v2.md_
+_Setiap perubahan harus dikomunikasikan ke tim terkait._
 
-*Last Updated: 2026-05-20 | Addendum Version: 1.0.0*
+_Last Updated: 2026-05-20 | Addendum Version: 1.0.0_

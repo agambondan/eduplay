@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, Gamepad2, BarChart3, Flag } from 'lucide-react';
+import { BarChart3, Flag, Gamepad2, Users } from 'lucide-react';
 import api from '@/lib/api/client';
 import { useLocale } from '@/lib/i18n';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -26,9 +26,12 @@ export default function AdminPage() {
   useEffect(() => {
     Promise.allSettled([
       api.get('/user/me').then((r) => setUser(r.data.data)),
-      api.get('/admin/dashboard').then((r) => setStats(r.data.data)).catch((e) => {
-        setError(e.response?.data?.message || 'Failed to load');
-      }),
+      api
+        .get('/admin/dashboard')
+        .then((r) => setStats(r.data.data))
+        .catch((e) => {
+          setError(e.response?.data?.message || 'Failed to load');
+        }),
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -76,7 +79,11 @@ export default function AdminPage() {
           : [
               { icon: Users, label: t('admin.users_total'), value: stats?.total_users ?? '-' },
               { icon: Gamepad2, label: t('admin.games_total'), value: stats?.total_games ?? '-' },
-              { icon: BarChart3, label: t('admin.sessions_total'), value: stats?.total_sessions ?? '-' },
+              {
+                icon: BarChart3,
+                label: t('admin.sessions_total'),
+                value: stats?.total_sessions ?? '-',
+              },
               { icon: Flag, label: t('admin.active_today'), value: stats?.active_today ?? '-' },
             ].map((s) => (
               <div
@@ -99,9 +106,7 @@ export default function AdminPage() {
             <div className="flex items-end gap-2">
               {stats.dau.map((d) => (
                 <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
-                  <span className="text-xs font-bold text-gray-900 dark:text-white">
-                    {d.count}
-                  </span>
+                  <span className="text-xs font-bold text-gray-900 dark:text-white">{d.count}</span>
                   <div
                     className="w-full rounded-t-md bg-indigo-500 transition-all"
                     style={{ height: `${Math.max((d.count / maxDau) * 120, 4)}px` }}

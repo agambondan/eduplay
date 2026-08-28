@@ -10,6 +10,7 @@
 ## [2026-05-22] — Responsive Game Boards (No More Overflow)
 
 ### Fixed
+
 - **Chess** — board cells changed from fixed `h-12 w-12` (48px) to `aspect-square` with responsive `clamp()` sizing; container uses `max-w-[min(480px,calc(100vw-32px))]` instead of `w-fit`
 - **Nonogram** — completely restructured board layout: removed `overflow-auto` band-aid, cells now use `flex-1 aspect-square` instead of fixed `w-8 h-8`; clue bars use `flex-1` to match column widths; container constrained to `max-w-lg`
 - **WordSearch** — cells changed from `h-8 w-8` to `aspect-square w-full` with grid container `max-w-md`; font size responsive via `text-xs sm:text-sm`
@@ -24,11 +25,13 @@
 ## [2026-05-21] — Game Touch/Click UX + Gesture Handling
 
 ### Added
+
 - **Shared `useIsTouchDevice` hook** (`lib/hooks/useIsTouchDevice.ts`) — deduplicated from BubbleShooter & BrickBreaker, now importable by any game
 - **Pointercancel handlers** in WordSearch and Nonogram — resets drag state when touch is interrupted (incoming call, system gesture, etc.)
 - **Touchcancel handler** in Game2048 — safe handling of interrupted swipe gestures
 
 ### Fixed
+
 - **Game2048** — swipe on mobile no longer triggers page scroll/zoom; touch listeners moved from `window` to board element with `touch-action: none` and `passive: true`
 - **Chess** — board now has `touch-action: none` + `select-none` to prevent double-tap zoom
 - **Sudoku** — grid has `touch-action: none` + `select-none`; number pad buttons now `min-h-[44px]` for proper touch targets
@@ -39,6 +42,7 @@
 ## [2026-05-21] — Responsive UI Polish + PWA/TWA Readiness
 
 ### Changed
+
 - **Navbar** — nav items now scroll horizontally on tablet to prevent overflow; uses `overflow-x-auto scrollbar-none` with `flex-nowrap`
 - **MobileNav** — trimmed to max 6 items (Home, Games, Daily, Friends, Leaderboard, Profile); admin users see Shield icon on Profile tab
 - **MobileNav** — larger touch targets (`touch-manipulation`, `text-[11px]`, `leading-tight`)
@@ -48,6 +52,7 @@
 - **Root layout** — added `viewportFit: 'cover'` for notched devices, `overscroll-behavior-y: contain` on body, `-webkit-tap-highlight-color: transparent` for PWA/TWA
 
 ### Fixed
+
 - Horizontal overflow on tablet/mid-size Navbar with many items
 - Inconsistent container padding between pages
 - Missing PWA-safe overscroll behavior
@@ -55,6 +60,7 @@
 ## [2026-05-22] — Final Polish: MP Leaderboard + Subscription UI + Docs Sync
 
 ### Added
+
 - Multiplayer Leaderboard frontend page (`/leaderboard/multiplayer`) with stats cards (wins/losses/win rate)
 - Link from main leaderboard to multiplayer leaderboard via tab navigasi
 - Premium subscription section in Settings with status check + Midtrans subscribe button
@@ -64,6 +70,7 @@
 - Sitemap entries: crossword-duel, crossword-coop, math-relay, chess
 
 ### Fixed
+
 - Chess WS: turn validation non-deterministic (map iteration order) → tracked via player_white/player_black
 - Chess WS: FEN reset bug → removed empty FEN, use current_turn for validation
 - Chess WS: runChessBotMove panic → removed (chess WS is human-only)
@@ -74,23 +81,27 @@
 - Settings page: useEffect import for SubscribeSection
 
 ### Changed
+
 - docs/HANDOFF.md: all tasks marked complete, final summary
 - PRD_Addendum_Multiplayer_Bot.md: all phases marked ✅ Done
 - README game count: updated from 28 to 34 games
 
 ### Added
+
 - Ghost replay bot playback: `GhostBotPlayer` struct with event-driven goroutine that replays recorded ghost data with proper timing
 - `tryAddGhostOrBot()` in hub.go: tries ghost service first, falls back to rule-based bot
 - Ghost bot integrated into Math Battle, Wordle Duel, and Sudoku Race room handlers
 - GhostBotProvider function type wiring in main.go via `service.NewGhostBotService()`
 
 ### Added
+
 - Sudoku Race: bot auto-fill, result payload with player scores, achievement checker, proper ResultScreen with score comparison + XP
 - Chess: chess.js frontend with minimax AI (alpha-beta pruning, depth 1-3), 3 bot difficulties, click-to-move, legal move indicators, move history
 - Chess backend: model (FEN/moves/players/bot), service (CRUD + resign), REST API, DB migration, game seed
 - Chess result recording via MultiplayerMatch/MatchParticipant
 
 ### Fixed
+
 - Sudoku Race room handler: added bot auto-fill (same pattern as Wordle Duel) so QuickMatchBot creates a playing game
 - Sudoku Race `handleSudokuCell`: sends proper `GameOverPayload` with Results array + calls achievement checker
 - Sudoku Race timeout: proper FinishedAt + results
@@ -101,6 +112,7 @@
 ## [2026-05-21] — Phase 5 Complete + Onet + Quiz Showdown Categories + Polish
 
 ### Added
+
 - Onet Advance game with full game engine, gravity system (none/down/up/left/right), 6 icon themes, combo scoring, hint/shuffle, admin config page for grid/tiles/timer/theme/gravity
 - Blog section: listing page with pagination, article pages, admin CRUD (list/create/edit/delete), sitemap, 3 seed articles
 - Weekly email summary: Monday scheduler, HTML email template with stats, opt-in toggle in settings
@@ -108,6 +120,7 @@
 - PWA manifest: `maskable` icon purpose for adaptive icons
 
 ### Fixed
+
 - Quiz Showdown answer scoring: `CorrectAnswer` was math value instead of option index — answers never matched
 - Next.js 16 middleware deprecation: `middleware.ts` → `proxy.ts`
 - Cookie consent: GA4 + AdSense scripts now only load after user accepts
@@ -127,6 +140,7 @@
 - Wordle Duel result screen: placeholder spinner → full win/lose/XP/animation
 
 ### Changed
+
 - `.env.example`: added `NEXT_PUBLIC_ADSENSE_INTERSTITIAL_SLOT`
 - Docker Compose: production-ready with Nginx, healthchecks, resource limits
 - Admin games page: added Onet config sub-page with gravity/icon/rows/cols/timer
@@ -137,6 +151,7 @@
 ## [2026-05-20] — Full Multiplayer + Blog API + Ads System
 
 ### Added
+
 - WebSocket infrastructure: Hub, Room Manager, Matchmaking Queue, Bot system
 - Math Battle (real-time 1v1): full WS game with scoring, timer, bot support
 - Wordle Duel (real-time 1v1): WS-based with ghost replay bot
@@ -156,11 +171,13 @@
 - Tournament admin page: list/cancel tournaments
 
 ### Changed
+
 - `cmd/main.go`: wired blog service, ad service, tournament service, score challenge routes
 - Multiplayer API client: `multiplayerApi`, `roomsApi`, `challengesApi`, `tournamentsApi`, `battleshipApi`, `wordChainApi`
 - Game seed: added `wordle-duel`, `quiz-showdown`, `battleship-math`, `math-tournament`, `flag-team-battle`, `word-chain` as multiplayer category
 
 ### Fixed
+
 - Stale migration SQL files removed (seeding done by Go `seedData()`)
 - Avatar upload stores path in `avatar_url`, not `avatar_color`
 - Mobile touch support for Bubble Shooter
@@ -171,6 +188,7 @@
 ## [2026-05-19] — P2 Features + Multiplayer Foundation
 
 ### Added
+
 - Number Match game: cross-pairs summing to 10
 - Fraction Visualizer: identify/compare/simplify fractions with visual bar
 - Referral system: referral code generation, `POST /referral/apply`, profile card
@@ -187,6 +205,7 @@
 - Sentry monitoring + GA4 analytics integration
 
 ### Fixed
+
 - Sudoku: keyboard navigation (arrow keys, number input)
 - Leaderboard: live refresh every 30 seconds
 - Profile: top games display, stats loading
@@ -198,6 +217,7 @@
 ## [2026-05-18] — Core Games + Gamification + API
 
 ### Added
+
 - 8 launch games: Math Quiz, 2048, Wordle ID, Sudoku, Times Table, Spelling Bee, Flag Quiz, Capital City Quiz
 - 12 roadmap games: Nonogram, Crossword ID, Mental Math, Element Quiz, Timeline History, Bubble Shooter, Brick Breaker, Word Search, Memory Match, Typing Speed, Simon Says, Snake
 - XP system: formula, level thresholds (50 levels), difficulty multiplier
@@ -212,6 +232,7 @@
 - API: standardized response format, error codes, pagination
 
 ### Fixed
+
 - PWA: build flags for development mode
 - Dev environment: `dev.sh` single-command startup with port cleanup
 - Docke Compose: correct CORS, port mapping, health checks
@@ -221,6 +242,7 @@
 ## [2026-05-17] — Foundation + Auth + Database
 
 ### Added
+
 - Next.js 16 project setup: App Router, Tailwind, shadcn/ui, TypeScript
 - Go backend: Fiber v2, GORM, PostgreSQL, Redis
 - Authentication: register, login, Google OAuth, logout, refresh token
@@ -240,6 +262,7 @@
 - Support/bug reporting: in-app form with email notification
 
 ### Fixed
+
 - CORS configuration for local development
 - Config loader path resolution
 - Stale swagger/docs imports removed

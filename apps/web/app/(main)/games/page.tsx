@@ -102,7 +102,11 @@ function GamesContent() {
   const searchParams = useSearchParams();
   const selectedCategory = searchParams.get('cat');
 
-  const { data: games, isLoading, isError } = useQuery({
+  const {
+    data: games,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['games'],
     queryFn: gamesApi.list,
     retry: 1,
@@ -128,7 +132,10 @@ function GamesContent() {
     return (
       <div className="py-20 text-center">
         <p className="text-gray-400">{t('common.error')}</p>
-        <button onClick={() => window.location.reload()} className="mt-4 rounded-xl bg-indigo-600 px-6 py-2.5 font-bold text-white">
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 rounded-xl bg-indigo-600 px-6 py-2.5 font-bold text-white"
+        >
           {t('common.retry')}
         </button>
       </div>

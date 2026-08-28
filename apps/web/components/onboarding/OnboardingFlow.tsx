@@ -1,8 +1,8 @@
 'use client';
 
-import { useAuthStore } from '@/lib/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/lib/stores/authStore';
 import DailyPrompt from './DailyPrompt';
 import InterestSelector from './InterestSelector';
 import PushPrompt from './PushPrompt';

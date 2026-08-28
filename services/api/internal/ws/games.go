@@ -174,5 +174,3 @@ func sudokuProgress(board *[9][9]int) int {
 	filled := countSudokuFilled(board)
 	return filled * 100 / total
 }
-
-

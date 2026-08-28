@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
+import { useIsTouchDevice } from '@/lib/hooks/useIsTouchDevice';
 import { useLocale } from '@/lib/i18n';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
-import { useIsTouchDevice } from '@/lib/hooks/useIsTouchDevice';
 
 interface Bubble {
   x: number;

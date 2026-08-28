@@ -143,32 +143,35 @@ export default function WordSearch() {
     }
   };
 
-  const onPointerUp = useCallback(async (e?: PointerEvent) => {
-    if (!isSelecting || !game) return;
-    setIsSelecting(false);
+  const onPointerUp = useCallback(
+    async (e?: PointerEvent) => {
+      if (!isSelecting || !game) return;
+      setIsSelecting(false);
 
-    const selectedWord = selection.map(([r, c]) => game.grid[r][c]).join('');
-    const reversedWord = selectedWord.split('').reverse().join('');
+      const selectedWord = selection.map(([r, c]) => game.grid[r][c]).join('');
+      const reversedWord = selectedWord.split('').reverse().join('');
 
-    const wordIndex = game.words.findIndex(
-      (w) => !w.found && (w.word === selectedWord || w.word === reversedWord)
-    );
+      const wordIndex = game.words.findIndex(
+        (w) => !w.found && (w.word === selectedWord || w.word === reversedWord)
+      );
 
-    if (wordIndex !== -1) {
-      const newWords = [...game.words];
-      newWords[wordIndex].found = true;
-      setGame({ ...game, words: newWords });
-      addScore(50);
+      if (wordIndex !== -1) {
+        const newWords = [...game.words];
+        newWords[wordIndex].found = true;
+        setGame({ ...game, words: newWords });
+        addScore(50);
 
-      if (newWords.every((w) => w.found)) {
-        setGameOver(true);
-        endGame();
-        const res = await submitScore();
-        setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
+        if (newWords.every((w) => w.found)) {
+          setGameOver(true);
+          endGame();
+          const res = await submitScore();
+          setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
+        }
       }
-    }
-    setSelection([]);
-  }, [isSelecting, game, selection, addScore, endGame, submitScore]);
+      setSelection([]);
+    },
+    [isSelecting, game, selection, addScore, endGame, submitScore]
+  );
 
   useEffect(() => {
     window.addEventListener('pointerup', onPointerUp);

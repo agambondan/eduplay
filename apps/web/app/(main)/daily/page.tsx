@@ -50,7 +50,10 @@ export default function DailyChallengePage() {
     return (
       <div className="container max-w-md py-20 text-center">
         <p className="text-gray-400">{t('common.error')}</p>
-        <button onClick={() => refetch()} className="mt-4 rounded-xl bg-indigo-600 px-6 py-2.5 font-bold text-white">
+        <button
+          onClick={() => refetch()}
+          className="mt-4 rounded-xl bg-indigo-600 px-6 py-2.5 font-bold text-white"
+        >
           {t('common.retry')}
         </button>
       </div>
@@ -86,7 +89,9 @@ export default function DailyChallengePage() {
             <h1 className="mb-2 text-2xl font-bold text-emerald-900 dark:text-emerald-400">
               {t('daily.complete')}
             </h1>
-            <p className="mb-6 text-emerald-700 dark:text-emerald-500">Kembali besok untuk tantangan baru!</p>
+            <p className="mb-6 text-emerald-700 dark:text-emerald-500">
+              Kembali besok untuk tantangan baru!
+            </p>
             <Link
               href="/games"
               className="block w-full rounded-xl bg-emerald-500 py-3 font-bold text-white transition-colors hover:bg-emerald-600"

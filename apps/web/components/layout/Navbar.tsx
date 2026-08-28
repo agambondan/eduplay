@@ -51,7 +51,8 @@ export default function Navbar() {
                     key={item.path}
                     href={item.path}
                     className={`inline-flex shrink-0 items-center border-b-2 px-1 pt-1 text-sm font-medium transition-colors ${
-                      pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))
+                      pathname === item.path ||
+                      (item.path !== '/' && pathname.startsWith(item.path))
                         ? 'border-indigo-500 text-gray-900 dark:text-white'
                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-slate-400 dark:hover:text-white'
                     }`}

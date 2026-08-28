@@ -46,7 +46,9 @@ export const friendsApi = {
     return res.data.data;
   },
   search: async (query: string) => {
-    const res = await api.get<ApiResponse<SearchUserResult[]>>(`/friends/search?q=${encodeURIComponent(query)}`);
+    const res = await api.get<ApiResponse<SearchUserResult[]>>(
+      `/friends/search?q=${encodeURIComponent(query)}`
+    );
     return res.data.data;
   },
 };

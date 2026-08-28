@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Edit2, Plus, Search, Trash2 } from 'lucide-react';
 import api from '@/lib/api/client';
-import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 
 interface BlogPost {
   id: string;
@@ -28,20 +28,28 @@ export default function AdminBlogPage() {
 
   const fetchPosts = () => {
     setLoading(true);
-    api.get(`/admin/blog?page=${page}&limit=20`)
-      .then((r) => { setPosts(r.data.data.posts); setTotal(r.data.data.total); })
+    api
+      .get(`/admin/blog?page=${page}&limit=20`)
+      .then((r) => {
+        setPosts(r.data.data.posts);
+        setTotal(r.data.data.total);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchPosts(); }, [page]);
+  useEffect(() => {
+    fetchPosts();
+  }, [page]);
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Hapus "${title}"?`)) return;
     try {
       await api.delete(`/admin/blog/${id}`);
       fetchPosts();
-    } catch { alert('Gagal menghapus'); }
+    } catch {
+      alert('Gagal menghapus');
+    }
   };
 
   const totalPages = Math.ceil(total / 20);
@@ -59,7 +67,11 @@ export default function AdminBlogPage() {
       </div>
 
       {loading ? (
-        <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-gray-100 dark:bg-slate-800" />)}</div>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-gray-100 dark:bg-slate-800" />
+          ))}
+        </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-700">
           <table className="w-full text-left text-sm">
@@ -74,23 +86,38 @@ export default function AdminBlogPage() {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
               {posts.map((post) => (
-                <tr key={post.id} className="bg-white transition-colors hover:bg-gray-50 dark:bg-slate-900 dark:hover:bg-slate-800">
-                  <td className="px-5 py-4 font-medium text-gray-900 dark:text-white">{post.title}</td>
+                <tr
+                  key={post.id}
+                  className="bg-white transition-colors hover:bg-gray-50 dark:bg-slate-900 dark:hover:bg-slate-800"
+                >
+                  <td className="px-5 py-4 font-medium text-gray-900 dark:text-white">
+                    {post.title}
+                  </td>
                   <td className="px-5 py-4 text-gray-500">{post.category || '-'}</td>
                   <td className="px-5 py-4">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${post.is_published ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-slate-700'}`}>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${post.is_published ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-slate-700'}`}
+                    >
                       {post.is_published ? 'Published' : 'Draft'}
                     </span>
                   </td>
                   <td className="px-5 py-4 text-gray-500">
-                    {post.published_at ? new Date(post.published_at).toLocaleDateString('id-ID') : '-'}
+                    {post.published_at
+                      ? new Date(post.published_at).toLocaleDateString('id-ID')
+                      : '-'}
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => router.push(`/admin/blog/${post.id}/edit`)} className="rounded-lg border border-gray-200 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:border-slate-600">
+                      <button
+                        onClick={() => router.push(`/admin/blog/${post.id}/edit`)}
+                        className="rounded-lg border border-gray-200 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:border-slate-600"
+                      >
                         <Edit2 className="h-4 w-4" />
                       </button>
-                      <button onClick={() => handleDelete(post.id, post.title)} className="rounded-lg border border-gray-200 p-1.5 text-red-500 transition-colors hover:bg-red-50 dark:border-slate-600">
+                      <button
+                        onClick={() => handleDelete(post.id, post.title)}
+                        className="rounded-lg border border-gray-200 p-1.5 text-red-500 transition-colors hover:bg-red-50 dark:border-slate-600"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -104,9 +131,23 @@ export default function AdminBlogPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-3">
-          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="rounded-lg border border-gray-200 px-4 py-2 text-sm disabled:opacity-30 dark:border-slate-700">Prev</button>
-          <span className="text-sm text-gray-500">{page} / {totalPages}</span>
-          <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="rounded-lg border border-gray-200 px-4 py-2 text-sm disabled:opacity-30 dark:border-slate-700">Next</button>
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="rounded-lg border border-gray-200 px-4 py-2 text-sm disabled:opacity-30 dark:border-slate-700"
+          >
+            Prev
+          </button>
+          <span className="text-sm text-gray-500">
+            {page} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="rounded-lg border border-gray-200 px-4 py-2 text-sm disabled:opacity-30 dark:border-slate-700"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

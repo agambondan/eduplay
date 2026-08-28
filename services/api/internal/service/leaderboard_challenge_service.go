@@ -20,18 +20,18 @@ type ScoreChallengeService interface {
 }
 
 type ScoreChallengeResponse struct {
-	ID               string `json:"id"`
-	ChallengerName   string `json:"challenger_name"`
-	OpponentName     string `json:"opponent_name,omitempty"`
-	GameName         string `json:"game_name"`
-	GameSlug         string `json:"game_slug"`
-	Difficulty       string `json:"difficulty"`
-	ChallengerScore  int    `json:"challenger_score"`
-	OpponentScore    *int   `json:"opponent_score"`
-	ShareLink        string `json:"share_link"`
-	Status           string `json:"status"`
-	ExpiresAt        string `json:"expires_at"`
-	CreatedAt        string `json:"created_at"`
+	ID              string `json:"id"`
+	ChallengerName  string `json:"challenger_name"`
+	OpponentName    string `json:"opponent_name,omitempty"`
+	GameName        string `json:"game_name"`
+	GameSlug        string `json:"game_slug"`
+	Difficulty      string `json:"difficulty"`
+	ChallengerScore int    `json:"challenger_score"`
+	OpponentScore   *int   `json:"opponent_score"`
+	ShareLink       string `json:"share_link"`
+	Status          string `json:"status"`
+	ExpiresAt       string `json:"expires_at"`
+	CreatedAt       string `json:"created_at"`
 }
 
 type ScoreChallengeDetail struct {
@@ -41,10 +41,10 @@ type ScoreChallengeDetail struct {
 }
 
 type ScoreChallengeResult struct {
-	Result   string `json:"result"`
-	XPEarned int    `json:"xp_earned"`
-	UserScore int   `json:"user_score"`
-	TargetScore int `json:"target_score"`
+	Result      string `json:"result"`
+	XPEarned    int    `json:"xp_earned"`
+	UserScore   int    `json:"user_score"`
+	TargetScore int    `json:"target_score"`
 }
 
 type scoreChallengeService struct{}
@@ -86,7 +86,7 @@ func (s *scoreChallengeService) Create(userID, gameSlug, difficulty string, scor
 	return &ScoreChallengeResponse{
 		ID:              challenge.ID.String(),
 		ChallengerName:  u.Username,
-		GameName:         game.Name,
+		GameName:        game.Name,
 		GameSlug:        gameSlug,
 		Difficulty:      difficulty,
 		ChallengerScore: score,
@@ -118,7 +118,7 @@ func (s *scoreChallengeService) GetByShareLink(link string) (*ScoreChallengeDeta
 			ID:              c.ID.String(),
 			ChallengerName:  challenger.Username,
 			GameName:        game.Name,
-			GameSlug:         game.Slug,
+			GameSlug:        game.Slug,
 			Difficulty:      c.Difficulty,
 			ChallengerScore: c.ChallengerScore,
 			OpponentScore:   c.OpponentScore,

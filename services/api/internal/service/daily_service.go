@@ -57,7 +57,8 @@ type dailyService struct {
 func NewDailyService(gameRepo repository.GameRepository, achSvc interface {
 	CheckAndUnlock(userID string, slug string) (bool, error)
 	CheckDailyCount(userID string) error
-}) DailyService {
+},
+) DailyService {
 	return &dailyService{gameRepo: gameRepo, achSvc: achSvc}
 }
 

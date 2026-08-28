@@ -32,24 +32,24 @@ type CreateChessInput struct {
 }
 
 type ChessMatchResponse struct {
-	ID            string          `json:"id"`
-	Player1ID     string          `json:"player1_id"`
-	Player2ID     string          `json:"player2_id,omitempty"`
-	IsVsBot       bool            `json:"is_vs_bot"`
-	BotDifficulty string          `json:"bot_difficulty,omitempty"`
-	BotName       string          `json:"bot_name,omitempty"`
-	Status        string          `json:"status"`
-	PlayerColor   string          `json:"player_color"`
-	CurrentTurn   string          `json:"current_turn"`
-	FEN           string          `json:"fen"`
-	Moves         []string        `json:"moves"`
-	Player1Score  int             `json:"player1_score"`
-	Player2Score  int             `json:"player2_score"`
-	WinnerID      string          `json:"winner_id,omitempty"`
-	WinReason     string          `json:"win_reason,omitempty"`
-	TurnExpiresAt *time.Time      `json:"turn_expires_at,omitempty"`
-	FinishedAt    *time.Time      `json:"finished_at,omitempty"`
-	CreatedAt     time.Time       `json:"created_at"`
+	ID            string     `json:"id"`
+	Player1ID     string     `json:"player1_id"`
+	Player2ID     string     `json:"player2_id,omitempty"`
+	IsVsBot       bool       `json:"is_vs_bot"`
+	BotDifficulty string     `json:"bot_difficulty,omitempty"`
+	BotName       string     `json:"bot_name,omitempty"`
+	Status        string     `json:"status"`
+	PlayerColor   string     `json:"player_color"`
+	CurrentTurn   string     `json:"current_turn"`
+	FEN           string     `json:"fen"`
+	Moves         []string   `json:"moves"`
+	Player1Score  int        `json:"player1_score"`
+	Player2Score  int        `json:"player2_score"`
+	WinnerID      string     `json:"winner_id,omitempty"`
+	WinReason     string     `json:"win_reason,omitempty"`
+	TurnExpiresAt *time.Time `json:"turn_expires_at,omitempty"`
+	FinishedAt    *time.Time `json:"finished_at,omitempty"`
+	CreatedAt     time.Time  `json:"created_at"`
 }
 
 const startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"

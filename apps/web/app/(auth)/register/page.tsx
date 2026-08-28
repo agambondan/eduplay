@@ -1,7 +1,7 @@
 'use client';
 
-import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -119,13 +119,15 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-md text-center">
-          <p className="text-gray-500">Memuat...</p>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-8 text-center shadow-md">
+            <p className="text-gray-500">Memuat...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <RegisterForm />
     </Suspense>
   );

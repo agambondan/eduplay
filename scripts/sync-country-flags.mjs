@@ -1,35 +1,32 @@
 #!/usr/bin/env node
 
-import { mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, "..");
+const repoRoot = path.resolve(__dirname, '..');
 const apiURL =
-  "https://restcountries.com/v3.1/all?fields=name,cca2,capital,region,subregion,independent,unMember,translations";
-const flagSourceDir = path.join(
+  'https://restcountries.com/v3.1/all?fields=name,cca2,capital,region,subregion,independent,unMember,translations';
+const flagSourceDir = path.join(repoRoot, 'apps/web/node_modules/country-flag-icons/3x2');
+const detailedFlagSourceDir = path.join(repoRoot, 'apps/web/node_modules/flag-icons/flags/4x3');
+const flagPackagePath = path.join(
   repoRoot,
-  "apps/web/node_modules/country-flag-icons/3x2",
+  'apps/web/node_modules/country-flag-icons/package.json'
 );
-const detailedFlagSourceDir = path.join(
-  repoRoot,
-  "apps/web/node_modules/flag-icons/flags/4x3",
-);
-const flagPackagePath = path.join(repoRoot, "apps/web/node_modules/country-flag-icons/package.json");
-const flagTargetDir = path.join(repoRoot, "apps/web/public/flags");
+const flagTargetDir = path.join(repoRoot, 'apps/web/public/flags');
 const generatedSeederPath = path.join(
   repoRoot,
-  "services/api/internal/seeder/countries_generated.go",
+  'services/api/internal/seeder/countries_generated.go'
 );
 
-const includedNonUNCodes = new Set(["GW", "PS", "VA"]);
-const excludedCodes = new Set(["XK"]);
-const detailedFlagOverrides = new Set(["FJ"]);
+const includedNonUNCodes = new Set(['GW', 'PS', 'VA']);
+const excludedCodes = new Set(['XK']);
+const detailedFlagOverrides = new Set(['FJ']);
 
 const regionOverrides = {
-  CY: "asia",
+  CY: 'asia',
 };
 
 function toGameRegion(country) {
@@ -37,43 +34,38 @@ function toGameRegion(country) {
     return regionOverrides[country.cca2];
   }
   switch (country.region) {
-    case "Africa":
-      return "africa";
-    case "Americas":
-      return "americas";
-    case "Asia":
-      return "asia";
-    case "Europe":
-      return "europe";
-    case "Oceania":
-      return "oceania";
+    case 'Africa':
+      return 'africa';
+    case 'Americas':
+      return 'americas';
+    case 'Asia':
+      return 'asia';
+    case 'Europe':
+      return 'europe';
+    case 'Oceania':
+      return 'oceania';
     default:
-      return "world";
+      return 'world';
   }
 }
 
 function countryEmoji(cca2) {
   return cca2
     .toUpperCase()
-    .split("")
+    .split('')
     .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
-    .join("");
+    .join('');
 }
 
 function goString(value) {
-  return JSON.stringify(value ?? "");
+  return JSON.stringify(value ?? '');
 }
 
 function withIntrinsicSize(svg, width, height) {
-  return svg.replace(
-    /<svg\b([^>]*)>/,
-    (_match, attrs) => {
-      const cleanedAttrs = attrs
-        .replace(/\swidth="[^"]*"/, "")
-        .replace(/\sheight="[^"]*"/, "");
-      return `<svg width="${width}" height="${height}"${cleanedAttrs}>`;
-    },
-  );
+  return svg.replace(/<svg\b([^>]*)>/, (_match, attrs) => {
+    const cleanedAttrs = attrs.replace(/\swidth="[^"]*"/, '').replace(/\sheight="[^"]*"/, '');
+    return `<svg width="${width}" height="${height}"${cleanedAttrs}>`;
+  });
 }
 
 function countryName(country) {
@@ -83,12 +75,12 @@ function countryName(country) {
 async function main() {
   if (!existsSync(flagSourceDir)) {
     throw new Error(
-      `country-flag-icons assets not found at ${flagSourceDir}. Run npm install in apps/web first.`,
+      `country-flag-icons assets not found at ${flagSourceDir}. Run npm install in apps/web first.`
     );
   }
   if (!existsSync(detailedFlagSourceDir)) {
     throw new Error(
-      `flag-icons detail assets not found at ${detailedFlagSourceDir}. Run npm install in apps/web first.`,
+      `flag-icons detail assets not found at ${detailedFlagSourceDir}. Run npm install in apps/web first.`
     );
   }
 
@@ -102,20 +94,20 @@ async function main() {
       (country) =>
         country.cca2 &&
         !excludedCodes.has(country.cca2) &&
-        (country.unMember || includedNonUNCodes.has(country.cca2)),
+        (country.unMember || includedNonUNCodes.has(country.cca2))
     )
     .map((country) => ({
       name: countryName(country),
-      capital: country.capital?.[0] || "",
+      capital: country.capital?.[0] || '',
       flagCode: country.cca2.toUpperCase(),
       flagEmoji: countryEmoji(country.cca2),
       region: toGameRegion(country),
     }))
-    .sort((a, b) => a.name.localeCompare(b.name, "id"));
+    .sort((a, b) => a.name.localeCompare(b.name, 'id'));
 
   await mkdir(flagTargetDir, { recursive: true });
   for (const entry of await readdir(flagTargetDir)) {
-    if (entry.endsWith(".svg")) {
+    if (entry.endsWith('.svg')) {
       await unlink(path.join(flagTargetDir, entry));
     }
   }
@@ -130,53 +122,53 @@ async function main() {
       missingFlags.push(code);
       continue;
     }
-    const svg = await readFile(source, "utf8");
+    const svg = await readFile(source, 'utf8');
     const normalized = detailedFlagOverrides.has(country.flagCode)
       ? withIntrinsicSize(svg, 640, 480)
       : withIntrinsicSize(svg, 513, 342);
-    await writeFile(path.join(flagTargetDir, `${code}.svg`), normalized, "utf8");
+    await writeFile(path.join(flagTargetDir, `${code}.svg`), normalized, 'utf8');
   }
 
   if (missingFlags.length > 0) {
-    throw new Error(`Missing flag SVGs for: ${missingFlags.join(", ")}`);
+    throw new Error(`Missing flag SVGs for: ${missingFlags.join(', ')}`);
   }
 
-  const flagPackage = JSON.parse(await readFile(flagPackagePath, "utf8"));
+  const flagPackage = JSON.parse(await readFile(flagPackagePath, 'utf8'));
   await writeFile(
-    path.join(flagTargetDir, "LICENSE.country-flag-icons.txt"),
+    path.join(flagTargetDir, 'LICENSE.country-flag-icons.txt'),
     [
       `${flagPackage.name} ${flagPackage.version}`,
       `License: ${flagPackage.license}`,
-      `Repository: ${flagPackage.repository?.url || ""}`,
-      "Detail overrides: flag-icons 4x3 MIT assets for selected emblem-heavy flags.",
-      "",
-      "Generated flag assets for EduPlay Phase 7.",
-      "Regenerate with: node scripts/sync-country-flags.mjs",
-      "",
-    ].join("\n"),
-    "utf8",
+      `Repository: ${flagPackage.repository?.url || ''}`,
+      'Detail overrides: flag-icons 4x3 MIT assets for selected emblem-heavy flags.',
+      '',
+      'Generated flag assets for EduPlay Phase 7.',
+      'Regenerate with: node scripts/sync-country-flags.mjs',
+      '',
+    ].join('\n'),
+    'utf8'
   );
 
   const lines = [
-    "package seeder",
-    "",
+    'package seeder',
+    '',
     'import "github.com/agambondan/eduplay/services/api/internal/model"',
-    "",
-    "// generatedCountries returns the Phase 7 flag quiz country dataset.",
-    "// Source metadata: REST Countries v3.1 all endpoint.",
-    "// Source SVG flags: country-flag-icons 3x2 assets with selected flag-icons detail overrides.",
-    "// Regenerate with: node scripts/sync-country-flags.mjs",
-    "func generatedCountries() []model.Country {",
-    "\treturn []model.Country{",
+    '',
+    '// generatedCountries returns the Phase 7 flag quiz country dataset.',
+    '// Source metadata: REST Countries v3.1 all endpoint.',
+    '// Source SVG flags: country-flag-icons 3x2 assets with selected flag-icons detail overrides.',
+    '// Regenerate with: node scripts/sync-country-flags.mjs',
+    'func generatedCountries() []model.Country {',
+    '\treturn []model.Country{',
     ...countries.map(
       (country) =>
-        `\t\t{Name: ${goString(country.name)}, Capital: ${goString(country.capital)}, FlagEmoji: ${goString(country.flagEmoji)}, FlagCode: ${goString(country.flagCode)}, Region: ${goString(country.region)}},`,
+        `\t\t{Name: ${goString(country.name)}, Capital: ${goString(country.capital)}, FlagEmoji: ${goString(country.flagEmoji)}, FlagCode: ${goString(country.flagCode)}, Region: ${goString(country.region)}},`
     ),
-    "\t}",
-    "}",
-    "",
+    '\t}',
+    '}',
+    '',
   ];
-  await writeFile(generatedSeederPath, lines.join("\n"), "utf8");
+  await writeFile(generatedSeederPath, lines.join('\n'), 'utf8');
 
   const byRegion = countries.reduce((acc, country) => {
     acc[country.region] = (acc[country.region] || 0) + 1;
@@ -193,8 +185,8 @@ async function main() {
         flagTargetDir: path.relative(repoRoot, flagTargetDir),
       },
       null,
-      2,
-    ),
+      2
+    )
   );
 }
 

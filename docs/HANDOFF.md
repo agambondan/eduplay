@@ -9,16 +9,16 @@
 
 ## 1. Project Overview
 
-| Metric | Value |
-|--------|-------|
-| Backend (Go) | 107 files |
-| Frontend (TSX) | 161 components |
-| TypeScript | 128 modules |
-| Frontend Routes | ~60 (static + dynamic) |
-| Games | 28 total (solo + multiplayer) |
-| Backend Tests | All passing (`go test ./...`) |
-| Frontend Tests | 24 passing (`npm test`) |
-| Lint | `go vet ./...` ✅ clean |
+| Metric          | Value                         |
+| --------------- | ----------------------------- |
+| Backend (Go)    | 107 files                     |
+| Frontend (TSX)  | 161 components                |
+| TypeScript      | 128 modules                   |
+| Frontend Routes | ~60 (static + dynamic)        |
+| Games           | 28 total (solo + multiplayer) |
+| Backend Tests   | All passing (`go test ./...`) |
+| Frontend Tests  | 24 passing (`npm test`)       |
+| Lint            | `go vet ./...` ✅ clean       |
 
 ---
 
@@ -26,74 +26,74 @@
 
 ### 2.1 PRD Main (Phases 1-5) — ✅ Complete
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| **Phase 1** | Foundation (Fiber, GORM, Auth, Layout, DB migrations) | ✅ |
-| **Phase 2** | Core Games (Math Quiz, 2048, Wordle, Sudoku) + Leaderboard + XP | ✅ |
-| **Phase 3** | All 8 launch games + Achievement + Streak + Daily Challenge | ✅ |
-| **Phase 4** | AdSense, PWA, Push Notifications, Dark Mode, Onboarding, Animations | ✅ |
-| **Phase 5** | Legal pages, Cookie Consent, E2E tests, CI/CD, Deploy scripts | ✅ |
+| Phase       | Description                                                         | Status |
+| ----------- | ------------------------------------------------------------------- | ------ |
+| **Phase 1** | Foundation (Fiber, GORM, Auth, Layout, DB migrations)               | ✅     |
+| **Phase 2** | Core Games (Math Quiz, 2048, Wordle, Sudoku) + Leaderboard + XP     | ✅     |
+| **Phase 3** | All 8 launch games + Achievement + Streak + Daily Challenge         | ✅     |
+| **Phase 4** | AdSense, PWA, Push Notifications, Dark Mode, Onboarding, Animations | ✅     |
+| **Phase 5** | Legal pages, Cookie Consent, E2E tests, CI/CD, Deploy scripts       | ✅     |
 
 ### 2.2 v2.0 Backlog — ✅ Complete
 
-| Feature | Priority | Status |
-|---------|----------|--------|
-| Privacy Policy, Terms, About | P0 | ✅ |
-| Cookie Consent Banner | P0 | ✅ |
-| Dark Mode + Animations | P1 | ✅ |
-| Onboarding Flow | P1 | ✅ |
-| Score Sharing (WhatsApp/IG) | P1 | ✅ |
-| Guest Mode | P1 | ✅ |
-| Near-Rank Leaderboard | P2 | ✅ |
-| Referral System | P2 | ✅ |
-| Number Match game | P2 | ✅ |
-| Fraction Visualizer game | P2 | ✅ |
-| Onet Advance game + Admin config | P2 | ✅ |
-| Blog Section (listing, posts, admin, sitemap) | P3 | ✅ |
-| Weekly Email Summary (scheduler, template, opt-in) | P3 | ✅ |
+| Feature                                            | Priority | Status |
+| -------------------------------------------------- | -------- | ------ |
+| Privacy Policy, Terms, About                       | P0       | ✅     |
+| Cookie Consent Banner                              | P0       | ✅     |
+| Dark Mode + Animations                             | P1       | ✅     |
+| Onboarding Flow                                    | P1       | ✅     |
+| Score Sharing (WhatsApp/IG)                        | P1       | ✅     |
+| Guest Mode                                         | P1       | ✅     |
+| Near-Rank Leaderboard                              | P2       | ✅     |
+| Referral System                                    | P2       | ✅     |
+| Number Match game                                  | P2       | ✅     |
+| Fraction Visualizer game                           | P2       | ✅     |
+| Onet Advance game + Admin config                   | P2       | ✅     |
+| Blog Section (listing, posts, admin, sitemap)      | P3       | ✅     |
+| Weekly Email Summary (scheduler, template, opt-in) | P3       | ✅     |
 
 ### 2.3 Multiplayer Addendum — ✅ Fully Complete
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| WebSocket infrastructure | ✅ | Hub, Room, Matchmaking, Bot |
-| Math Battle (real-time 1v1) | ✅ | Full WS + scoring |
-| Quiz Showdown (room 2-4p) | ✅ | WS + categories (math/geo/lang/mix) |
-| Wordle Duel (real-time 1v1) | ✅ | WS + result screen |
-| Battleship Math (turn-based) | ✅ | Full REST service + bot |
-| Math Tournament (bracket) | ✅ | Single-elimination + bot fill |
-| Flag Team Battle (team) | ✅ | WS-based team mode |
-| Word Chain (async vs bot) | ✅ | Claude AI + dictionary fallback |
-| Async Challenges (trivia) | ✅ | Challenge system |
-| Score/Leaderboard Challenge | ✅ | Share link + score comparison |
-| Room system (private rooms) | ✅ | Code-based join/leave/start |
-| Ghost replay bot | ✅ | Playback goroutine + matchmaking integration |
-| **Sudoku Race (real-time 1v1)** | ✅ Complete | Bot auto-fill + result screen |
-| **Word Chain vs real player** | ✅ Complete | Username challenge + polling |
-| **Chess** | ✅ Complete | chess.js + minimax AI + REST API + WS real-time |
-| **Collaborative Crossword Duel** | ✅ Complete | Competitive 1v1 TTS |
-| **Collaborative Crossword Co-op** | ✅ Complete | 2-4 player co-op with MVP |
-| **Math Relay** | ✅ Complete | Co-op team estafet |
-| Multiplayer Leaderboard | ✅ Complete | Win rate, stats, frontend page |
-| Subscription/Premium | ✅ Complete | Midtrans integration + frontend UI |
+| Feature                           | Status      | Notes                                           |
+| --------------------------------- | ----------- | ----------------------------------------------- |
+| WebSocket infrastructure          | ✅          | Hub, Room, Matchmaking, Bot                     |
+| Math Battle (real-time 1v1)       | ✅          | Full WS + scoring                               |
+| Quiz Showdown (room 2-4p)         | ✅          | WS + categories (math/geo/lang/mix)             |
+| Wordle Duel (real-time 1v1)       | ✅          | WS + result screen                              |
+| Battleship Math (turn-based)      | ✅          | Full REST service + bot                         |
+| Math Tournament (bracket)         | ✅          | Single-elimination + bot fill                   |
+| Flag Team Battle (team)           | ✅          | WS-based team mode                              |
+| Word Chain (async vs bot)         | ✅          | Claude AI + dictionary fallback                 |
+| Async Challenges (trivia)         | ✅          | Challenge system                                |
+| Score/Leaderboard Challenge       | ✅          | Share link + score comparison                   |
+| Room system (private rooms)       | ✅          | Code-based join/leave/start                     |
+| Ghost replay bot                  | ✅          | Playback goroutine + matchmaking integration    |
+| **Sudoku Race (real-time 1v1)**   | ✅ Complete | Bot auto-fill + result screen                   |
+| **Word Chain vs real player**     | ✅ Complete | Username challenge + polling                    |
+| **Chess**                         | ✅ Complete | chess.js + minimax AI + REST API + WS real-time |
+| **Collaborative Crossword Duel**  | ✅ Complete | Competitive 1v1 TTS                             |
+| **Collaborative Crossword Co-op** | ✅ Complete | 2-4 player co-op with MVP                       |
+| **Math Relay**                    | ✅ Complete | Co-op team estafet                              |
+| Multiplayer Leaderboard           | ✅ Complete | Win rate, stats, frontend page                  |
+| Subscription/Premium              | ✅ Complete | Midtrans integration + frontend UI              |
 
 ### 2.4 Bugfixes & Polish
 
-| Fix | Detail |
-|-----|--------|
-| `useSearchParams` Suspense | 6 pages wrapped in `<Suspense>` |
-| Middleware deprecation | `middleware.ts` → `proxy.ts` (Next.js 16) |
-| Cookie consent blocking | GA4 + AdSense scripts only load after "accept" |
-| Leaderboard rank bug | `GetUserRank` returns 1-based, service was adding +1 again |
-| Quiz Showdown answer bug | `CorrectAnswer` was math value ("42") instead of option index ("0") |
-| Quiz Showdown categories | Now supports geography (195 countries) + language (KBBI words) + mix |
-| Wordle Duel result | Placeholder spinner → full win/lose/XP screen |
-| Game Hub / Daily / Leaderboard error states | Error + retry buttons on API failure |
-| Mobile nav | Added Support, Blog, Admin links |
-| Dashboard greetings | Hardcoded → i18n (4 languages) |
-| Settings language switcher | Placeholder → functional toggle |
-| Profile/Admin loading | Brittle `count++` → `Promise.allSettled` |
-| Backend tests | 3 → 11 (added daily + leaderboard + test isolation fixes) |
+| Fix                                         | Detail                                                               |
+| ------------------------------------------- | -------------------------------------------------------------------- |
+| `useSearchParams` Suspense                  | 6 pages wrapped in `<Suspense>`                                      |
+| Middleware deprecation                      | `middleware.ts` → `proxy.ts` (Next.js 16)                            |
+| Cookie consent blocking                     | GA4 + AdSense scripts only load after "accept"                       |
+| Leaderboard rank bug                        | `GetUserRank` returns 1-based, service was adding +1 again           |
+| Quiz Showdown answer bug                    | `CorrectAnswer` was math value ("42") instead of option index ("0")  |
+| Quiz Showdown categories                    | Now supports geography (195 countries) + language (KBBI words) + mix |
+| Wordle Duel result                          | Placeholder spinner → full win/lose/XP screen                        |
+| Game Hub / Daily / Leaderboard error states | Error + retry buttons on API failure                                 |
+| Mobile nav                                  | Added Support, Blog, Admin links                                     |
+| Dashboard greetings                         | Hardcoded → i18n (4 languages)                                       |
+| Settings language switcher                  | Placeholder → functional toggle                                      |
+| Profile/Admin loading                       | Brittle `count++` → `Promise.allSettled`                             |
+| Backend tests                               | 3 → 11 (added daily + leaderboard + test isolation fixes)            |
 
 ---
 
@@ -160,18 +160,18 @@ games/
 
 ### 3.2 Key Tech Choices
 
-| Layer | Technology | Notes |
-|-------|-----------|-------|
-| Frontend | Next.js 16.2.6, React 19, TypeScript 5 | App Router, webpack |
-| Styling | Tailwind CSS 3, shadcn/ui | Dark mode via `class` strategy |
-| State | Zustand (client), TanStack Query 5 (server) | Auth persist in localStorage |
-| Backend | Go 1.26, Fiber v2, GORM v2 | Manual DI in main.go |
-| Database | PostgreSQL (Neon) + Redis (Upstash) | AutoMigrate, no migration CLI |
-| WebSocket | Custom Hub/Room pattern | Single-server in-memory |
-| Auth | JWT (golang-jwt v5) + bcrypt | Access 15m, Refresh 7d |
-| Payments | Midtrans (Indonesia) | Subscription/premium |
-| Email | Resend API | Transactional + weekly summary |
-| CI/CD | GitHub Actions | Docker → GHCR → SSH deploy |
+| Layer     | Technology                                  | Notes                          |
+| --------- | ------------------------------------------- | ------------------------------ |
+| Frontend  | Next.js 16.2.6, React 19, TypeScript 5      | App Router, webpack            |
+| Styling   | Tailwind CSS 3, shadcn/ui                   | Dark mode via `class` strategy |
+| State     | Zustand (client), TanStack Query 5 (server) | Auth persist in localStorage   |
+| Backend   | Go 1.26, Fiber v2, GORM v2                  | Manual DI in main.go           |
+| Database  | PostgreSQL (Neon) + Redis (Upstash)         | AutoMigrate, no migration CLI  |
+| WebSocket | Custom Hub/Room pattern                     | Single-server in-memory        |
+| Auth      | JWT (golang-jwt v5) + bcrypt                | Access 15m, Refresh 7d         |
+| Payments  | Midtrans (Indonesia)                        | Subscription/premium           |
+| Email     | Resend API                                  | Transactional + weekly summary |
+| CI/CD     | GitHub Actions                              | Docker → GHCR → SSH deploy     |
 
 ### 3.3 Game Implementation Pattern
 
@@ -183,24 +183,22 @@ Each game follows this structure:
 4. **Sitemap** — Add slug to `app/sitemap.ts`
 5. **Scoring** — Generic `POST /api/v1/games/:slug/score` endpoint
 
-For multiplayer games, additionally:
-6. **Game Type** — Register in `RoomPrefixForGame()` in `ws/matchmaking.go`
-7. **WS Handler** — Add game logic in `ws/hub.go` or `ws/games.go`
-8. **Questions** — Generate in `ws/room.go:generateQuestions()`
+For multiplayer games, additionally: 6. **Game Type** — Register in `RoomPrefixForGame()` in `ws/matchmaking.go` 7. **WS Handler** — Add game logic in `ws/hub.go` or `ws/games.go` 8. **Questions** — Generate in `ws/room.go:generateQuestions()`
 
 ---
 
 ## 4. Session History
 
-| Session | Tasks Completed |
-|---------|----------------|
-| **Session 1** (2026-05-21) | Sudoku Race, Chess (REST + minimax), Ghost Replay Bot |
-| **Session 2** (2026-05-21) | Chess WS real-time, Collaborative Crossword Duel |
+| Session                    | Tasks Completed                                                                                           |
+| -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Session 1** (2026-05-21) | Sudoku Race, Chess (REST + minimax), Ghost Replay Bot                                                     |
+| **Session 2** (2026-05-21) | Chess WS real-time, Collaborative Crossword Duel                                                          |
 | **Session 3** (2026-05-22) | Math Relay, Crossword Co-op, Word Chain vs Real Player (already done), MP Leaderboard UI, Subscription UI |
 
 **Final State:** All HANDOFF tasks + PRD features complete. Build passes, tests pass, 34 games.
 
 ### Still Pending (Future)
+
 - Native iOS/Android app (Out of Scope per PRD)
 - Teacher/classroom dashboard (Out of Scope per PRD)
 - Offline-first full experience (partial via PWA)
@@ -214,7 +212,7 @@ Copy the following to the next AI agent:
 
 ```
 You are continuing development of EduPlay, an educational mini-game platform.
-Monorepo at /home/firman/works/me/games with Go backend (services/api/) and 
+Monorepo at /home/firman/works/me/games with Go backend (services/api/) and
 Next.js 16 frontend (apps/web/).
 
 ## CURRENT STATE

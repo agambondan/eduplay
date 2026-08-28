@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useGameStore } from '@/lib/stores/gameStore';
+import { cn } from '@/lib/utils/cn';
+import { BannerAd } from '@/components/ads/BannerAd';
 import Footer from '@/components/layout/Footer';
 import MobileNav from '@/components/layout/MobileNav';
 import Navbar from '@/components/layout/Navbar';
-import { BannerAd } from '@/components/ads/BannerAd';
 import { GameLevelUpHandler } from '@/components/ui/GameLevelUpHandler';
 import { PauseOverlay } from '@/components/ui/PauseOverlay';
-import { useGameStore } from '@/lib/stores/gameStore';
-import { cn } from '@/lib/utils/cn';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,7 +25,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <div
       className={cn(
         'flex min-h-screen flex-col bg-gray-50 dark:bg-slate-900',
-        !isPlaying && 'pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0',
+        !isPlaying && 'pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0'
       )}
     >
       {!isPlaying && <Navbar />}
@@ -33,7 +33,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         id="main-content"
         className={cn(
           'mx-auto w-full flex-grow',
-          isPlaying ? 'max-w-full p-0' : 'max-w-7xl p-4 sm:p-6 lg:p-8',
+          isPlaying ? 'max-w-full p-0' : 'max-w-7xl p-4 sm:p-6 lg:p-8'
         )}
       >
         <AnimatePresence mode="wait">

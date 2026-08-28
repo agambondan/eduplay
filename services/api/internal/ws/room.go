@@ -974,7 +974,6 @@ func (r *GameRoom) runSuddenDeath() {
 	r.State = "finished"
 	r.FinishedAt = nowPtr()
 	r.mu.Unlock()
-
 }
 
 func (r *GameRoom) runBotSuddenDeathQuestion(q QuestionPayload) {

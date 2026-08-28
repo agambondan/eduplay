@@ -75,7 +75,7 @@ func (s *userService) UploadAvatar(userID string, file multipart.File, header *m
 	filename := userID + ext
 	savePath := filepath.Join(s.cfg.AvatarUploadPath, filename)
 
-	if err := os.MkdirAll(s.cfg.AvatarUploadPath, 0755); err != nil {
+	if err := os.MkdirAll(s.cfg.AvatarUploadPath, 0o755); err != nil {
 		return "", err
 	}
 

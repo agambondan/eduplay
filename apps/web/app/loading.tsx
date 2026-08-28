@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react';
 
 export default function Loading() {
   return (
@@ -8,5 +8,5 @@ export default function Loading() {
         <p className="text-sm font-medium text-gray-500 dark:text-slate-400">Memuat...</p>
       </div>
     </div>
-  )
+  );
 }

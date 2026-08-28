@@ -50,16 +50,20 @@
 **Setiap akhir session, update `CHANGELOG.md`** dengan menambahkan entry baru di paling atas.
 
 Format:
+
 ```markdown
 ## [YYYY-MM-DD] — {Judul Session}
 
 ### Added
+
 - {Fitur baru yang ditambahkan}
 
 ### Fixed
+
 - {Bug yang diperbaiki}
 
 ### Changed
+
 - {Perubahan yang tidak termasuk Added/Fixed}
 ```
 
@@ -76,6 +80,7 @@ Gunakan commit history sebagai referensi. Beberapa commit bisa digabung jadi 1 e
 (or its addenda), update the relevant PRD section immediately as part of the same task.**
 
 Examples of changes that require PRD sync:
+
 - Adding, removing, or renaming a feature or game
 - Changing a priority level (P0/P1/P2)
 - Changing a tech stack version or library
@@ -85,6 +90,7 @@ Examples of changes that require PRD sync:
 - Adding endpoints not listed in the API specification
 
 The PRD files are:
+
 - `PRD_EduPlay_v2.md` — master specification (always update this first)
 - `PRD_Addendum_Multiplayer_Bot.md` — multiplayer + bot system
 - `PRD_Addendum_Multiplayer_Games.md` — additional multiplayer games

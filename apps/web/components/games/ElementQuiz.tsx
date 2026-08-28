@@ -62,11 +62,15 @@ function generateQuestion(ELEMENTS: { symbol: string; name: string }[]): Element
   };
 }
 
-function convertAIQuestion(q: AIQuestion): { symbol: string; name: string; options: string[] } | null {
+function convertAIQuestion(
+  q: AIQuestion
+): { symbol: string; name: string; options: string[] } | null {
   const options = q.options?.map(String);
   if (!options || options.length < 4) return null;
   return {
-    symbol: String(q.question).includes(' simbol ') ? q.question.split('simbol ')[1]?.trim() || '?': '?',
+    symbol: String(q.question).includes(' simbol ')
+      ? q.question.split('simbol ')[1]?.trim() || '?'
+      : '?',
     name: String(q.answer),
     options,
   };

@@ -450,8 +450,8 @@ func seedData() {
 func seedBlogPosts() {
 	posts := []model.BlogPost{
 		{
-			Title: "Cara Belajar Matematika Jadi Seru dengan Game Edukasi",
-			Slug:  "belajar-matematika-seru-dengan-game-edukasi",
+			Title:   "Cara Belajar Matematika Jadi Seru dengan Game Edukasi",
+			Slug:    "belajar-matematika-seru-dengan-game-edukasi",
 			Excerpt: "Matematika sering dianggap sulit dan membosankan. Tapi dengan pendekatan gamifikasi, belajar jadi menyenangkan!",
 			Content: `<h2>Belajar Matematika Tidak Harus Membosankan</h2>
 <p>Matematika adalah salah satu mata pelajaran yang paling ditakuti oleh pelajar di Indonesia. Menurut survei, lebih dari 60% pelajar SMP mengaku kesulitan dengan matematika. Tapi tahukah kamu? Matematika sebenarnya bisa sangat seru jika dikemas dengan cara yang tepat.</p>
@@ -471,8 +471,8 @@ func seedBlogPosts() {
 			IsPublished: true,
 		},
 		{
-			Title: "7 Manfaat Bermain Puzzle untuk Kecerdasan Otak",
-			Slug:  "manfaat-bermain-puzzle-untuk-kecerdasan-otak",
+			Title:   "7 Manfaat Bermain Puzzle untuk Kecerdasan Otak",
+			Slug:    "manfaat-bermain-puzzle-untuk-kecerdasan-otak",
 			Excerpt: "Bermain puzzle bukan sekadar hiburan. Ini dia 7 manfaat ilmiah bermain puzzle untuk otak kamu.",
 			Content: `<h2>Puzzle: Hiburan yang Mencerdaskan</h2>
 <p>Puzzle seperti Sudoku, Nonogram, dan 2048 bukan hanya game yang menyenangkan — mereka juga punya dampak positif pada fungsi kognitif otak.</p>
@@ -491,8 +491,8 @@ func seedBlogPosts() {
 			IsPublished: true,
 		},
 		{
-			Title: "Mengenal Wordle Bahasa Indonesia — Game Tebak Kata Populer",
-			Slug:  "mengenal-wordle-bahasa-indonesia",
+			Title:   "Mengenal Wordle Bahasa Indonesia — Game Tebak Kata Populer",
+			Slug:    "mengenal-wordle-bahasa-indonesia",
 			Excerpt: "Wordle versi Bahasa Indonesia? Ada! Tebak kata 5 huruf dalam 6 percobaan. Simak cara main dan tipsnya.",
 			Content: `<h2>Apa Itu Wordle?</h2>
 <p>Wordle adalah game tebak kata yang fenomenal di seluruh dunia. Pemain harus menebak kata 5 huruf dalam 6 percobaan. Setiap tebakan memberikan kode warna: hijau untuk huruf yang tepat di posisi tepat, kuning untuk huruf yang ada tapi posisi salah, dan abu-abu untuk huruf yang tidak ada sama sekali.</p>

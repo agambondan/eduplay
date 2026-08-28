@@ -21,12 +21,114 @@ export const DIFFICULTY: Record<string, OnetConfig> = {
 };
 
 export const ICON_THEMES: Record<string, string[]> = {
-  fruit: ['🍎', '🍊', '🍋', '🍇', '🍉', '🍓', '🍒', '🥝', '🍌', '🍑', '🥭', '🍍', '🫐', '🥥', '🥑', '🌽'],
-  sweet: ['🧁', '🍩', '🍪', '🎂', '🍫', '🍭', '🍬', '🍿', '🍰', '🥧', '🍮', '🍨', '🍦', '🍡', '🍯', '🥨'],
-  animal: ['🐶', '🐱', '🐼', '🐸', '🦊', '🐰', '🐨', '🐯', '🦁', '🐮', '🐷', '🐵', '🐔', '🐧', '🦄', '🐲'],
-  sport: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏓', '🏸', '🏒', '🥊', '🎱', '🚴', '🏋️', '🤺', '🏹', '⛸️'],
-  space: ['🌞', '🌙', '⭐', '🌍', '🌛', '☀️', '🌈', '🌪️', '🔥', '💧', '❄️', '⚡', '🌊', '🌋', '🪐', '🌟'],
-  shape: ['🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟤', '🔶', '🔷', '🟥', '🟧', '🟨', '🟩', '🟦'],
+  fruit: [
+    '🍎',
+    '🍊',
+    '🍋',
+    '🍇',
+    '🍉',
+    '🍓',
+    '🍒',
+    '🥝',
+    '🍌',
+    '🍑',
+    '🥭',
+    '🍍',
+    '🫐',
+    '🥥',
+    '🥑',
+    '🌽',
+  ],
+  sweet: [
+    '🧁',
+    '🍩',
+    '🍪',
+    '🎂',
+    '🍫',
+    '🍭',
+    '🍬',
+    '🍿',
+    '🍰',
+    '🥧',
+    '🍮',
+    '🍨',
+    '🍦',
+    '🍡',
+    '🍯',
+    '🥨',
+  ],
+  animal: [
+    '🐶',
+    '🐱',
+    '🐼',
+    '🐸',
+    '🦊',
+    '🐰',
+    '🐨',
+    '🐯',
+    '🦁',
+    '🐮',
+    '🐷',
+    '🐵',
+    '🐔',
+    '🐧',
+    '🦄',
+    '🐲',
+  ],
+  sport: [
+    '⚽',
+    '🏀',
+    '🏈',
+    '⚾',
+    '🎾',
+    '🏐',
+    '🏓',
+    '🏸',
+    '🏒',
+    '🥊',
+    '🎱',
+    '🚴',
+    '🏋️',
+    '🤺',
+    '🏹',
+    '⛸️',
+  ],
+  space: [
+    '🌞',
+    '🌙',
+    '⭐',
+    '🌍',
+    '🌛',
+    '☀️',
+    '🌈',
+    '🌪️',
+    '🔥',
+    '💧',
+    '❄️',
+    '⚡',
+    '🌊',
+    '🌋',
+    '🪐',
+    '🌟',
+  ],
+  shape: [
+    '🔴',
+    '🟠',
+    '🟡',
+    '🟢',
+    '🔵',
+    '🟣',
+    '⚫',
+    '⚪',
+    '🟤',
+    '🔶',
+    '🔷',
+    '🟥',
+    '🟧',
+    '🟨',
+    '🟩',
+    '🟦',
+  ],
 };
 
 export type Board = (number | null)[][];
@@ -71,12 +173,19 @@ export function applyAdminOverrides(
   return result;
 }
 
-export function generateBoard(config: OnetConfig): { board: Board; icons: string[]; iconMap: Map<number, string> } {
+export function generateBoard(config: OnetConfig): {
+  board: Board;
+  icons: string[];
+  iconMap: Map<number, string>;
+} {
   const { rows, cols, tileTypes, iconTheme } = config;
   const totalCells = rows * cols;
   if (totalCells % 2 !== 0) throw new Error('total cells must be even');
 
-  const fullList = iconTheme && ICON_THEMES[iconTheme] ? ICON_THEMES[iconTheme] : Object.values(ICON_THEMES).flat();
+  const fullList =
+    iconTheme && ICON_THEMES[iconTheme]
+      ? ICON_THEMES[iconTheme]
+      : Object.values(ICON_THEMES).flat();
   const pairs = totalCells / 2;
   const types = Math.min(tileTypes, pairs, fullList.length);
   const icons = fullList.slice(0, types);
@@ -140,8 +249,10 @@ export function findPath(board: Board, start: Point, end: Point): PathResult {
 
 function getNeighbors(board: Board, p: Point, end: Point, rows: number, cols: number): Point[] {
   const dirs = [
-    { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
-    { dr: 0, dc: -1 }, { dr: 0, dc: 1 },
+    { dr: -1, dc: 0 },
+    { dr: 1, dc: 0 },
+    { dr: 0, dc: -1 },
+    { dr: 0, dc: 1 },
   ];
   const result: Point[] = [];
 
@@ -149,8 +260,14 @@ function getNeighbors(board: Board, p: Point, end: Point, rows: number, cols: nu
     let r = p.row + dr;
     let c = p.col + dc;
     while (r >= -1 && r <= rows && c >= -1 && c <= cols) {
-      if (r === end.row && c === end.col) { result.push({ row: r, col: c }); break; }
-      if (r < 0 || r >= rows || c < 0 || c >= cols) { result.push({ row: r, col: c }); break; }
+      if (r === end.row && c === end.col) {
+        result.push({ row: r, col: c });
+        break;
+      }
+      if (r < 0 || r >= rows || c < 0 || c >= cols) {
+        result.push({ row: r, col: c });
+        break;
+      }
       if (board[r][c] !== null) break;
       result.push({ row: r, col: c });
       r += dr;
@@ -247,7 +364,9 @@ export function shuffleBoard(board: Board): Board {
       if (board[r][c] !== null) values.push(board[r][c]!);
     }
   }
-  do { shuffleArray(values); } while (!isSolvable(values, rows, cols));
+  do {
+    shuffleArray(values);
+  } while (!isSolvable(values, rows, cols));
   let idx = 0;
   const newBoard: Board = [];
   for (let r = 0; r < rows; r++) {

@@ -136,19 +136,19 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
           }
         }
       }
-      const requiredLetters = new Set<string>()
+      const requiredLetters = new Set<string>();
       for (const prev of guesses) {
         for (const cell of prev) {
-          if (cell.status === 'present') requiredLetters.add(cell.letter)
+          if (cell.status === 'present') requiredLetters.add(cell.letter);
         }
       }
       for (const letter of requiredLetters) {
-        if (!guess.includes(letter)) return `Harus pakai huruf ${letter} yang sudah ditemukan`
+        if (!guess.includes(letter)) return `Harus pakai huruf ${letter} yang sudah ditemukan`;
       }
-      return null
+      return null;
     },
     [hardMode, guesses]
-  )
+  );
 
   const evaluateGuess = useCallback(
     (guess: string): LetterCell[] => {
@@ -313,8 +313,13 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
         >
           {t('game.start')}
         </button>
-        <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
-          <input type="checkbox" checked={hardMode} onChange={(e) => setHardMode(e.target.checked)} className="rounded" />
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-500">
+          <input
+            type="checkbox"
+            checked={hardMode}
+            onChange={(e) => setHardMode(e.target.checked)}
+            className="rounded"
+          />
           Hard Mode — wajib gunakan huruf yang sudah ditemukan
         </label>
       </div>

@@ -1,5 +1,7 @@
 # Product Requirements Document (PRD)
+
 ## EduPlay — Educational Mini Game Platform
+
 ### Version 2.0 — Full Specification
 
 **Version:** 2.2.0
@@ -58,12 +60,14 @@
 **EduPlay** adalah platform web-based educational mini game yang menggabungkan pembelajaran dengan gamifikasi. Platform ini menyediakan berbagai game edukatif ringan yang dapat diakses melalui browser (web) dan mobile (PWA — Progressive Web App) tanpa perlu instalasi dari app store.
 
 ### Value Proposition
+
 - **Untuk Pelajar:** Belajar terasa seperti bermain — menyenangkan, adiktif, dan terukur progressnya
 - **Untuk Orang Tua/Guru:** Platform aman, bebas konten dewasa, tidak ada gambar manusia/makhluk hidup
 - **Untuk Pengiklan:** Audience yang engaged, spesifik (pendidikan), dengan session duration tinggi
 - **Untuk Bisnis:** Monetisasi ads + freemium yang scalable dengan biaya infrastruktur rendah
 
 ### Differentiators
+
 1. Semua visual menggunakan geometri, angka, huruf — **zero human/creature imagery**
 2. AI-powered question generator sehingga soal **tidak pernah habis**
 3. **PWA-first** — install dari browser tanpa app store
@@ -125,6 +129,7 @@ EduPlay berada di **High Gamification + High Education** — kuadran yang masih 
 ### 3.2 Solution Overview
 
 Platform mini game edukatif berbasis web dengan:
+
 - Multi-kategori: Math, Language, Geography, Logic, Science
 - Gamifikasi penuh: XP, Level, Streak, Badge, Leaderboard
 - Daily Challenge untuk daily active user retention
@@ -144,6 +149,7 @@ Platform mini game edukatif berbasis web dengan:
 ### 3.4 Scope v1.0
 
 **In Scope:**
+
 - Web platform (desktop & mobile browser)
 - PWA installable
 - User authentication
@@ -156,11 +162,13 @@ Platform mini game edukatif berbasis web dengan:
 - Bahasa Indonesia (primary) + English (secondary)
 
 **In Scope (tambahan dari v1.0):**
+
 - Friends system (basic — friends page, add/view friends) ✅ Implemented
 - Support / bug reporting page ✅ Implemented
 - 20 games (8 launch + 12 roadmap games sudah diimplementasi) ✅
 
 **Out of Scope (v1):**
+
 - Native iOS / Android app
 - Real-time multiplayer (diaddress di PRD Addendum)
 - Teacher / classroom dashboard
@@ -222,38 +230,42 @@ Metric ini mencerminkan engagement sejati — bukan sekedar visit, tapi pengguna
 ---
 
 **Persona 1: Budi — Pelajar SMP**
+
 - Usia: 13 tahun, Kelas 8 SMP, Jakarta
 - Perangkat: Samsung Galaxy A-series
 - Koneksi: WiFi rumah / data 4G
 - Motivasi: Suka game, dipaksa belajar orang tua
-- Quote: *"Kalau bisa belajar sambil game sih oke banget"*
+- Quote: _"Kalau bisa belajar sambil game sih oke banget"_
 - Kebutuhan: Game Math, leaderboard sama teman sekelas
 - Frustasi: Ads terlalu banyak, loading lambat
 
 **Persona 2: Sari — Pelajar SMA**
+
 - Usia: 16 tahun, Kelas 11 IPA, Surabaya
 - Perangkat: iPhone (hadiah ulang tahun) + MacBook
 - Koneksi: WiFi rumah stabil
 - Motivasi: Mau masuk PTN, perlu latihan soal banyak
-- Quote: *"Soalnya harus banyak dan variatif, bukan itu-itu aja"*
+- Quote: _"Soalnya harus banyak dan variatif, bukan itu-itu aja"_
 - Kebutuhan: Quiz soal tak terbatas, progress tracking, difficulty level
 - Frustasi: Soal yang sama terus muncul
 
 **Persona 3: Bu Dewi — Guru SD**
+
 - Usia: 38 tahun, Guru Matematika SD, Bandung
 - Perangkat: Laptop Lenovo + smartphone
 - Koneksi: WiFi sekolah (kadang lemot)
 - Motivasi: Cari media belajar yang bisa direkomendasikan ke murid
-- Quote: *"Harus aman, tidak ada gambar yang tidak pantas"*
+- Quote: _"Harus aman, tidak ada gambar yang tidak pantas"_
 - Kebutuhan: Konten aman, tanpa gambar makhluk hidup, bisa diakses di browser
 - Frustasi: Platform asing, tidak ada konten Indonesia
 
 **Persona 4: Pak Andi — Orang Tua**
+
 - Usia: 42 tahun, Karyawan swasta, Medan
 - Perangkat: Smartphone Xiaomi
 - Koneksi: Data 4G
 - Motivasi: Anaknya (10 tahun) minta main game, mau yang edukatif
-- Quote: *"Asal aman dan ada manfaat belajarnya"*
+- Quote: _"Asal aman dan ada manfaat belajarnya"_
 - Kebutuhan: Konten aman, tidak ada in-app purchase tersembunyi
 - Frustasi: Tidak tahu anaknya belajar apa
 
@@ -276,26 +288,31 @@ Landing Page
 ### 6.2 Onboarding Steps (Setelah Register)
 
 **Step 1 — Welcome Screen**
+
 - Tampilkan nama user
 - Brief value proposition (3 poin bullet singkat)
 - CTA: "Mulai Jelajahi Game"
 
 **Step 2 — Pilih Minat (Optional)**
+
 - Pilih kategori favorit: Math / Language / Geography / Logic
 - Digunakan untuk personalisasi urutan game di hub
 - Bisa skip
 
 **Step 3 — Tutorial Interaktif**
+
 - Tampilkan game pertama dengan overlay tooltip
 - Highlight: cara main, skor, XP bar
 - Durasi < 30 detik
 
 **Step 4 — Daily Challenge Prompt**
+
 - Setelah main pertama kali, muncul card Daily Challenge
 - "Main daily challenge setiap hari untuk bonus XP!"
 - CTA: "Coba Sekarang" / "Nanti Saja"
 
 **Step 5 — Push Notification Prompt (PWA)**
+
 - Muncul setelah user main ≥ 2 kali dalam satu sesi
 - "Aktifkan notifikasi untuk reminder Daily Challenge?"
 - Tidak dimunculkan sebelum user engage
@@ -433,6 +450,7 @@ Buka App/Website
 ## 8. Game Catalog & Design
 
 ### Constraint Desain Semua Game
+
 - ❌ Tidak ada gambar manusia atau makhluk hidup
 - ✅ Visual menggunakan: geometri, angka, huruf, kartu, ikon abstrak, warna, simbol
 - ✅ Responsive — bisa dimainkan di mobile dan desktop
@@ -522,17 +540,17 @@ Buka App/Website
 
 ### 8.7 Sudoku
 
-| Aspek           | Detail                                                                      |
-| --------------- | --------------------------------------------------------------------------- |
-| **Kategori**    | Logic                                                                       |
-| **Deskripsi**   | Classic Sudoku 9x9 grid                                                     |
+| Aspek           | Detail                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Kategori**    | Logic                                                                                                                    |
+| **Deskripsi**   | Classic Sudoku 9x9 grid                                                                                                  |
 | **Mechanic**    | Isi angka di grid, highlight konflik otomatis (merah), pencil mode, notes; navigasi keyboard arrow keys (✅ implemented) |
-| **Generator**   | Algoritma backtracking untuk generate puzzle valid                          |
-| **Difficulty**  | Easy (35+ sel terisi), Medium (27-34), Hard (20-26), Expert (<20) — Expert belum diimplementasi |
-| **Scoring**     | Waktu selesai + jumlah kesalahan (skor terbalik — makin cepat makin tinggi) |
-| **Hint System** | Reveal 1 sel via rewarded ad atau pengurangan skor                          |
-| **Auto-check**  | Validasi otomatis saat selesai                                              |
-| **Ad Slots**    | Banner, rewarded (reveal sel), interstitial selesai                         |
+| **Generator**   | Algoritma backtracking untuk generate puzzle valid                                                                       |
+| **Difficulty**  | Easy (35+ sel terisi), Medium (27-34), Hard (20-26), Expert (<20) — Expert belum diimplementasi                          |
+| **Scoring**     | Waktu selesai + jumlah kesalahan (skor terbalik — makin cepat makin tinggi)                                              |
+| **Hint System** | Reveal 1 sel via rewarded ad atau pengurangan skor                                                                       |
+| **Auto-check**  | Validasi otomatis saat selesai                                                                                           |
+| **Ad Slots**    | Banner, rewarded (reveal sel), interstitial selesai                                                                      |
 
 ### 8.8 2048
 
@@ -551,47 +569,47 @@ Buka App/Website
 
 ### 8.9 Memory Match ✅ Implemented
 
-| Aspek          | Detail                                                                         |
-| -------------- | ------------------------------------------------------------------------------ |
-| **Kategori**   | Logic                                                                          |
-| **Deskripsi**  | Temukan semua pasangan kartu emoji yang tersembunyi                            |
-| **Mechanic**   | Balik 2 kartu; jika cocok tetap terbuka, jika tidak tertutup kembali           |
-| **Difficulty** | Easy: 12 kartu (6 pasang) \| Medium: 16 kartu \| Hard: 20 kartu               |
+| Aspek          | Detail                                                                              |
+| -------------- | ----------------------------------------------------------------------------------- |
+| **Kategori**   | Logic                                                                               |
+| **Deskripsi**  | Temukan semua pasangan kartu emoji yang tersembunyi                                 |
+| **Mechanic**   | Balik 2 kartu; jika cocok tetap terbuka, jika tidak tertutup kembali                |
+| **Difficulty** | Easy: 12 kartu (6 pasang) \| Medium: 16 kartu \| Hard: 20 kartu                     |
 | **Scoring**    | `max(0, 2000 - moves*20 - elapsed_seconds*5)` — makin sedikit langkah = lebih bagus |
-| **Ad Slots**   | Banner, interstitial setelah selesai                                           |
+| **Ad Slots**   | Banner, interstitial setelah selesai                                                |
 
 ### 8.10 Typing Speed ✅ Implemented
 
-| Aspek          | Detail                                                                         |
-| -------------- | ------------------------------------------------------------------------------ |
-| **Kategori**   | Language                                                                       |
-| **Deskripsi**  | Ketik kata-kata yang muncul secepat dan seakurat mungkin dalam 60 detik        |
-| **Mechanic**   | Kata muncul satu per satu; Space/Enter untuk submit. Feedback hijau (benar) / merah (salah) |
-| **Scoring**    | WPM × 10 (Words Per Minute × 10)                                              |
-| **Metrics**    | WPM + Accuracy % ditampilkan di result screen                                  |
-| **Ad Slots**   | Banner, interstitial setelah selesai                                           |
+| Aspek         | Detail                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| **Kategori**  | Language                                                                                    |
+| **Deskripsi** | Ketik kata-kata yang muncul secepat dan seakurat mungkin dalam 60 detik                     |
+| **Mechanic**  | Kata muncul satu per satu; Space/Enter untuk submit. Feedback hijau (benar) / merah (salah) |
+| **Scoring**   | WPM × 10 (Words Per Minute × 10)                                                            |
+| **Metrics**   | WPM + Accuracy % ditampilkan di result screen                                               |
+| **Ad Slots**  | Banner, interstitial setelah selesai                                                        |
 
 ### 8.11 Simon Says ✅ Implemented
 
-| Aspek          | Detail                                                                         |
-| -------------- | ------------------------------------------------------------------------------ |
-| **Kategori**   | Logic / Memory                                                                 |
-| **Deskripsi**  | 4 tombol warna berkedip dalam urutan acak; user harus mengulangi urutannya     |
-| **Mechanic**   | Sequence bertambah 1 tombol setiap level. Progress dots menunjukkan sequence vs input user |
-| **Scoring**    | `level × 100` — bertambah setiap level berhasil dilewati                      |
-| **Colors**     | Merah, Biru, Hijau, Kuning — tidak ada gambar makhluk hidup                    |
-| **Ad Slots**   | Banner, interstitial game over                                                 |
+| Aspek         | Detail                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------ |
+| **Kategori**  | Logic / Memory                                                                             |
+| **Deskripsi** | 4 tombol warna berkedip dalam urutan acak; user harus mengulangi urutannya                 |
+| **Mechanic**  | Sequence bertambah 1 tombol setiap level. Progress dots menunjukkan sequence vs input user |
+| **Scoring**   | `level × 100` — bertambah setiap level berhasil dilewati                                   |
+| **Colors**    | Merah, Biru, Hijau, Kuning — tidak ada gambar makhluk hidup                                |
+| **Ad Slots**  | Banner, interstitial game over                                                             |
 
 ### 8.12 Snake Classic ✅ Implemented
 
-| Aspek          | Detail                                                                         |
-| -------------- | ------------------------------------------------------------------------------ |
-| **Kategori**   | Arcade                                                                         |
-| **Deskripsi**  | Kendalikan ular; makan makanan untuk tumbuh, hindari menabrak dinding atau badan |
-| **Mechanic**   | Canvas 400×400px. WASD / Arrow keys (desktop) + touch swipe + on-screen d-pad (mobile) |
-| **Scoring**    | Makanan yang dimakan × 10                                                      |
+| Aspek              | Detail                                                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| **Kategori**       | Arcade                                                                                    |
+| **Deskripsi**      | Kendalikan ular; makan makanan untuk tumbuh, hindari menabrak dinding atau badan          |
+| **Mechanic**       | Canvas 400×400px. WASD / Arrow keys (desktop) + touch swipe + on-screen d-pad (mobile)    |
+| **Scoring**        | Makanan yang dimakan × 10                                                                 |
 | **Implementation** | `useRef` untuk mutable game state, `setInterval` untuk game loop — mencegah stale closure |
-| **Ad Slots**   | Banner, interstitial game over                                                 |
+| **Ad Slots**       | Banner, interstitial game over                                                            |
 
 ---
 
@@ -599,8 +617,8 @@ Buka App/Website
 
 > **Status per Mei 2026:** Semua game roadmap v1.1–v1.3 sudah diimplementasikan lebih awal.
 
-| Game                | Kategori | Status         | Catatan                                |
-| ------------------- | -------- | -------------- | -------------------------------------- |
+| Game                | Kategori | Status          | Catatan                                |
+| ------------------- | -------- | --------------- | -------------------------------------- |
 | Nonogram            | Logic    | ✅ Done (v1.1)  | Grid puzzle hitam-putih                |
 | Crossword Indonesia | Language | ✅ Done (v1.1)  | TTS Bahasa Indonesia                   |
 | Mental Math Speed   | Math     | ✅ Done (v1.1)  | Hitung cepat tanpa pilihan ganda       |
@@ -613,8 +631,8 @@ Buka App/Website
 | Typing Speed        | Language | ✅ Done (added) | WPM test 60 detik                      |
 | Simon Says          | Logic    | ✅ Done (added) | Urutan warna dari memori               |
 | Snake Classic       | Arcade   | ✅ Done (added) | Classic snake canvas game              |
-| Number Match        | Math     | Backlog        | Coret pasangan angka yang berjumlah 10 |
-| Fraction Visualizer | Math     | Backlog (v2.0) | Visualisasi pecahan interaktif         |
+| Number Match        | Math     | Backlog         | Coret pasangan angka yang berjumlah 10 |
+| Fraction Visualizer | Math     | Backlog (v2.0)  | Visualisasi pecahan interaktif         |
 
 ---
 
@@ -632,10 +650,12 @@ Buka App/Website
 ### 9.2 Ad Network & Mediation
 
 **Primary Network:**
+
 - Google AdSense (web desktop)
 - Google AdMob (PWA/mobile)
 
 **Ad Mediation (v1.1):**
+
 - Google Ad Manager sebagai mediasi
 - Secondary: Meta Audience Network, InMobi
 
@@ -688,6 +708,7 @@ REWARDED ADS:
 ### 9.6 AdSense Approval Checklist
 
 Untuk memastikan akun AdSense disetujui:
+
 - [ ] Privacy Policy halaman tersedia dan linked di footer
 - [ ] Terms of Service halaman tersedia
 - [ ] About Us halaman tersedia
@@ -912,6 +933,7 @@ Action: Share2, Copy, RotateCcw, ChevronRight
 ### 11.2 Requirements per Kategori
 
 **Perceivable:**
+
 - [ ] Semua gambar non-dekoratif punya alt text
 - [ ] Kontras warna minimum 4.5:1 untuk teks normal
 - [ ] Kontras warna minimum 3:1 untuk teks besar (>18px bold)
@@ -920,6 +942,7 @@ Action: Share2, Copy, RotateCcw, ChevronRight
 - [ ] Captions untuk semua audio (jika ada)
 
 **Operable:**
+
 - [ ] Semua interaksi bisa dilakukan dengan keyboard
 - [ ] Focus indicator jelas (outline 2px, kontras tinggi)
 - [ ] Skip link "Langsung ke konten" di awal halaman
@@ -928,12 +951,14 @@ Action: Share2, Copy, RotateCcw, ChevronRight
 - [ ] Game bisa dimainkan dengan keyboard (arrow keys, tab, enter)
 
 **Understandable:**
+
 - [ ] Bahasa halaman di-set (`<html lang="id">`)
 - [ ] Error message jelas dan actionable
 - [ ] Label form yang jelas
 - [ ] Instruksi game tidak hanya mengandalkan sensori (warna/suara)
 
 **Robust:**
+
 - [ ] Valid HTML5
 - [ ] ARIA roles dan labels untuk komponen custom
 - [ ] Kompatibel dengan screen reader (NVDA, VoiceOver)
@@ -974,17 +999,25 @@ Action: Share2, Copy, RotateCcw, ChevronRight
 ### 12.2 On-Page SEO
 
 **Meta Tags (per halaman):**
+
 ```html
 <!-- Home -->
 <title>EduPlay — Game Edukasi Online Seru & Gratis</title>
-<meta name="description" content="Belajar sambil bermain! Game edukasi online gratis: matematika, bahasa, geografi, dan logika. Cocok untuk pelajar SD, SMP, dan SMA.">
+<meta
+  name="description"
+  content="Belajar sambil bermain! Game edukasi online gratis: matematika, bahasa, geografi, dan logika. Cocok untuk pelajar SD, SMP, dan SMA."
+/>
 
 <!-- Game Pages -->
 <title>Wordle Bahasa Indonesia — EduPlay</title>
-<meta name="description" content="Main Wordle dalam Bahasa Indonesia! Tebak kata 5 huruf dalam 6 percobaan. Gratis, langsung main di browser tanpa install.">
+<meta
+  name="description"
+  content="Main Wordle dalam Bahasa Indonesia! Tebak kata 5 huruf dalam 6 percobaan. Gratis, langsung main di browser tanpa install."
+/>
 ```
 
 **Structured Data (JSON-LD):**
+
 ```json
 {
   "@context": "https://schema.org",
@@ -1023,6 +1056,7 @@ Action: Share2, Copy, RotateCcw, ChevronRight
 ### 13.1 PWA Push Notifications
 
 **Setup:**
+
 - Menggunakan Web Push API + Service Worker
 - Subscription token disimpan di database (tabel `push_subscriptions`)
 - Kirim via backend Go menggunakan library `web-push`
@@ -1037,6 +1071,7 @@ Action: Share2, Copy, RotateCcw, ChevronRight
 | Achievement     | Unlock achievement baru      | Real-time | Setiap kali unlock |
 
 **User Control:**
+
 - User bisa opt-out notifikasi tertentu di Settings
 - Unsubscribe dari semua notifikasi 1 klik
 
@@ -1074,6 +1109,7 @@ Action: Share2, Copy, RotateCcw, ChevronRight
 ### 14.2 Event Tracking Specification
 
 **Authentication Events:**
+
 ```
 user_registered        { method: 'email'|'google' }
 user_logged_in         { method: 'email'|'google' }
@@ -1082,6 +1118,7 @@ password_reset_requested {}
 ```
 
 **Game Events:**
+
 ```
 game_hub_viewed        {}
 game_selected          { game_id, game_name, category }
@@ -1094,6 +1131,7 @@ difficulty_selected    { game_id, difficulty }
 ```
 
 **Gamification Events:**
+
 ```
 xp_earned              { amount, source: 'game'|'daily'|'achievement' }
 level_up               { old_level, new_level }
@@ -1103,6 +1141,7 @@ achievement_unlocked   { achievement_id, achievement_name }
 ```
 
 **Daily Challenge Events:**
+
 ```
 daily_challenge_viewed {}
 daily_challenge_started {}
@@ -1111,6 +1150,7 @@ daily_challenge_abandoned {}
 ```
 
 **Monetization Events:**
+
 ```
 ad_banner_impression   { page }
 ad_interstitial_shown  { game_id, trigger: 'game_over'|'between_level' }
@@ -1123,6 +1163,7 @@ ad_rewarded_declined   { game_id, reward_type }
 ```
 
 **Navigation Events:**
+
 ```
 page_viewed            { page_name, referrer }
 leaderboard_viewed     { game_id|'global', period }
@@ -1131,6 +1172,7 @@ settings_opened        {}
 ```
 
 **Onboarding Events:**
+
 ```
 onboarding_started     {}
 onboarding_step_completed { step: 1|2|3|4|5 }
@@ -1139,6 +1181,7 @@ onboarding_completed   {}
 ```
 
 **Error Events:**
+
 ```
 api_error              { endpoint, status_code, error_message }
 game_crash             { game_id, error_message }
@@ -1148,16 +1191,19 @@ ad_load_failed         { ad_type, reason }
 ### 14.3 Funnel Analysis
 
 **Acquisition Funnel:**
+
 ```
 Landing Page Visit → Guest Game Play → Register Prompt Shown → Register Click → Register Complete
 ```
 
 **Retention Funnel:**
+
 ```
 Day 0 Install → Day 1 Return → Day 3 Return → Day 7 Return → Day 30 Return
 ```
 
 **Monetization Funnel:**
+
 ```
 Ad Shown → Ad Viewed → Ad Clicked → Revenue Generated
 Rewarded Offered → Rewarded Accepted → Rewarded Completed → Reward Claimed
@@ -1995,12 +2041,14 @@ PATCH  /api/v1/admin/daily/:id
 ### 18.1 Frontend Error Handling
 
 **Global Error Boundary:**
+
 ```
 app/error.tsx  — Catch React rendering errors
 app/not-found.tsx  — 404 halaman
 ```
 
 **API Error Handling (TanStack Query + Axios):**
+
 - Network error → Tampilkan "Koneksi bermasalah, coba lagi"
 - 401 → Auto redirect ke login
 - 429 → Tampilkan "Terlalu banyak percobaan, tunggu beberapa saat"
@@ -2008,6 +2056,7 @@ app/not-found.tsx  — 404 halaman
 - Semua error di-log ke Sentry
 
 **Game Error Handling:**
+
 - Game crash → Tampilkan result screen dengan skor saat itu
 - Score submit gagal → Retry otomatis 3x dengan exponential backoff
 - Jika tetap gagal → Simpan di localStorage, retry saat online
@@ -2015,10 +2064,12 @@ app/not-found.tsx  — 404 halaman
 ### 18.2 Backend Error Handling
 
 **Panic Recovery:**
+
 - Fiber middleware RecoverFromPanic
 - Log dengan Zap, return 500
 
 **Database Error:**
+
 - Connection pool exhausted → Return 503, log alert
 - Query timeout (> 5 detik) → Timeout context, return 408
 - Unique constraint → Return 409 dengan pesan jelas
@@ -2036,6 +2087,7 @@ app/not-found.tsx  — 404 halaman
 ### 18.3 Offline Mode (PWA)
 
 **Service Worker Cache Strategy:**
+
 ```
 Network First (dengan fallback):
   - API calls (user data, leaderboard)
@@ -2054,6 +2106,7 @@ Network Only:
 ```
 
 **Offline UI:**
+
 - Banner "Kamu sedang offline" saat tidak ada koneksi
 - Game yang bisa dimainkan offline (dengan soal cached): Math Quiz, 2048, Sudoku
 - Score disimpan di IndexedDB, submit otomatis saat online kembali
@@ -2097,6 +2150,7 @@ Network Only:
 ### 19.3 Score Anti-Cheat
 
 **Server-side Validation:**
+
 ```go
 // Validasi yang dilakukan saat score submit:
 1. Score range check: 0 <= score <= MAX_SCORE[game][difficulty]
@@ -2108,6 +2162,7 @@ Network Only:
 ```
 
 **Anomaly Flagging:**
+
 - Skor yang di-flag masuk ke tabel `flagged_scores` untuk review manual admin
 - User tidak langsung di-ban, tapi skor di-hide dari leaderboard pending review
 
@@ -2156,6 +2211,7 @@ Network Only:
 ### 20.3 Optimization Strategies
 
 **Frontend:**
+
 - Code splitting per route (App Router)
 - Dynamic import untuk game components (tidak load semua game sekaligus)
 - `next/image` untuk optimasi gambar (flag SVG = inline, tidak pakai next/image)
@@ -2165,6 +2221,7 @@ Network Only:
 - Virtualization untuk leaderboard panjang
 
 **Backend:**
+
 - Redis untuk leaderboard (O(log N) ZADD/ZRANK)
 - Database connection pooling
 - AI questions di-cache 1 jam
@@ -2173,6 +2230,7 @@ Network Only:
 - Daily challenge di-pregenerate H-1 via scheduler
 
 **Infrastructure:**
+
 - CDN untuk static assets (Cloudflare)
 - Lazy load ads (tidak block render utama)
 - Gzip compression di semua response
@@ -2196,6 +2254,7 @@ Network Only:
 ### 21.2 Backend Testing (Go)
 
 **Unit Tests:**
+
 - Game score validation logic
 - XP calculation formula
 - Achievement trigger evaluation
@@ -2204,12 +2263,14 @@ Network Only:
 - AI prompt construction
 
 **Integration Tests (httptest):**
+
 - Auth flow: register → login → refresh → logout
 - Game score submit flow: submit → XP update → leaderboard update → achievement check
 - Daily challenge: get → submit → streak update
 - Rate limiting behavior
 
 **Tools:**
+
 ```go
 "testing"              // stdlib
 "github.com/stretchr/testify"  // assert & mock
@@ -2223,18 +2284,21 @@ Network Only:
 ### 21.3 Frontend Testing
 
 **Unit Tests (Jest + Testing Library):**
+
 - Game engine logic (Sudoku generator, 2048 engine, Wordle validator)
 - Score calculation utilities
 - XP formula utils
 - Custom hooks (useGame, useAuth)
 
 **Component Tests:**
+
 - Game components render correctly
 - Timer countdown behavior
 - Score display updates
 - Ad frequency cap logic
 
 **Tools:**
+
 ```
 Jest
 @testing-library/react
@@ -2245,6 +2309,7 @@ MSW (Mock Service Worker) — mock API calls
 ### 21.4 E2E Testing (Playwright)
 
 **Critical Flows:**
+
 1. Register → Play game → See score on leaderboard
 2. Guest play → Score submit → Register prompt → Register → Score saved
 3. Daily challenge: view → play → submit → streak updated
@@ -2254,6 +2319,7 @@ MSW (Mock Service Worker) — mock API calls
 7. Rewarded ad: tap hint → confirm → ad shown → hint revealed
 
 **Browser Coverage:**
+
 - Chrome (desktop + mobile emulation)
 - Safari (desktop + iOS emulation)
 - Firefox
@@ -2261,6 +2327,7 @@ MSW (Mock Service Worker) — mock API calls
 ### 21.5 Performance Testing
 
 **Load Testing (k6):**
+
 ```javascript
 // Scenario: 1000 concurrent users selama 5 menit
 export const options = {
@@ -2269,11 +2336,12 @@ export const options = {
   thresholds: {
     http_req_duration: ['p(95)<200'],
     http_req_failed: ['rate<0.01'],
-  }
+  },
 };
 ```
 
 **Target Scenarios:**
+
 - 1,000 concurrent users (v1 launch)
 - Spike test: 0 → 2,000 users dalam 30 detik (viral scenario)
 - Leaderboard read-heavy: 500 concurrent leaderboard reads
@@ -2497,12 +2565,12 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: secret
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/migrations:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
+      test: ['CMD-SHELL', 'pg_isready -U admin']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -2510,11 +2578,11 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
 
   backend:
@@ -2522,7 +2590,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     ports:
-      - "8080:8080"
+      - '8080:8080'
     volumes:
       - ./backend:/app
     env_file:
@@ -2532,7 +2600,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: air  # hot reload
+    command: air # hot reload
 
 volumes:
   postgres_data:
@@ -2563,6 +2631,7 @@ CMD ["./server"]
 ### 23.5 Environment Variables
 
 **Backend (.env.example):**
+
 ```env
 # App
 APP_ENV=development          # development|staging|production
@@ -2610,6 +2679,7 @@ ADMIN_SECRET=change-this-too  # Untuk create admin account
 ```
 
 **Frontend (.env.local.example):**
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -2636,14 +2706,17 @@ NEXT_PUBLIC_ENABLE_SOUNDS=true
 ### 24.1 Backup Strategy
 
 **PostgreSQL:**
+
 - Neon: Automatic backup setiap hari (retained 7 hari di free tier, 30 hari di pro)
 - Manual backup: pg_dump setiap minggu, disimpan di cloud storage
 
 **Redis:**
+
 - Upstash: Persistent storage (RDB snapshots)
 - Data yang hilang dapat direkonstruksi dari PostgreSQL
 
 **Application Code:**
+
 - Git repository (GitHub) sebagai source of truth
 - Multi-environment deployment (staging + production)
 
@@ -2667,15 +2740,18 @@ NEXT_PUBLIC_ENABLE_SOUNDS=true
 ### 24.4 Incident Response
 
 **Level 1 — Minor (latency tinggi, error rate < 5%):**
+
 - Auto-alert ke Slack (#alerts channel)
 - On-call engineer check dalam 30 menit
 
 **Level 2 — Major (service degraded, error rate 5-20%):**
+
 - Alert ke seluruh tim engineering
 - Response dalam 15 menit
 - Status page update
 
 **Level 3 — Critical (service down, error rate > 20%):**
+
 - Semua tangan di dek
 - Response dalam 5 menit
 - Rollback ke versi sebelumnya jika deploy-related
@@ -2689,6 +2765,7 @@ NEXT_PUBLIC_ENABLE_SOUNDS=true
 ### 25.1 Required Legal Pages
 
 **Privacy Policy** — Wajib untuk AdSense dan PDPA:
+
 - Data apa yang dikumpulkan (email, username, skor, device info)
 - Bagaimana data digunakan
 - Third-party sharing (Google Ads, Google Analytics)
@@ -2697,12 +2774,14 @@ NEXT_PUBLIC_ENABLE_SOUNDS=true
 - Kontak: privacy@eduplay.id
 
 **Terms of Service:**
+
 - Usia minimum: 7 tahun (dengan izin orang tua untuk < 13 tahun)
 - Acceptable use policy
 - Larangan: cheat, spam, konten ofensif username
 - Disclaimer: Platform untuk hiburan dan edukasi informal
 
 **Cookie Policy:**
+
 - Cookie yang digunakan: session, preferences, analytics, ads
 - Cara opt-out
 
@@ -2739,6 +2818,7 @@ NEXT_PUBLIC_ENABLE_SOUNDS=true
 ### 26.1 Soal Game
 
 **Standar Kualitas:**
+
 - Soal harus jelas dan tidak ambigu
 - Satu jawaban yang definitif benar
 - Bahasa Indonesia yang baik dan benar (atau English untuk mode EN)
@@ -2747,18 +2827,21 @@ NEXT_PUBLIC_ENABLE_SOUNDS=true
 
 **Standar untuk Setiap Kategori:**
 
-*Math:*
+_Math:_
+
 - Easy: Operasi 1 langkah, angka kecil
 - Medium: Operasi 2 langkah, angka sedang
 - Hard: Operasi 3+ langkah, angka besar, campuran operasi
 
-*Language (Wordle):*
+_Language (Wordle):_
+
 - Kata harus ada di KBBI
 - Panjang tepat 5 huruf
 - Bukan kata kasar, nama orang, atau nama tempat
 - Bukan kata yang terlalu obscure (kata sehari-hari lebih baik)
 
-*Geography:*
+_Geography:_
+
 - Data harus akurat dan up-to-date (ibukota bisa berubah)
 - Sumber: Data resmi PBB / Wikipedia verified
 - Update berkala setiap 6 bulan
@@ -2766,6 +2849,7 @@ NEXT_PUBLIC_ENABLE_SOUNDS=true
 ### 26.2 AI Question Generation
 
 **System Prompt Template (Math Quiz):**
+
 ```
 Kamu adalah generator soal matematika untuk platform edukasi anak-anak.
 Buat [COUNT] soal matematika dengan ketentuan:
@@ -2780,6 +2864,7 @@ Buat [COUNT] soal matematika dengan ketentuan:
 ```
 
 **Validasi Output AI:**
+
 - Parse JSON, jika gagal → gunakan fallback
 - Cek semua field hadir
 - Cek `answer` ada di dalam `options`
@@ -2788,6 +2873,7 @@ Buat [COUNT] soal matematika dengan ketentuan:
 ### 26.3 Username Guidelines
 
 **Aturan Username:**
+
 - 3-30 karakter
 - Hanya huruf, angka, underscore, dash
 - Tidak boleh mulai/akhir dengan underscore atau dash
@@ -2796,6 +2882,7 @@ Buat [COUNT] soal matematika dengan ketentuan:
 - Case-insensitive uniqueness check
 
 **Username Blacklist (contoh):**
+
 - Kata kasar bahasa Indonesia
 - Kata kasar bahasa Inggris
 - Nama brand sensitif (admin, support, help, dll)
@@ -2811,42 +2898,50 @@ Admin panel adalah web interface terpisah atau di path `/admin` dengan auth role
 ### 27.2 Halaman Admin
 
 **Dashboard:**
+
 - Total users, DAU, MAU, new users hari ini
 - Total games played hari ini
 - Error rate
 - Graph sederhana 7 hari terakhir
 
 **User Management:**
+
 - List semua user (search, filter by date, filter by status)
 - Detail user: info, history game, achievement
 - Aksi: Ban, Unban, Reset password manual
 
 **Game Management:**
+
 - List semua game
 - Toggle active/inactive
 - Edit nama, deskripsi, urutan tampil
 - Lihat statistik per game (total plays, avg score)
 
 **Daily Challenge Manager:**
+
 - Lihat daily challenge yang sudah dibuat (calendar view)
 - Buat challenge manual untuk tanggal tertentu
 - Edit challenge yang belum mulai
 - Override AI-generated challenge
 
 **Leaderboard Management:**
+
 - Lihat leaderboard per game
 - Hapus score yang dicurigai cheat
 - Reset weekly leaderboard manual (emergency)
 
 **Content Moderation:**
+
 - Queue username yang dilaporkan
 - Approve / reject / ban
 
 **Feature Flags:**
+
 - Toggle fitur on/off
 - View current state semua flag
 
 **Analytics:**
+
 - Basic charts: DAU/MAU, games per category, top games
 - Export data ke CSV
 
@@ -2885,6 +2980,7 @@ Admin panel adalah web interface terpisah atau di path `/admin` dengan auth role
 Implementasi: Database table `feature_flags` + Redis cache (5 menit TTL)
 
 **Flags v1:**
+
 ```
 ENABLE_DARK_MODE           — Toggle dark mode untuk semua user
 ENABLE_SOUNDS              — Toggle sound effects
@@ -2898,6 +2994,7 @@ SHOW_INTERSTITIAL_ADS      — Toggle interstitial ads
 ```
 
 **Cara Kerja:**
+
 ```go
 // Backend: check feature flag
 func IsEnabled(key string) bool {
@@ -2916,12 +3013,14 @@ if (flags?.ENABLE_DARK_MODE) { ... }
 ### 29.2 A/B Testing Framework (v1.1)
 
 **Variabel yang akan di-test:**
+
 - Posisi tombol "Main Sekarang" di game card
 - Jumlah XP reward yang diberikan (apakah lebih banyak XP meningkatkan retention?)
 - Timing interstitial ads (game over vs 3 detik setelah result screen)
 - Onboarding flow panjang vs singkat
 
 **Implementasi:**
+
 - Deterministic assignment berdasarkan `hash(user_id + experiment_id) % 100`
 - Track variant di GA4 events
 - Analisis setelah 2 minggu data
@@ -2940,6 +3039,7 @@ if (flags?.ENABLE_DARK_MODE) { ... }
 ### 30.2 Implementasi
 
 **Frontend:** `next-intl`
+
 ```
 messages/
 ├── id.json    # Semua string dalam Bahasa Indonesia
@@ -2947,16 +3047,19 @@ messages/
 ```
 
 **URL Structure:**
+
 - Default (tanpa prefix): Bahasa Indonesia
 - `/en/...`: English
 
 **Game Content:**
+
 - Wordle: Word list berbeda per bahasa (id: KBBI, en: common English words)
 - Spelling Bee: Dictionary per bahasa
 - Math / Logic: Bahasa soal mengikuti pilihan bahasa
 - Geography: Nama negara dalam bahasa yang dipilih
 
 **Language Switcher:**
+
 - Tersedia di navbar dan settings
 - Tersimpan di localStorage + user preferences (jika login)
 - Default: detect dari browser `Accept-Language` header
@@ -2974,6 +3077,7 @@ messages/
 ### Phase 1 — Foundation (Minggu 1-3) ✅ Done
 
 **Backend:**
+
 - [x] Project setup: Fiber, GORM, Redis, config, logger
 - [x] Database migrations (semua tabel)
 - [x] Auth module: register, login, refresh, logout, forgot password
@@ -2983,6 +3087,7 @@ messages/
 - [x] Docker compose untuk local dev
 
 **Frontend:**
+
 - [x] Next.js 16 setup + Tailwind + shadcn/ui + TypeScript
 - [x] Design tokens (warna, typography, spacing)
 - [x] Auth pages (login, register, forgot password)
@@ -2994,12 +3099,14 @@ messages/
 ### Phase 2 — Core Games (Minggu 4-6) ✅ Done
 
 **Games:**
+
 - [x] Math Quiz Blitz (dengan timer, pilihan ganda, scoring)
 - [x] 2048 (engine, swipe + keyboard, undo)
 - [x] Wordle Bahasa Indonesia (engine, keyboard virtual, color feedback)
 - [x] Sudoku (generator backtracking, grid UI, hint, keyboard navigation)
 
 **Backend:**
+
 - [x] Leaderboard module (Redis sorted set, per-game + global)
 - [x] XP & level calculation service
 - [x] Score anti-cheat (range check, rate limit, checksum)
@@ -3008,12 +3115,14 @@ messages/
 ### Phase 3 — Remaining Games & Gamification (Minggu 7-9) ✅ Done
 
 **Games:**
+
 - [x] Times Table Challenge
 - [x] Spelling Bee
 - [x] Flag Quiz (195 bendera SVG)
 - [x] Capital City Quiz
 
 **Gamifikasi:**
+
 - [x] Achievement system (evaluator + 10 achievement awal)
 - [x] Daily Streak system
 - [x] Daily Challenge (scheduler + UI)
@@ -3022,6 +3131,7 @@ messages/
 - [x] Achievement toast
 
 **Leaderboard UI:**
+
 - [x] Leaderboard page (per-game + global)
 - [x] User rank display
 - [x] Weekly tab
@@ -3029,12 +3139,14 @@ messages/
 ### Phase 4 — Monetisasi, Notifikasi & PWA (Minggu 10-12) ✅ Partial
 
 **Monetisasi:**
+
 - [x] Google AdSense integration (banner — stub components siap)
 - [x] Interstitial ads dengan frequency cap (stub)
 - [x] Rewarded ads system (stub)
 - [x] Ad placeholder components (agar ada space saat iklan load)
 
 **Notifikasi:**
+
 - [x] PWA manifest + service worker (next-pwa)
 - [x] Push notification subscription
 - [x] Daily reminder notification
@@ -3042,6 +3154,7 @@ messages/
 - [x] In-app notification (achievement, level up)
 
 **Polish:**
+
 - [ ] Dark mode — belum diimplementasi
 - [ ] Animasi (Framer Motion) — belum diimplementasi
 - [x] Sound effects (toggle) — Web Audio API
@@ -3053,6 +3166,7 @@ messages/
 ### Phase 5 — Testing, Legal & Launch (Minggu 13-14) ✅ Done
 
 **Testing:**
+
 - [x] Backend integration tests (partial — game service & auth)
 - [x] Frontend unit tests (Vitest — 21 tests)
 - [x] E2E tests (Playwright — 4 spec files, 36 tests): auth, home, games hub, leaderboard
@@ -3060,6 +3174,7 @@ messages/
 - [ ] Manual QA (mobile + desktop) — perlu device fisik, belum dilakukan (depends on beta)
 
 **Legal & SEO:**
+
 - [x] Privacy Policy halaman — `app/(legal)/privacy-policy/`
 - [x] Terms of Service halaman — `app/(legal)/terms-of-service/`
 - [x] Cookie consent banner — `components/layout/CookieBanner.tsx` (sudah di-root layout)
@@ -3068,6 +3183,7 @@ messages/
 - [x] Structured data JSON-LD
 
 **Deployment:**
+
 - [x] Staging deployment + testing — `docker-compose.staging.yml` + Nginx, deploy via `deploy-staging.yml`
 - [x] Production deployment — infra ready, deployment script (`scripts/deploy-prod.sh`) + GitHub Actions (`deploy-prod.yml`) + Docker Compose + Nginx config
 - [x] Monitoring setup (Sentry, GA4) — konfigurasi siap
@@ -3075,6 +3191,7 @@ messages/
 - [x] DNS + SSL setup — ACME (Let's Encrypt) auto-renew via cron, di-script di `scripts/deploy-prod.sh`
 
 **Launch:**
+
 - [ ] Beta testing (50-100 user)
 - [ ] Bug fix dari beta feedback
 - [ ] Soft launch
@@ -3110,22 +3227,22 @@ messages/
 
 ### v2.0 Backlog (Prioritas)
 
-| Feature | Priority | Notes |
-| ------- | -------- | ----- |
-| Privacy Policy + Terms + About pages | **P0** | Blocker untuk AdSense approval |
-| Cookie consent banner | **P0** | Blocker untuk AdSense/GDPR |
-| Dark mode | P1 | Framer Motion animations sekalian |
-| Onboarding flow | P1 | First-time user experience |
-| Score sharing (WhatsApp, Instagram) | P1 | Viral mechanic |
-| Guest mode (main tanpa daftar) | P1 | Turunkan friction onboarding |
-| Near-rank leaderboard | P2 | "Kamu rank #47, 23 poin di bawah rank #46" |
-| Referral system | P2 ✅ | Kode referral → bonus XP — `ReferralCode` on User, `POST /referral/apply`, profile card |
-| Number Match game | P2 ✅ | New logic game — cross pairs summing to 10 |
-| Fraction Visualizer | P2 ✅ | New math game — identify/compare/simplify with visual bar |
-| Ad mediation (Ad Manager) | P2 | Maximize ad revenue |
-| Remove ads subscription / IAP | P2 | Freemium monetization |
-| Blog section | P3 | SEO content |
-| Weekly email summary | P3 | Retention email |
+| Feature                              | Priority | Notes                                                                                   |
+| ------------------------------------ | -------- | --------------------------------------------------------------------------------------- |
+| Privacy Policy + Terms + About pages | **P0**   | Blocker untuk AdSense approval                                                          |
+| Cookie consent banner                | **P0**   | Blocker untuk AdSense/GDPR                                                              |
+| Dark mode                            | P1       | Framer Motion animations sekalian                                                       |
+| Onboarding flow                      | P1       | First-time user experience                                                              |
+| Score sharing (WhatsApp, Instagram)  | P1       | Viral mechanic                                                                          |
+| Guest mode (main tanpa daftar)       | P1       | Turunkan friction onboarding                                                            |
+| Near-rank leaderboard                | P2       | "Kamu rank #47, 23 poin di bawah rank #46"                                              |
+| Referral system                      | P2 ✅    | Kode referral → bonus XP — `ReferralCode` on User, `POST /referral/apply`, profile card |
+| Number Match game                    | P2 ✅    | New logic game — cross pairs summing to 10                                              |
+| Fraction Visualizer                  | P2 ✅    | New math game — identify/compare/simplify with visual bar                               |
+| Ad mediation (Ad Manager)            | P2       | Maximize ad revenue                                                                     |
+| Remove ads subscription / IAP        | P2       | Freemium monetization                                                                   |
+| Blog section                         | P3       | SEO content                                                                             |
+| Weekly email summary                 | P3       | Retention email                                                                         |
 
 ---
 
@@ -3216,8 +3333,8 @@ Level Thresholds:
 
 ### Appendix C: Browser & Device Support Matrix
 
-| Browser / OS        | Minimum Version | Supported       |
-| ------------------- | --------------- | --------------- |
+| Browser / OS        | Minimum Version | Supported        |
+| ------------------- | --------------- | ---------------- |
 | Chrome Android      | 90+             | ✅ Full          |
 | Safari iOS          | 14+             | ✅ Full          |
 | Chrome Desktop      | 90+             | ✅ Full          |
@@ -3229,11 +3346,13 @@ Level Thresholds:
 | IE 11               | -               | ❌ Not supported |
 
 **PWA Installation Support:**
+
 - Chrome Android: ✅ Full (Add to Home Screen)
 - Safari iOS: ✅ Partial (Add to Home Screen, no push notifications)
 - Chrome Desktop: ✅ Full
 
 **Minimum Device Requirements:**
+
 - RAM: 1GB
 - CPU: Octa-core 1.5GHz atau lebih
 - Screen: 320px minimum width
@@ -3319,16 +3438,16 @@ make clean        # Hapus build artifacts
 
 ### Kapan PRD harus diupdate
 
-| Perubahan | Tindakan |
-| --------- | -------- |
-| Menambah / menghapus / merename game atau fitur | Update section 8 (Game Catalog) + Roadmap |
-| Mengubah priority (P0/P1/P2) | Update tabel di section relevan + v2.0 Backlog |
-| Mengubah versi tech stack atau library | Update section 15 (Technical Architecture) |
-| Memindahkan sesuatu antara "In Scope" dan "Out of Scope" | Update section 3 (Product Overview) |
-| Mengubah struktur navigasi (tabs, routes) | Update section 7 (Features) dan UX section |
-| Mengubah formula skor, XP, atau mekanik game | Update section 8 (game spec) + Appendix A |
-| Menambah endpoint yang belum ada di API spec | Update section 17 (API Specification) |
-| Mengubah database schema | Update section 16 (Database Schema) |
+| Perubahan                                                | Tindakan                                       |
+| -------------------------------------------------------- | ---------------------------------------------- |
+| Menambah / menghapus / merename game atau fitur          | Update section 8 (Game Catalog) + Roadmap      |
+| Mengubah priority (P0/P1/P2)                             | Update tabel di section relevan + v2.0 Backlog |
+| Mengubah versi tech stack atau library                   | Update section 15 (Technical Architecture)     |
+| Memindahkan sesuatu antara "In Scope" dan "Out of Scope" | Update section 3 (Product Overview)            |
+| Mengubah struktur navigasi (tabs, routes)                | Update section 7 (Features) dan UX section     |
+| Mengubah formula skor, XP, atau mekanik game             | Update section 8 (game spec) + Appendix A      |
+| Menambah endpoint yang belum ada di API spec             | Update section 17 (API Specification)          |
+| Mengubah database schema                                 | Update section 16 (Database Schema)            |
 
 ### File PRD
 
@@ -3339,6 +3458,6 @@ make clean        # Hapus build artifacts
 
 ---
 
-*Dokumen ini adalah living document. Setiap perubahan signifikan harus di-review oleh Product Lead dan Tech Lead sebelum diimplementasikan.*
+_Dokumen ini adalah living document. Setiap perubahan signifikan harus di-review oleh Product Lead dan Tech Lead sebelum diimplementasikan._
 
-*Last Updated: 2026-05-20 | Version: 2.0.0*
+_Last Updated: 2026-05-20 | Version: 2.0.0_

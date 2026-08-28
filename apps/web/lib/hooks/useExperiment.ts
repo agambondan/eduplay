@@ -1,54 +1,56 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import api from '@/lib/api/client'
+import { useEffect, useState } from 'react';
+import api from '@/lib/api/client';
 
 interface ExperimentConfig {
-  name: string
-  variants: string[]
-  traffic?: number
+  name: string;
+  variants: string[];
+  traffic?: number;
 }
 
-const experiments: Record<string, ExperimentConfig> = {}
+const experiments: Record<string, ExperimentConfig> = {};
 
 export function useExperiment(experimentName: string) {
-  const [variant, setVariant] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [variant, setVariant] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     async function load() {
       try {
         const token = localStorage.getItem('auth-storage')
           ? JSON.parse(localStorage.getItem('auth-storage') || '{}')?.state?.accessToken
-          : null
+          : null;
         if (!token) {
-          if (!cancelled) setVariant('control')
-          return
+          if (!cancelled) setVariant('control');
+          return;
         }
 
         const res = await api.get('/experiments/variant', {
           params: { name: experimentName },
           headers: { Authorization: `Bearer ${token}` },
-        })
+        });
         if (!cancelled) {
-          setVariant(res.data.data?.variant || 'control')
+          setVariant(res.data.data?.variant || 'control');
         }
       } catch {
         if (!cancelled) {
-          setVariant('control')
-          setError('Experiment not available')
+          setVariant('control');
+          setError('Experiment not available');
         }
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoading(false);
       }
     }
 
-    load()
-    return () => { cancelled = true }
-  }, [experimentName])
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [experimentName]);
 
   const trackEvent = async (eventType: string, metadata?: Record<string, unknown>) => {
     try {
@@ -56,13 +58,13 @@ export function useExperiment(experimentName: string) {
         name: experimentName,
         event: eventType,
         metadata: metadata || {},
-      })
+      });
     } catch {}
-  }
+  };
 
-  return { variant, loading, error, trackEvent }
+  return { variant, loading, error, trackEvent };
 }
 
 export function registerExperiment(config: ExperimentConfig) {
-  experiments[config.name] = config
+  experiments[config.name] = config;
 }

@@ -208,8 +208,11 @@ export default function Game2048() {
         </button>
         <div className="flex gap-2">
           {([3, 4, 5] as GridSize[]).map((s) => (
-            <button key={s} onClick={() => handleStart(s)}
-              className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${gridSize === s ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-700 dark:text-slate-300'}`}>
+            <button
+              key={s}
+              onClick={() => handleStart(s)}
+              className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${gridSize === s ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-700 dark:text-slate-300'}`}
+            >
               {s}×{s}
             </button>
           ))}
@@ -231,8 +234,11 @@ export default function Game2048() {
         </button>
       </div>
 
-      <div ref={boardRef} className="grid w-full max-w-sm gap-2 rounded-xl bg-gray-300 p-2 dark:bg-slate-600"
-        style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, touchAction: 'none' }}>
+      <div
+        ref={boardRef}
+        className="grid w-full max-w-sm gap-2 rounded-xl bg-gray-300 p-2 dark:bg-slate-600"
+        style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`, touchAction: 'none' }}
+      >
         {board.flat().map((val, i) => (
           <div
             key={i}

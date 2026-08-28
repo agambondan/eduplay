@@ -298,7 +298,12 @@ export default function Sudoku() {
   const selBox = selected ? [Math.floor(selRow / 3), Math.floor(selCol / 3)] : null;
 
   return (
-    <div className={cn('mx-auto flex w-full flex-col items-center gap-4 py-4', isPlaying ? 'max-w-xl' : 'max-w-sm')}>
+    <div
+      className={cn(
+        'mx-auto flex w-full flex-col items-center gap-4 py-4',
+        isPlaying ? 'max-w-xl' : 'max-w-sm'
+      )}
+    >
       {/* Status bar */}
       <div className="flex w-full items-center justify-between gap-2">
         <Timer
@@ -332,8 +337,11 @@ export default function Sudoku() {
       </div>
 
       {/* Board */}
-      <div className="w-full overflow-hidden rounded-lg border-2 border-gray-800 dark:border-slate-400" style={{ touchAction: 'none' }}>
-        <div className="grid grid-cols-9 select-none" role="grid" aria-label="Papan Sudoku 9x9">
+      <div
+        className="w-full overflow-hidden rounded-lg border-2 border-gray-800 dark:border-slate-400"
+        style={{ touchAction: 'none' }}
+      >
+        <div className="grid select-none grid-cols-9" role="grid" aria-label="Papan Sudoku 9x9">
           {current.map((row, r) =>
             row.map((cell, c) => {
               const isGiven = puzzle[r]?.[c] !== null;

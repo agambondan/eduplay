@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
-import { ConsentAwareScripts } from '@/components/layout/CookieConsentProvider';
 import { CookieBanner } from '@/components/layout/CookieBanner';
+import { ConsentAwareScripts } from '@/components/layout/CookieConsentProvider';
 import { Providers } from '@/components/layout/Providers';
 import { SkipLink } from '@/components/layout/SkipLink';
 import { WebAppJsonLd } from '@/components/seo/JsonLd';

@@ -87,5 +87,3 @@ func (b *RuleBasedBot) AnswerQuestion(q QuestionPayload) BotAnswer {
 
 	return BotAnswer{Answer: "0", IsCorrect: false, TimeTaken: 0}
 }
-
-

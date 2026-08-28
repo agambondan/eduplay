@@ -1,8 +1,9 @@
-'use client'
+'use client';
 
-import { useMemo, useState } from 'react'
-import Link from 'next/link'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Tournament, TournamentMatch, TournamentPlayer } from '@/types/multiplayer';
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Bot,
@@ -18,88 +19,87 @@ import {
   Swords,
   Trophy,
   Users,
-} from 'lucide-react'
-import { BannerAd } from '@/components/ads/BannerAd'
-import { tournamentsApi } from '@/lib/api/multiplayer'
-import { useAuthStore } from '@/lib/stores/authStore'
-import { cn } from '@/lib/utils/cn'
-import { Tournament, TournamentMatch, TournamentPlayer } from '@/types/multiplayer'
+} from 'lucide-react';
+import { tournamentsApi } from '@/lib/api/multiplayer';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { cn } from '@/lib/utils/cn';
+import { BannerAd } from '@/components/ads/BannerAd';
 
 const difficultyLabels: Record<string, string> = {
   easy: 'Mudah',
   medium: 'Sedang',
   hard: 'Sulit',
-}
+};
 
 const modeLabels: Record<string, string> = {
   quick: 'Quick',
   open_daily: 'Daily Open',
   open_weekly: 'Weekly Open',
-}
+};
 
 export default function MathTournament() {
-  const queryClient = useQueryClient()
-  const user = useAuthStore((s) => s.user)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [name, setName] = useState('Quick Math Tournament')
-  const [difficulty, setDifficulty] = useState('medium')
-  const [mode, setMode] = useState<'quick' | 'open_daily' | 'open_weekly'>('quick')
-  const [maxPlayers, setMaxPlayers] = useState(8)
-  const [joinCode, setJoinCode] = useState('')
-  const [error, setError] = useState('')
+  const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [name, setName] = useState('Quick Math Tournament');
+  const [difficulty, setDifficulty] = useState('medium');
+  const [mode, setMode] = useState<'quick' | 'open_daily' | 'open_weekly'>('quick');
+  const [maxPlayers, setMaxPlayers] = useState(8);
+  const [joinCode, setJoinCode] = useState('');
+  const [error, setError] = useState('');
 
   const { data: tournaments, isLoading } = useQuery({
     queryKey: ['tournaments'],
     queryFn: tournamentsApi.list,
     enabled: !!user,
-  })
+  });
 
   const activeTournament = useMemo(() => {
-    if (!tournaments?.length) return null
-    if (selectedId) return tournaments.find((item) => item.id === selectedId) ?? tournaments[0]
-    return tournaments[0]
-  }, [selectedId, tournaments])
+    if (!tournaments?.length) return null;
+    if (selectedId) return tournaments.find((item) => item.id === selectedId) ?? tournaments[0];
+    return tournaments[0];
+  }, [selectedId, tournaments]);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['tournaments'] })
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['tournaments'] });
 
   const createMutation = useMutation({
     mutationFn: () => tournamentsApi.create({ name, difficulty, mode, max_players: maxPlayers }),
     onSuccess: (tournament) => {
-      setSelectedId(tournament.id)
-      setError('')
-      invalidate()
+      setSelectedId(tournament.id);
+      setError('');
+      invalidate();
     },
     onError: (err: any) => setError(err.response?.data?.message || 'Gagal membuat tournament'),
-  })
+  });
 
   const joinMutation = useMutation({
     mutationFn: (id: string) => tournamentsApi.join(id),
     onSuccess: (tournament) => {
-      setSelectedId(tournament.id)
-      setError('')
-      invalidate()
+      setSelectedId(tournament.id);
+      setError('');
+      invalidate();
     },
     onError: (err: any) => setError(err.response?.data?.message || 'Gagal join tournament'),
-  })
+  });
 
   const joinByCode = () => {
-    const code = joinCode.trim().toUpperCase()
+    const code = joinCode.trim().toUpperCase();
     if (!code) {
-      setError('Masukkan invite code tournament')
-      return
+      setError('Masukkan invite code tournament');
+      return;
     }
-    joinMutation.mutate(code)
-  }
+    joinMutation.mutate(code);
+  };
 
   const startMutation = useMutation({
     mutationFn: (id: string) => tournamentsApi.start(id),
     onSuccess: (tournament) => {
-      setSelectedId(tournament.id)
-      setError('')
-      invalidate()
+      setSelectedId(tournament.id);
+      setError('');
+      invalidate();
     },
     onError: (err: any) => setError(err.response?.data?.message || 'Gagal mulai tournament'),
-  })
+  });
 
   const reportMutation = useMutation({
     mutationFn: ({
@@ -107,9 +107,9 @@ export default function MathTournament() {
       match,
       winner,
     }: {
-      tournamentId: string
-      match: TournamentMatch
-      winner: TournamentPlayer
+      tournamentId: string;
+      match: TournamentMatch;
+      winner: TournamentPlayer;
     }) =>
       tournamentsApi.reportMatch(tournamentId, match.id, {
         winner_player_id: winner.id,
@@ -117,12 +117,12 @@ export default function MathTournament() {
         player2_score: winner.id === match.player2?.id ? 120 : 80,
       }),
     onSuccess: (tournament) => {
-      setSelectedId(tournament.id)
-      setError('')
-      invalidate()
+      setSelectedId(tournament.id);
+      setError('');
+      invalidate();
     },
     onError: (err: any) => setError(err.response?.data?.message || 'Gagal report hasil match'),
-  })
+  });
 
   if (!user) {
     return (
@@ -147,7 +147,7 @@ export default function MathTournament() {
           </Link>
         </section>
       </main>
-    )
+    );
   }
 
   return (
@@ -204,10 +204,10 @@ export default function MathTournament() {
                     <button
                       key={value}
                       onClick={() => {
-                        setMode(value)
-                        if (value === 'quick') setName('Quick Math Tournament')
-                        if (value === 'open_daily') setName('Daily Math Tournament')
-                        if (value === 'open_weekly') setName('Weekly Math Tournament')
+                        setMode(value);
+                        if (value === 'quick') setName('Quick Math Tournament');
+                        if (value === 'open_daily') setName('Daily Math Tournament');
+                        if (value === 'open_weekly') setName('Weekly Math Tournament');
                       }}
                       className={cn(
                         'rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors',
@@ -271,7 +271,11 @@ export default function MathTournament() {
                 disabled={createMutation.isPending}
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
               >
-                {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {createMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
                 Buat Bracket
               </button>
             </div>
@@ -323,7 +327,9 @@ export default function MathTournament() {
                     <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-slate-400">
                       <span>{difficultyLabels[item.difficulty] ?? item.difficulty}</span>
                       <span>{modeLabels[item.mode] ?? item.mode}</span>
-                      <span>{item.players.length}/{item.max_players}</span>
+                      <span>
+                        {item.players.length}/{item.max_players}
+                      </span>
                       <span className="capitalize">{item.status}</span>
                     </div>
                   </button>
@@ -351,7 +357,9 @@ export default function MathTournament() {
           ) : (
             <div className="flex h-full min-h-[420px] flex-col items-center justify-center text-center">
               <Trophy className="mb-4 h-14 w-14 text-gray-300" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pilih atau buat tournament</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Pilih atau buat tournament
+              </h2>
               <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">
                 Bracket akan muncul di sini setelah tournament dibuat.
               </p>
@@ -360,7 +368,7 @@ export default function MathTournament() {
         </section>
       </div>
     </main>
-  )
+  );
 }
 
 function TournamentDetail({
@@ -371,27 +379,29 @@ function TournamentDetail({
   onReport,
   busy,
 }: {
-  tournament: Tournament
-  userId: string
-  onJoin: () => void
-  onStart: () => void
-  onReport: (match: TournamentMatch, winner: TournamentPlayer) => void
-  busy: boolean
+  tournament: Tournament;
+  userId: string;
+  onJoin: () => void;
+  onStart: () => void;
+  onReport: (match: TournamentMatch, winner: TournamentPlayer) => void;
+  busy: boolean;
 }) {
-  const isHost = tournament.host_id === userId
-  const isJoined = tournament.players.some((player) => player.user_id === userId)
+  const isHost = tournament.host_id === userId;
+  const isJoined = tournament.players.some((player) => player.user_id === userId);
   const isEliminated = tournament.players.some(
     (player) => player.user_id === userId && player.status === 'eliminated'
-  )
-  const champion = tournament.players.find((player) => player.user_id === tournament.champion_id)
-  const rounds = groupMatchesByRound(tournament.matches)
-  const copyInviteCode = () => navigator.clipboard?.writeText(tournament.invite_code)
+  );
+  const champion = tournament.players.find((player) => player.user_id === tournament.champion_id);
+  const rounds = groupMatchesByRound(tournament.matches);
+  const copyInviteCode = () => navigator.clipboard?.writeText(tournament.invite_code);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 border-b border-gray-100 pb-5 md:flex-row md:items-start md:justify-between dark:border-slate-700">
         <div>
-          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">{tournament.name}</h2>
+          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
+            {tournament.name}
+          </h2>
           <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold">
             <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
               {difficultyLabels[tournament.difficulty] ?? tournament.difficulty}
@@ -402,7 +412,7 @@ function TournamentDetail({
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
               {tournament.players.length}/{tournament.max_players} pemain
             </span>
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-700 capitalize dark:bg-slate-700 dark:text-slate-200">
+            <span className="rounded-full bg-gray-100 px-3 py-1 capitalize text-gray-700 dark:bg-slate-700 dark:text-slate-200">
               {tournament.status}
             </span>
           </div>
@@ -462,7 +472,9 @@ function TournamentDetail({
           <div className="flex items-center gap-3">
             <Crown className="h-8 w-8 text-amber-500" />
             <div>
-              <div className="text-sm font-semibold text-amber-700 dark:text-amber-300">Champion</div>
+              <div className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+                Champion
+              </div>
               <div className="text-xl font-extrabold text-gray-900 dark:text-white">
                 {champion?.display_name ?? 'Champion'}
               </div>
@@ -532,7 +544,7 @@ function TournamentDetail({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function MatchCard({
@@ -543,17 +555,17 @@ function MatchCard({
   busy,
   canReport,
 }: {
-  match: TournamentMatch
-  tournamentId: string
-  userId: string
-  onReport: (match: TournamentMatch, winner: TournamentPlayer) => void
-  busy: boolean
-  canReport: boolean
+  match: TournamentMatch;
+  tournamentId: string;
+  userId: string;
+  onReport: (match: TournamentMatch, winner: TournamentPlayer) => void;
+  busy: boolean;
+  canReport: boolean;
 }) {
-  const players = [match.player1, match.player2].filter(Boolean) as TournamentPlayer[]
-  const isFinished = match.status === 'finished'
-  const canPlay = match.status === 'active' && players.some((player) => player.user_id === userId)
-  const canWatch = match.status === 'active' && !canPlay
+  const players = [match.player1, match.player2].filter(Boolean) as TournamentPlayer[];
+  const isFinished = match.status === 'finished';
+  const canPlay = match.status === 'active' && players.some((player) => player.user_id === userId);
+  const canWatch = match.status === 'active' && !canPlay;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
@@ -563,8 +575,8 @@ function MatchCard({
       </div>
       <div className="space-y-2">
         {players.map((player, index) => {
-          const score = index === 0 ? match.player1_score : match.player2_score
-          const won = match.winner_player_id === player.id
+          const score = index === 0 ? match.player1_score : match.player2_score;
+          const won = match.winner_player_id === player.id;
           return (
             <div
               key={player.id}
@@ -584,7 +596,7 @@ function MatchCard({
                 {won && <Check className="h-4 w-4 text-emerald-500" />}
               </span>
             </div>
-          )
+          );
         })}
         {players.length < 2 && (
           <div className="rounded-lg border border-dashed border-gray-200 px-3 py-2 text-sm text-gray-400 dark:border-slate-700">
@@ -612,21 +624,21 @@ function MatchCard({
             </Link>
           )}
           <div className="grid grid-cols-2 gap-2">
-          {players.map((player) => (
-            <button
-              key={player.id}
-              onClick={() => onReport(match, player)}
-              disabled={busy}
-              className="rounded-lg border border-indigo-200 px-2 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:opacity-60 dark:border-indigo-900 dark:text-indigo-300 dark:hover:bg-indigo-950"
-            >
-              {player.display_name} Menang
-            </button>
-          ))}
+            {players.map((player) => (
+              <button
+                key={player.id}
+                onClick={() => onReport(match, player)}
+                disabled={busy}
+                className="rounded-lg border border-indigo-200 px-2 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:opacity-60 dark:border-indigo-900 dark:text-indigo-300 dark:hover:bg-indigo-950"
+              >
+                {player.display_name} Menang
+              </button>
+            ))}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function buildMathBattleHref(tournamentId: string, match: TournamentMatch, spectator = false) {
@@ -638,9 +650,9 @@ function buildMathBattleHref(tournamentId: string, match: TournamentMatch, spect
     p1_user: match.player1?.user_id ?? '',
     p2_id: match.player2?.id ?? '',
     p2_user: match.player2?.user_id ?? '',
-  })
-  if (spectator) params.set('spectator', '1')
-  return `/games/math-battle?${params.toString()}`
+  });
+  if (spectator) params.set('spectator', '1');
+  return `/games/math-battle?${params.toString()}`;
 }
 
 function formatDateTime(value: string) {
@@ -649,13 +661,13 @@ function formatDateTime(value: string) {
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(value))
+  }).format(new Date(value));
 }
 
 function groupMatchesByRound(matches: TournamentMatch[]) {
-  const grouped = new Map<number, TournamentMatch[]>()
+  const grouped = new Map<number, TournamentMatch[]>();
   matches.forEach((match) => {
-    grouped.set(match.round, [...(grouped.get(match.round) ?? []), match])
-  })
-  return Array.from(grouped.entries()).sort(([a], [b]) => a - b)
+    grouped.set(match.round, [...(grouped.get(match.round) ?? []), match]);
+  });
+  return Array.from(grouped.entries()).sort(([a], [b]) => a - b);
 }

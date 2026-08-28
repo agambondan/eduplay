@@ -204,7 +204,9 @@ export default function SettingsPage() {
             {emailLoading ? (
               <Loader2 className="absolute inset-0 m-auto h-4 w-4 animate-spin text-gray-500" />
             ) : (
-              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${weeklyEmail ? 'left-5' : 'left-0.5'}`} />
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${weeklyEmail ? 'left-5' : 'left-0.5'}`}
+              />
             )}
           </button>
         </div>
@@ -215,7 +217,9 @@ export default function SettingsPage() {
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <Zap className="h-5 w-5 text-amber-500" /> Premium
         </h2>
-        <p className="text-sm text-gray-500 dark:text-slate-400">Nikmati EduPlay tanpa iklan! Dukung pengembangan platform.</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400">
+          Nikmati EduPlay tanpa iklan! Dukung pengembangan platform.
+        </p>
         <SubscribeSection />
       </section>
 
@@ -224,7 +228,9 @@ export default function SettingsPage() {
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <Globe className="h-5 w-5" /> {t('settings.language')}
         </h2>
-        <p className="mb-4 text-sm text-gray-500 dark:text-slate-400">{t('settings.language_desc')}</p>
+        <p className="mb-4 text-sm text-gray-500 dark:text-slate-400">
+          {t('settings.language_desc')}
+        </p>
         <div className="flex gap-3">
           <button
             onClick={() => setLocale('id')}
@@ -285,45 +291,65 @@ export default function SettingsPage() {
 }
 
 function SubscribeSection() {
-  const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState<{ plan?: string; status?: string; expires_at?: string } | null>(null)
-  const [checking, setChecking] = useState(true)
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{
+    plan?: string;
+    status?: string;
+    expires_at?: string;
+  } | null>(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     import('@/lib/api/multiplayer').then(({ subscribeApi }) => {
-      subscribeApi.status().then((s) => setStatus(s)).catch(() => {}).finally(() => setChecking(false))
-    })
-  }, [])
+      subscribeApi
+        .status()
+        .then((s) => setStatus(s))
+        .catch(() => {})
+        .finally(() => setChecking(false));
+    });
+  }, []);
 
   const handleSubscribe = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const { subscribeApi } = await import('@/lib/api/multiplayer')
-      const result = await subscribeApi.create()
+      const { subscribeApi } = await import('@/lib/api/multiplayer');
+      const result = await subscribeApi.create();
       if (result.redirect_url) {
-        window.open(result.redirect_url, '_blank')
+        window.open(result.redirect_url, '_blank');
       }
     } catch {}
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
-  if (checking) return <div className="mt-3 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
+  if (checking)
+    return (
+      <div className="mt-3 flex justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+      </div>
+    );
 
   if (status?.status === 'active') {
     return (
       <div className="mt-3 rounded-xl bg-emerald-50 p-4 text-center dark:bg-emerald-950">
         <p className="font-bold text-emerald-700 dark:text-emerald-300">Premium Aktif</p>
-        {status.expires_at && <p className="mt-1 text-xs text-gray-500">Berlaku hingga: {new Date(status.expires_at).toLocaleDateString('id-ID')}</p>}
+        {status.expires_at && (
+          <p className="mt-1 text-xs text-gray-500">
+            Berlaku hingga: {new Date(status.expires_at).toLocaleDateString('id-ID')}
+          </p>
+        )}
         <Check className="mx-auto mt-2 h-6 w-6 text-emerald-500" />
       </div>
-    )
+    );
   }
 
   return (
-    <button onClick={handleSubscribe} disabled={loading}
-      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50">
+    <button
+      onClick={handleSubscribe}
+      disabled={loading}
+      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50"
+    >
       {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
       Langganan Premium — Bebas Iklan
     </button>
-  )
+  );
 }

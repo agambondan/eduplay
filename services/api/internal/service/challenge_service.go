@@ -27,16 +27,16 @@ type UserAnswer struct {
 }
 
 type AsyncChallengeResponse struct {
-	ID               string  `json:"id"`
-	ChallengerName   string  `json:"challenger_name"`
-	OpponentName     string  `json:"opponent_name"`
-	GameName         string  `json:"game_name"`
-	Difficulty       string  `json:"difficulty"`
-	ChallengerScore  *int    `json:"challenger_score"`
-	OpponentScore    *int    `json:"opponent_score"`
-	Status           string  `json:"status"`
-	ExpiresAt        string  `json:"expires_at"`
-	CreatedAt        string  `json:"created_at"`
+	ID              string `json:"id"`
+	ChallengerName  string `json:"challenger_name"`
+	OpponentName    string `json:"opponent_name"`
+	GameName        string `json:"game_name"`
+	Difficulty      string `json:"difficulty"`
+	ChallengerScore *int   `json:"challenger_score"`
+	OpponentScore   *int   `json:"opponent_score"`
+	Status          string `json:"status"`
+	ExpiresAt       string `json:"expires_at"`
+	CreatedAt       string `json:"created_at"`
 }
 
 type AsyncChallengeDetail struct {
@@ -46,9 +46,9 @@ type AsyncChallengeDetail struct {
 }
 
 type ChallengeResult struct {
-	WinnerID   string `json:"winner_id"`
-	Result     string `json:"result"` // "win", "lose", "draw", "pending"
-	XPEarned   int    `json:"xp_earned"`
+	WinnerID string `json:"winner_id"`
+	Result   string `json:"result"` // "win", "lose", "draw", "pending"
+	XPEarned int    `json:"xp_earned"`
 }
 
 type challengeService struct {
@@ -118,12 +118,12 @@ func (s *challengeService) CreateChallenge(challengerID, opponentUsername, gameS
 	}
 
 	return &AsyncChallengeResponse{
-		ID:         challenge.ID.String(),
+		ID:           challenge.ID.String(),
 		OpponentName: opponent.Username,
-		Difficulty: difficulty,
-		Status:     "pending",
-		ExpiresAt:  challenge.ExpiresAt.Format(time.RFC3339),
-		CreatedAt:  challenge.CreatedAt.Format(time.RFC3339),
+		Difficulty:   difficulty,
+		Status:       "pending",
+		ExpiresAt:    challenge.ExpiresAt.Format(time.RFC3339),
+		CreatedAt:    challenge.CreatedAt.Format(time.RFC3339),
 	}, nil
 }
 

@@ -20,15 +20,15 @@ func NewWeeklySummaryService(emailCl *email.ResendClient) *WeeklySummaryService 
 }
 
 type weeklyStats struct {
-	Username        string
-	GamesPlayed     int64
-	XPEarned        int64
-	Streak          int
-	Level           int
-	Achievements    int64
-	GamesStr        string
-	TopGame         string
-	TotalSessions   int64
+	Username      string
+	GamesPlayed   int64
+	XPEarned      int64
+	Streak        int
+	Level         int
+	Achievements  int64
+	GamesStr      string
+	TopGame       string
+	TotalSessions int64
 }
 
 func (s *WeeklySummaryService) SendWeeklySummaries() {

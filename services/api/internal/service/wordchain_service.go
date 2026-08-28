@@ -26,23 +26,23 @@ type WordChainService interface {
 }
 
 type WordChainGameResponse struct {
-	ID             string `json:"id"`
-	OpponentName   string `json:"opponent_name"`
-	IsVsBot        bool   `json:"is_vs_bot"`
-	BotDifficulty  string `json:"bot_difficulty"`
-	CurrentWord    string `json:"current_word"`
-	MyTurn         bool   `json:"my_turn"`
-	Player1Score   int    `json:"player1_score"`
-	Player2Score   int    `json:"player2_score"`
-	Status         string `json:"status"`
-	TurnExpiresAt  string `json:"turn_expires_at"`
-	CreatedAt      string `json:"created_at"`
+	ID            string `json:"id"`
+	OpponentName  string `json:"opponent_name"`
+	IsVsBot       bool   `json:"is_vs_bot"`
+	BotDifficulty string `json:"bot_difficulty"`
+	CurrentWord   string `json:"current_word"`
+	MyTurn        bool   `json:"my_turn"`
+	Player1Score  int    `json:"player1_score"`
+	Player2Score  int    `json:"player2_score"`
+	Status        string `json:"status"`
+	TurnExpiresAt string `json:"turn_expires_at"`
+	CreatedAt     string `json:"created_at"`
 }
 
 type WordChainDetail struct {
 	WordChainGameResponse
-	WordsUsed  []string          `json:"words_used"`
-	History    []WordHistoryItem `json:"history"`
+	WordsUsed []string          `json:"words_used"`
+	History   []WordHistoryItem `json:"history"`
 }
 
 type WordHistoryItem struct {
@@ -63,9 +63,9 @@ type WordSubmitResult struct {
 }
 
 type wordChainService struct {
-	cfg    *config.Config
-	aiSvc  AIService
-	words  map[rune][]string
+	cfg   *config.Config
+	aiSvc AIService
+	words map[rune][]string
 }
 
 func NewWordChainService(cfg *config.Config, aiSvc AIService) WordChainService {
@@ -166,7 +166,7 @@ var kbbiWords = []string{
 	"berisik", "berita", "berkah", "berkas", "berkat", "berkik", "berkil", "berko", "berkung",
 	"berlau", "berlian", "berma", "bermat", "berminyak", "bernas", "bernga", "beroci", "beroga",
 	"berok", "beronak", "beronang", "berondok", "berondong", "beronga", "berongkol", "beronok",
-	"berontak", "beron(t)" , "beroro", "beros", "bersat", "bersih", "bersin", "bersit", "bersut",
+	"berontak", "beron(t)", "beroro", "beros", "bersat", "bersih", "bersin", "bersit", "bersut",
 	"bertam", "bertih", "bertil", "beru", "beruang", "beruas", "berubuh", "berudu", "berui",
 	"beruju", "berujul", "beruk", "berumbung", "berumbun", "berunding", "beruntus", "berus",
 	"berwujud", "besar", "besaran", "besek", "besel", "besengek", "beser", "besero", "beset",

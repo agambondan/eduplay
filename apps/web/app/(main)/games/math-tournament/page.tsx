@@ -1,10 +1,10 @@
-import { Metadata } from 'next'
-import MathTournament from '@/components/games/MathTournament'
-import { GameJsonLd } from '@/components/seo/JsonLd'
+import { Metadata } from 'next';
+import MathTournament from '@/components/games/MathTournament';
+import { GameJsonLd } from '@/components/seo/JsonLd';
 
 export async function generateMetadata(): Promise<Metadata> {
   const description =
-    'Buat bracket Math Tournament 4, 8, atau 16 pemain dengan seeding, bot fill, dan reward XP.'
+    'Buat bracket Math Tournament 4, 8, atau 16 pemain dengan seeding, bot fill, dan reward XP.';
 
   return {
     title: 'Math Tournament | EduPlay',
@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: 'Math Tournament | EduPlay',
       description,
     },
-  }
+  };
 }
 
 export default function MathTournamentPage() {
@@ -32,5 +32,5 @@ export default function MathTournamentPage() {
       />
       <MathTournament />
     </>
-  )
+  );
 }

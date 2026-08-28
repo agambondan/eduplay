@@ -2,22 +2,48 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  generateBoard, findPath, shuffleBoard, hasValidMoves, applyGravity,
-  DIFFICULTY, OnetConfig, Point, Gravity,
-  fetchAdminConfig, applyAdminOverrides,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  Lightbulb,
+  Pause,
+  Play,
+  RotateCcw,
+  Shuffle,
+  Sparkles,
+} from 'lucide-react';
+import {
+  DIFFICULTY,
+  Gravity,
+  OnetConfig,
+  Point,
+  applyAdminOverrides,
+  applyGravity,
+  fetchAdminConfig,
+  findPath,
+  generateBoard,
+  hasValidMoves,
+  shuffleBoard,
 } from '@/lib/game-engines/onetEngine';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
-import { GameContainer } from '@/components/ui/GameContainer';
 import { cn } from '@/lib/utils/cn';
-import { Sparkles, Shuffle, Lightbulb, Pause, Play, RotateCcw, ArrowDown, ArrowUp, ArrowLeft, ArrowRight } from 'lucide-react';
+import { GameContainer } from '@/components/ui/GameContainer';
 
 const ANIMATION_DURATION = 300;
 const GRAVITY_ICONS: Record<string, typeof ArrowDown> = {
-  down: ArrowDown, up: ArrowUp, left: ArrowLeft, right: ArrowRight,
+  down: ArrowDown,
+  up: ArrowUp,
+  left: ArrowLeft,
+  right: ArrowRight,
 };
 const GRAVITY_NAMES: Record<string, string> = {
-  none: 'No Gravity', down: 'Gravity Down', up: 'Gravity Up', left: 'Slide Left', right: 'Slide Right',
+  none: 'No Gravity',
+  down: 'Gravity Down',
+  up: 'Gravity Up',
+  left: 'Slide Left',
+  right: 'Slide Right',
 };
 
 let resolvedDifficulty: Record<string, OnetConfig> | null = null;
@@ -43,46 +69,60 @@ export default function OnetGame() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const scoreRef = useRef(0);
 
-  const init = useCallback(async (diff: string) => {
-    if (!resolvedDifficulty) {
-      const overrides = await fetchAdminConfig();
-      resolvedDifficulty = applyAdminOverrides(DIFFICULTY, overrides);
-    }
-    const cfg = resolvedDifficulty[diff];
-    setDifficulty(diff);
-    setConfig(cfg);
-    const { board: b, iconMap: im } = generateBoard(cfg);
-    setBoard(b);
-    setIconMap(im);
-    setSelected(null);
-    setPath([]);
-    setRemoving(false);
-    setTimer(cfg.timeLimit);
-    setCombo(0);
-    setGameOver(false);
-    setPaused(false);
-    setShuffles(3);
-    setHints(3);
-    setHintPath([]);
-    setGravityLabel(GRAVITY_NAMES[cfg.gravity || 'none']);
-    scoreRef.current = 0;
-    startGame();
-  }, [startGame]);
+  const init = useCallback(
+    async (diff: string) => {
+      if (!resolvedDifficulty) {
+        const overrides = await fetchAdminConfig();
+        resolvedDifficulty = applyAdminOverrides(DIFFICULTY, overrides);
+      }
+      const cfg = resolvedDifficulty[diff];
+      setDifficulty(diff);
+      setConfig(cfg);
+      const { board: b, iconMap: im } = generateBoard(cfg);
+      setBoard(b);
+      setIconMap(im);
+      setSelected(null);
+      setPath([]);
+      setRemoving(false);
+      setTimer(cfg.timeLimit);
+      setCombo(0);
+      setGameOver(false);
+      setPaused(false);
+      setShuffles(3);
+      setHints(3);
+      setHintPath([]);
+      setGravityLabel(GRAVITY_NAMES[cfg.gravity || 'none']);
+      scoreRef.current = 0;
+      startGame();
+    },
+    [startGame]
+  );
 
   useEffect(() => {
     if (!isPlaying || gameOver || paused || timer <= 0) return;
     timerRef.current = setInterval(() => {
       setTimer((prev) => {
-        if (prev <= 1) { clearInterval(timerRef.current!); finishGame(scoreRef.current); return 0; }
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          finishGame(scoreRef.current);
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [isPlaying, gameOver, paused, timer]);
 
-  const finishGame = useCallback((finalScore: number) => {
-    setGameOver(true); endGame(); submitScore(finalScore);
-  }, [endGame, submitScore]);
+  const finishGame = useCallback(
+    (finalScore: number) => {
+      setGameOver(true);
+      endGame();
+      submitScore(finalScore);
+    },
+    [endGame, submitScore]
+  );
 
   useEffect(() => {
     if (!isPlaying || gameOver || paused) return;
@@ -103,37 +143,52 @@ export default function OnetGame() {
     return count;
   };
 
-  const handleCellClick = useCallback((row: number, col: number) => {
-    if (removing || gameOver || paused || !config) return;
-    if (board[row][col] === null) return;
-    setHintPath([]);
+  const handleCellClick = useCallback(
+    (row: number, col: number) => {
+      if (removing || gameOver || paused || !config) return;
+      if (board[row][col] === null) return;
+      setHintPath([]);
 
-    if (!selected) { setSelected({ row, col }); return; }
-    if (selected.row === row && selected.col === col) { setSelected(null); return; }
-    if (board[selected.row][selected.col] !== board[row][col]) { setSelected({ row, col }); return; }
+      if (!selected) {
+        setSelected({ row, col });
+        return;
+      }
+      if (selected.row === row && selected.col === col) {
+        setSelected(null);
+        return;
+      }
+      if (board[selected.row][selected.col] !== board[row][col]) {
+        setSelected({ row, col });
+        return;
+      }
 
-    const result = findPath(board, selected, { row, col });
-    if (!result.found) { setSelected({ row, col }); return; }
+      const result = findPath(board, selected, { row, col });
+      if (!result.found) {
+        setSelected({ row, col });
+        return;
+      }
 
-    setRemoving(true);
-    setPath(result.path);
-    setSelected(null);
+      setRemoving(true);
+      setPath(result.path);
+      setSelected(null);
 
-    setTimeout(() => {
-      let newBoard = board.map((r) => [...r]);
-      newBoard[selected.row][selected.col] = null;
-      newBoard[row][col] = null;
-      newBoard = applyGravity(newBoard, (config.gravity || 'none') as Gravity);
-      setBoard(newBoard);
-      setPath([]);
-      setRemoving(false);
-      const newCombo = combo + 1;
-      setCombo(newCombo);
-      const pts = 100 + (newCombo - 1) * 50;
-      scoreRef.current += pts;
-      addScore(pts);
-    }, ANIMATION_DURATION);
-  }, [board, selected, removing, gameOver, paused, config, combo, addScore]);
+      setTimeout(() => {
+        let newBoard = board.map((r) => [...r]);
+        newBoard[selected.row][selected.col] = null;
+        newBoard[row][col] = null;
+        newBoard = applyGravity(newBoard, (config.gravity || 'none') as Gravity);
+        setBoard(newBoard);
+        setPath([]);
+        setRemoving(false);
+        const newCombo = combo + 1;
+        setCombo(newCombo);
+        const pts = 100 + (newCombo - 1) * 50;
+        scoreRef.current += pts;
+        addScore(pts);
+      }, ANIMATION_DURATION);
+    },
+    [board, selected, removing, gameOver, paused, config, combo, addScore]
+  );
 
   const handleShuffle = useCallback(() => {
     if (shuffles <= 0 || gameOver || paused) return;
@@ -185,7 +240,9 @@ export default function OnetGame() {
                     {GI && <GI className="h-4 w-4 text-rose-400" />}
                   </span>
                   <p className="text-sm text-gray-500 dark:text-slate-400">
-                    {cfg.rows}x{cfg.cols} &middot; {cfg.tileTypes} tipe &middot; {Math.floor(cfg.timeLimit / 60)}m &middot; {GRAVITY_NAMES[cfg.gravity || 'none']}
+                    {cfg.rows}x{cfg.cols} &middot; {cfg.tileTypes} tipe &middot;{' '}
+                    {Math.floor(cfg.timeLimit / 60)}m &middot;{' '}
+                    {GRAVITY_NAMES[cfg.gravity || 'none']}
                   </p>
                 </button>
               );
@@ -203,7 +260,10 @@ export default function OnetGame() {
           <p className="mt-2 text-4xl font-extrabold text-rose-500">{scoreRef.current}</p>
           <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">skor akhir</p>
           <div className="mt-6 flex justify-center gap-3">
-            <button onClick={() => init(difficulty)} className="flex items-center gap-2 rounded-xl bg-rose-500 px-6 py-3 font-bold text-white shadow-lg transition-all hover:bg-rose-600">
+            <button
+              onClick={() => init(difficulty)}
+              className="flex items-center gap-2 rounded-xl bg-rose-500 px-6 py-3 font-bold text-white shadow-lg transition-all hover:bg-rose-600"
+            >
               <RotateCcw className="h-5 w-5" /> Main Lagi
             </button>
           </div>
@@ -230,29 +290,53 @@ export default function OnetGame() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={handleHint} disabled={hints <= 0} className="rounded-lg border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-30 dark:border-slate-700 dark:hover:bg-slate-700" title={`Hint (${hints})`}>
+              <button
+                onClick={handleHint}
+                disabled={hints <= 0}
+                className="rounded-lg border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-30 dark:border-slate-700 dark:hover:bg-slate-700"
+                title={`Hint (${hints})`}
+              >
                 <Lightbulb className="h-4 w-4" />
               </button>
-              <button onClick={handleShuffle} disabled={shuffles <= 0} className="rounded-lg border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-30 dark:border-slate-700 dark:hover:bg-slate-700" title={`Shuffle (${shuffles})`}>
+              <button
+                onClick={handleShuffle}
+                disabled={shuffles <= 0}
+                className="rounded-lg border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-30 dark:border-slate-700 dark:hover:bg-slate-700"
+                title={`Shuffle (${shuffles})`}
+              >
                 <Shuffle className="h-4 w-4" />
               </button>
-              <button onClick={handlePause} className="rounded-lg border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-700">
+              <button
+                onClick={handlePause}
+                className="rounded-lg border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-700"
+              >
                 {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
               </button>
             </div>
           </div>
 
           <div className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-slate-700">
-            <div className="h-full rounded-full bg-gradient-to-r from-rose-400 to-pink-500 transition-all duration-1000" style={{ width: `${config ? (timer / config.timeLimit) * 100 : 0}%` }} />
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-rose-400 to-pink-500 transition-all duration-1000"
+              style={{ width: `${config ? (timer / config.timeLimit) * 100 : 0}%` }}
+            />
           </div>
-          <p className="text-right text-xs font-mono text-gray-400">
+          <p className="text-right font-mono text-xs text-gray-400">
             {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
           </p>
 
           {paused ? (
-            <div className="flex h-64 items-center justify-center"><p className="text-lg font-semibold text-gray-400">DIJEDA</p></div>
+            <div className="flex h-64 items-center justify-center">
+              <p className="text-lg font-semibold text-gray-400">DIJEDA</p>
+            </div>
           ) : (
-            <div className="mx-auto grid w-full touch-none select-none gap-1" style={{ gridTemplateColumns: `repeat(${config?.cols || 8}, 1fr)`, maxWidth: `min(${(config?.cols || 8) * 52}px, 100%)` }}>
+            <div
+              className="mx-auto grid w-full touch-none select-none gap-1"
+              style={{
+                gridTemplateColumns: `repeat(${config?.cols || 8}, 1fr)`,
+                maxWidth: `min(${(config?.cols || 8) * 52}px, 100%)`,
+              }}
+            >
               {board.map((row, r) =>
                 row.map((cell, c) => {
                   const isSelected = selected?.row === r && selected?.col === c;
@@ -267,10 +351,14 @@ export default function OnetGame() {
                       className={cn(
                         'flex aspect-square w-full items-center justify-center rounded-lg text-sm font-bold transition-all duration-150 sm:text-lg',
                         isEmpty && 'invisible',
-                        !isEmpty && 'border border-gray-200 bg-white shadow-sm hover:border-rose-400 hover:shadow-md dark:border-slate-600 dark:bg-slate-800',
-                        isSelected && 'border-2 border-rose-500 shadow-md ring-2 ring-rose-200 dark:ring-rose-800',
-                        isPath && 'border-2 border-emerald-500 bg-emerald-50 scale-105 dark:bg-emerald-900',
-                        isHint && 'animate-pulse border-2 border-amber-400 bg-amber-50 dark:bg-amber-900',
+                        !isEmpty &&
+                          'border border-gray-200 bg-white shadow-sm hover:border-rose-400 hover:shadow-md dark:border-slate-600 dark:bg-slate-800',
+                        isSelected &&
+                          'border-2 border-rose-500 shadow-md ring-2 ring-rose-200 dark:ring-rose-800',
+                        isPath &&
+                          'scale-105 border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-900',
+                        isHint &&
+                          'animate-pulse border-2 border-amber-400 bg-amber-50 dark:bg-amber-900'
                       )}
                     >
                       {!isEmpty && <span className="pointer-events-none">{iconMap.get(cell)}</span>}
@@ -282,7 +370,9 @@ export default function OnetGame() {
           )}
 
           {!hasValidMoves(board) && remaining > 0 && (
-            <p className="text-center text-sm font-medium text-amber-600">Tidak ada langkah. Shuffle otomatis...</p>
+            <p className="text-center text-sm font-medium text-amber-600">
+              Tidak ada langkah. Shuffle otomatis...
+            </p>
           )}
         </div>
       )}

@@ -6,12 +6,12 @@ EduPlay is a PWA educational mini-game platform combining learning with gamifica
 
 ## Tech Stack
 
-| Layer | Stack |
-|-------|-------|
+| Layer        | Stack                                                                  |
+| ------------ | ---------------------------------------------------------------------- |
 | **Frontend** | Next.js 16 App Router, React 19, Tailwind CSS, Zustand, TanStack Query |
-| **Backend** | Go 1.26, Fiber v2, GORM, Postgres 18, Redis 8 |
-| **AI** | Anthropic Claude API (dynamic question generation) |
-| **Auth** | JWT (access + refresh token rotation) |
+| **Backend**  | Go 1.26, Fiber v2, GORM, Postgres 18, Redis 8                          |
+| **AI**       | Anthropic Claude API (dynamic question generation)                     |
+| **Auth**     | JWT (access + refresh token rotation)                                  |
 
 ---
 
@@ -92,36 +92,36 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Root (`./`)
 
-| Command | Description |
-|---------|-------------|
-| `make up` | Start all services (detached) |
-| `make down` | Stop all services |
-| `make build` | Build Docker images (cached) |
-| `make rebuild` | Clean rebuild: down → build `--no-cache` → up |
-| `make rebuild-api` | Rebuild only backend image + restart |
-| `make rebuild-web` | Rebuild only frontend image + restart |
-| `make logs` | Tail all container logs |
-| `make ps` | List running containers |
-| `make clean` | Nuke everything including volumes |
+| Command            | Description                                   |
+| ------------------ | --------------------------------------------- |
+| `make up`          | Start all services (detached)                 |
+| `make down`        | Stop all services                             |
+| `make build`       | Build Docker images (cached)                  |
+| `make rebuild`     | Clean rebuild: down → build `--no-cache` → up |
+| `make rebuild-api` | Rebuild only backend image + restart          |
+| `make rebuild-web` | Rebuild only frontend image + restart         |
+| `make logs`        | Tail all container logs                       |
+| `make ps`          | List running containers                       |
+| `make clean`       | Nuke everything including volumes             |
 
 ### Backend (`services/api/`)
 
-| Command | Description |
-|---------|-------------|
-| `make dev` | Dev server with hot-reload |
-| `make build` | Build Go binary |
-| `make run` | Run binary |
-| `make test` | Run all Go tests |
+| Command      | Description                |
+| ------------ | -------------------------- |
+| `make dev`   | Dev server with hot-reload |
+| `make build` | Build Go binary            |
+| `make run`   | Run binary                 |
+| `make test`  | Run all Go tests           |
 
 ### Frontend (`apps/web/`)
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Next.js dev server |
-| `npm run build` | Production build |
-| `npm run test` | Run Vitest unit tests (21 tests) |
-| `npm run test:watch` | Tests in watch mode |
-| `npm run lint` | Run ESLint |
+| Command              | Description                      |
+| -------------------- | -------------------------------- |
+| `npm run dev`        | Next.js dev server               |
+| `npm run build`      | Production build                 |
+| `npm run test`       | Run Vitest unit tests (21 tests) |
+| `npm run test:watch` | Tests in watch mode              |
+| `npm run lint`       | Run ESLint                       |
 
 ---
 
@@ -139,21 +139,21 @@ Images use distroless/base:nonroot (Go) and Next.js standalone output for minima
 
 ### Backend (`services/api/.env`)
 
-| Variable | Description |
-|----------|-------------|
-| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Postgres config |
-| `REDIS_URL` | Redis connection string |
-| `JWT_SECRET` | JWT signing key |
-| `JWT_ACCESS_EXPIRY` | Access token TTL (e.g. `15m`) |
-| `JWT_REFRESH_EXPIRY` | Refresh token TTL (e.g. `168h`) |
-| `ANTHROPIC_API_KEY` | Claude API key for AI questions |
+| Variable                                                  | Description                     |
+| --------------------------------------------------------- | ------------------------------- |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Postgres config                 |
+| `REDIS_URL`                                               | Redis connection string         |
+| `JWT_SECRET`                                              | JWT signing key                 |
+| `JWT_ACCESS_EXPIRY`                                       | Access token TTL (e.g. `15m`)   |
+| `JWT_REFRESH_EXPIRY`                                      | Refresh token TTL (e.g. `168h`) |
+| `ANTHROPIC_API_KEY`                                       | Claude API key for AI questions |
 
 ### Frontend (`apps/web/.env.local`)
 
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_API_URL` | Backend URL (e.g. `http://localhost:8080/api/v1`) |
-| `NEXT_PUBLIC_ADSENSE_CLIENT_ID` | Google AdSense ID |
+| Variable                        | Description                                       |
+| ------------------------------- | ------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`           | Backend URL (e.g. `http://localhost:8080/api/v1`) |
+| `NEXT_PUBLIC_ADSENSE_CLIENT_ID` | Google AdSense ID                                 |
 
 ---
 
@@ -171,6 +171,7 @@ The product specification lives in the `PRD_EduPlay_v2.md` file (and its addenda
 **Rule: Jika development mengubah ketentuan yang ada di PRD, update PRD-nya sekalian.**
 
 Contoh perubahan yang wajib di-sync ke PRD:
+
 - Menambah / menghapus / merename game atau fitur
 - Mengubah priority (P0/P1/P2)
 - Mengubah versi tech stack atau library
@@ -180,6 +181,7 @@ Contoh perubahan yang wajib di-sync ke PRD:
 - Menambah endpoint yang belum ada di API spec
 
 File PRD:
+
 - [`PRD_EduPlay_v2.md`](./PRD_EduPlay_v2.md) — master spec (selalu update ini dulu)
 - [`PRD_Addendum_Multiplayer_Bot.md`](./PRD_Addendum_Multiplayer_Bot.md) — multiplayer + bot
 - [`PRD_Addendum_Multiplayer_Games.md`](./PRD_Addendum_Multiplayer_Games.md) — game multiplayer tambahan

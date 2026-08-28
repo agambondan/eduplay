@@ -1,22 +1,22 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useState } from 'react';
 import {
-  LayoutDashboard,
-  Users,
-  Gamepad2,
-  ToggleLeft,
-  Trophy,
-  Megaphone,
-  Inbox,
   BarChart3,
   ChevronLeft,
+  Gamepad2,
+  Inbox,
+  LayoutDashboard,
+  Megaphone,
   Menu,
+  ToggleLeft,
+  Trophy,
+  Users,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
 import { useAuthStore } from '@/lib/stores/authStore';
 
 const NAV_ITEMS = [
@@ -55,7 +55,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       />
 
       <aside
-        className={`fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-gray-200 bg-white shadow-xl transition-transform duration-200 dark:border-slate-700 dark:bg-slate-800 md:sticky md:top-0 md:block md:translate-x-0 md:shadow-none ${
+        className={`fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-gray-200 bg-white shadow-xl transition-transform duration-200 md:sticky md:top-0 md:block md:translate-x-0 md:shadow-none dark:border-slate-700 dark:bg-slate-800 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -75,15 +75,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive =
-              item.href === '/admin'
-                ? pathname === '/admin'
-                : pathname.startsWith(item.href);
+              item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`touch-manipulation flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
+                className={`flex touch-manipulation items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
                     : 'text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700'
