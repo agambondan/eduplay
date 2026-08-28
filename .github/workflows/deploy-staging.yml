@@ -52,6 +52,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=${{ secrets.STAGING_API_URL }}
             NEXT_PUBLIC_SITE_URL=${{ secrets.STAGING_SITE_URL }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.STAGING_GOOGLE_CLIENT_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

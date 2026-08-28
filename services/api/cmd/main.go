@@ -12,6 +12,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/config"
@@ -119,9 +120,23 @@ func main() {
 	app.Use(recover.New())
 	app.Use(middleware.RequestLogger())
 	app.Static("/uploads", "./uploads")
+	// AllowCredentials means the origin list must be explicit. Echoing back
+	// whatever Origin was sent would let any website on the internet call this
+	// API with the visitor's session cookie attached.
+	allowedOrigins := cfg.CORS.AllowedOrigins
+	if len(allowedOrigins) == 0 {
+		logger.Log.Warn("CORS: no allowed origins configured, cross-origin browser requests will be blocked; set CORS_ALLOWED_ORIGINS")
+	} else {
+		logger.Log.Info("CORS allowed origins", zap.Strings("origins", allowedOrigins))
+	}
 	app.Use(cors.New(cors.Config{
 		AllowOriginsFunc: func(origin string) bool {
-			return true
+			for _, allowed := range allowedOrigins {
+				if strings.EqualFold(allowed, origin) {
+					return true
+				}
+			}
+			return false
 		},
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true,

@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/config"
@@ -464,12 +466,87 @@ func (s *authService) ResetPassword(req ResetPasswordRequest) error {
 	return database.DB.Save(&u).Error
 }
 
+// googleBool decodes the booleans in Google's tokeninfo response, which arrive
+// as JSON strings ("true") rather than real booleans. Declaring these as a plain
+// bool makes the whole response fail to decode, which rejects every single
+// Google login with "failed to parse Google token info". Both shapes are
+// accepted so the struct keeps working if Google ever returns a real bool.
+type googleBool bool
+
+func (b *googleBool) UnmarshalJSON(data []byte) error {
+	var asBool bool
+	if err := json.Unmarshal(data, &asBool); err == nil {
+		*b = googleBool(asBool)
+		return nil
+	}
+
+	var asString string
+	if err := json.Unmarshal(data, &asString); err != nil {
+		return fmt.Errorf("expected a bool or a quoted bool, got %s", string(data))
+	}
+
+	parsed, err := strconv.ParseBool(asString)
+	if err != nil {
+		return fmt.Errorf("%q is not a boolean", asString)
+	}
+	*b = googleBool(parsed)
+	return nil
+}
+
 type googleTokenInfo struct {
-	Sub           string `json:"sub"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	Name          string `json:"name"`
-	Aud           string `json:"aud"`
+	Iss           string     `json:"iss"`
+	Sub           string     `json:"sub"`
+	Email         string     `json:"email"`
+	EmailVerified googleBool `json:"email_verified"`
+	Name          string     `json:"name"`
+	Aud           string     `json:"aud"`
+	Exp           string     `json:"exp"`
+}
+
+const maxUsernameLen = 30
+
+// truncateRunes cuts to n characters, not n bytes — the username column is a
+// varchar(30), and byte slicing would corrupt names with non-ASCII characters.
+func truncateRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n])
+}
+
+// deriveGoogleUsername picks a free username for a brand new Google account.
+// Google display names are not unique but the username column is uniquely
+// indexed, so a plain info.Name would make every user sharing a common name
+// after the first fail to sign up at all.
+func deriveGoogleUsername(name, email string) string {
+	base := strings.TrimSpace(name)
+	if base == "" {
+		if at := strings.Index(email, "@"); at > 0 {
+			base = email[:at]
+		}
+	}
+	if base == "" {
+		base = "player"
+	}
+	base = truncateRunes(base, maxUsernameLen)
+
+	candidate := base
+	for i := 1; i <= 100; i++ {
+		var count int64
+		if err := database.DB.Model(&model.User{}).Where("username = ?", candidate).Count(&count).Error; err != nil {
+			break
+		}
+		if count == 0 {
+			return candidate
+		}
+
+		suffix := strconv.Itoa(i)
+		candidate = truncateRunes(base, maxUsernameLen-len(suffix)) + suffix
+	}
+
+	// Never block a login over a name clash; fall back to something unique.
+	return "player" + strings.ToLower(uuid.NewString()[:8])
 }
 
 func (s *authService) GoogleLogin(req GoogleLoginRequest) (*AuthResponse, error) {
@@ -485,7 +562,18 @@ func (s *authService) GoogleLogin(req GoogleLoginRequest) (*AuthResponse, error)
 
 	var info googleTokenInfo
 	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		// Logged in full: swallowing this is what hid the email_verified type
+		// mismatch that rejected every Google login.
+		logger.Log.Error("failed to decode Google tokeninfo response", zap.Error(err))
 		return nil, errors.New("failed to parse Google token info")
+	}
+
+	if info.Iss != "accounts.google.com" && info.Iss != "https://accounts.google.com" {
+		return nil, errors.New("invalid Google token issuer")
+	}
+
+	if exp, err := strconv.ParseInt(info.Exp, 10, 64); err == nil && time.Now().Unix() >= exp {
+		return nil, errors.New("Google token expired")
 	}
 
 	if !info.EmailVerified {
@@ -501,13 +589,7 @@ func (s *authService) GoogleLogin(req GoogleLoginRequest) (*AuthResponse, error)
 	if err != nil {
 		err = database.DB.Where("email = ?", info.Email).First(&u).Error
 		if err != nil {
-			username := info.Name
-			if username == "" {
-				username = info.Email[:max(len(info.Email)-10, 1)]
-			}
-			if len(username) > 30 {
-				username = username[:30]
-			}
+			username := deriveGoogleUsername(info.Name, info.Email)
 
 			now := time.Now()
 			newUser := model.User{

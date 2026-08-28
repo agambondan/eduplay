@@ -17,7 +17,8 @@ export interface AuthResponse {
     email_verified: boolean;
   };
   access_token: string;
-  refresh_token: string;
+  /** Not sent in the body — the API sets it as an HttpOnly cookie. */
+  refresh_token?: string;
 }
 
 export interface RegisterRequest {

@@ -36,6 +36,7 @@ const en: Record<string, string> = {
   'auth.guest': 'Play as Guest',
   'auth.guest_desc': 'Scores will not be saved. Register to save your progress.',
   'auth.guest_error': 'Failed to create guest session',
+  'auth.google_error': 'Google login failed. Please try again.',
   'auth.login_error': 'An error occurred while logging in',
   'auth.register_error': 'An error occurred while registering',
   'auth.reset_error': 'Reset token is invalid or expired.',

@@ -36,6 +36,7 @@ const id: Record<string, string> = {
   'auth.guest': 'Main sebagai Tamu',
   'auth.guest_desc': 'Skor tidak akan tersimpan. Daftar untuk menyimpan progres.',
   'auth.guest_error': 'Gagal membuat sesi tamu',
+  'auth.google_error': 'Gagal login dengan Google. Coba lagi.',
   'auth.login_error': 'Terjadi kesalahan saat login',
   'auth.register_error': 'Terjadi kesalahan saat daftar',
   'auth.reset_error': 'Token reset tidak valid atau kadaluarsa.',
