@@ -95,3 +95,12 @@ The PRD files are:
 - `PRD_Addendum_Multiplayer_Bot.md` — multiplayer + bot system
 - `PRD_Addendum_Multiplayer_Games.md` — additional multiplayer games
 - `PRD.md` — deprecated v1 (do not edit, historical reference only)
+
+## Deploy tooling in `ops/deploy-workspace/`
+
+That directory is a **mirrored backup**, not configuration for this repo. Deploys
+run from `~/works/me` on the laptop (`make help`), and `~/works/me` is not a git
+repo, so every repo carries an identical copy of its `deploy.sh` + `Makefile` as
+the only versioned record. The `Makefile` there lists targets for *every*
+project — that is expected, it mirrors the workspace file. Read
+`ops/deploy-workspace/README.md` before touching it.
