@@ -32,15 +32,19 @@ function VerifyContent() {
 
   return (
     <div className="flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 text-center shadow-md">
-        <h2 className="text-3xl font-extrabold text-gray-900">{t('app.name')}</h2>
-        {status === 'loading' && <p className="text-gray-600">{t('auth.verify_checking')}</p>}
+      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 text-center shadow-md dark:bg-slate-800">
+        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">{t('app.name')}</h2>
+        {status === 'loading' && (
+          <p className="text-gray-600 dark:text-slate-400">{t('auth.verify_checking')}</p>
+        )}
         {status === 'success' && (
           <div className="space-y-4">
-            <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">{message}</div>
+            <div className="rounded-md bg-green-50 p-4 text-sm text-green-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+              {message}
+            </div>
             <a
               href="/login"
-              className="block text-sm font-medium text-indigo-600 hover:text-indigo-500"
+              className="block text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
             >
               {t('auth.login')}
             </a>
@@ -48,8 +52,13 @@ function VerifyContent() {
         )}
         {status === 'error' && (
           <div className="space-y-4">
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">{message}</div>
-            <a href="/" className="block text-sm font-medium text-indigo-600 hover:text-indigo-500">
+            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
+              {message}
+            </div>
+            <a
+              href="/"
+              className="block text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
               {t('common.back')}
             </a>
           </div>

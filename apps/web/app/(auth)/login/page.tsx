@@ -51,10 +51,14 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-md">
+      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-md dark:bg-slate-800">
         <div>
-          <h2 className="text-center text-3xl font-extrabold text-gray-900">EduPlay</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">{t('auth.login_title')}</p>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+            EduPlay
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-slate-400">
+            {t('auth.login_title')}
+          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4 rounded-md shadow-sm">
@@ -63,10 +67,12 @@ export default function LoginPage() {
                 {...register('email')}
                 type="email"
                 placeholder={t('auth.email')}
-                className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder-slate-500"
               />
               {errors.email && (
-                <p className="mt-1 text-xs text-red-500">{errors.email.message as string}</p>
+                <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+                  {errors.email.message as string}
+                </p>
               )}
             </div>
             <div>
@@ -74,14 +80,18 @@ export default function LoginPage() {
                 {...register('password')}
                 type="password"
                 placeholder={t('auth.password')}
-                className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder-slate-500"
               />
               {errors.password && (
-                <p className="mt-1 text-xs text-red-500">{errors.password.message as string}</p>
+                <p className="mt-1 text-xs text-red-500 dark:text-red-400">
+                  {errors.password.message as string}
+                </p>
               )}
             </div>
           </div>
-          {error && <div className="text-center text-sm text-red-500">{error}</div>}
+          {error && (
+            <div className="text-center text-sm text-red-500 dark:text-red-400">{error}</div>
+          )}
           <div>
             <button
               type="submit"
@@ -94,11 +104,14 @@ export default function LoginPage() {
           <div className="flex items-center justify-between text-sm">
             <a
               href="/forgot-password"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
+              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
             >
               {t('auth.forgot_password')}
             </a>
-            <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <a
+              href="/register"
+              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
               {t('auth.register')}
             </a>
           </div>
@@ -107,10 +120,12 @@ export default function LoginPage() {
           <>
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
+                <div className="w-full border-t border-gray-200 dark:border-slate-700" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">{t('common.or')}</span>
+                <span className="bg-white px-2 text-gray-500 dark:bg-slate-800 dark:text-slate-400">
+                  {t('common.or')}
+                </span>
               </div>
             </div>
             <GoogleLoginButton />
@@ -118,10 +133,10 @@ export default function LoginPage() {
         )}
         <div className="relative mt-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
+            <div className="w-full border-t border-gray-200 dark:border-slate-700" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-500">
+            <span className="bg-white px-2 text-gray-500 dark:bg-slate-800 dark:text-slate-400">
               {t('common.or')} {t('auth.guest').toLowerCase()}
             </span>
           </div>
@@ -140,14 +155,14 @@ export default function LoginPage() {
             }
           }}
           disabled={guestLoading}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
         >
           {guestLoading ? (
             t('common.loading')
           ) : (
             <>
               <svg
-                className="h-5 w-5 text-gray-400"
+                className="h-5 w-5 text-gray-400 dark:text-slate-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -163,7 +178,9 @@ export default function LoginPage() {
             </>
           )}
         </button>
-        <p className="mt-2 text-center text-xs text-gray-400">{t('auth.guest_desc')}</p>
+        <p className="mt-2 text-center text-xs text-gray-400 dark:text-slate-500">
+          {t('auth.guest_desc')}
+        </p>
       </div>
     </div>
   );

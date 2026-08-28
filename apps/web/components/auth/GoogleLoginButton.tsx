@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { authApi } from '@/lib/api/auth';
 import { useLocale } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { getThemeClass, useThemeStore } from '@/lib/stores/themeStore';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const GSI_SRC = 'https://accounts.google.com/gsi/client';
@@ -52,6 +53,7 @@ export default function GoogleLoginButton() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
   const { t, locale } = useLocale();
+  const appTheme = useThemeStore((state) => state.theme);
   const btnRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState('');
 
@@ -98,8 +100,10 @@ export default function GoogleLoginButton() {
         // renderButton appends an iframe; without clearing, a re-render
         // (locale switch, fast refresh) stacks a second button.
         btnRef.current.replaceChildren();
+        // Google paints this button itself, so a light-themed one would stay
+        // white on a dark card unless we tell it which theme is active.
         google.accounts.id.renderButton(btnRef.current, {
-          theme: 'outline',
+          theme: getThemeClass(appTheme) ? 'filled_black' : 'outline',
           size: 'large',
           text: 'continue_with',
           width: 320,
@@ -113,7 +117,7 @@ export default function GoogleLoginButton() {
     return () => {
       cancelled = true;
     };
-  }, [locale, t]);
+  }, [appTheme, locale, t]);
 
   if (!GOOGLE_CLIENT_ID) return null;
 
@@ -121,7 +125,7 @@ export default function GoogleLoginButton() {
     <div className="flex flex-col items-center gap-2">
       <div ref={btnRef} />
       {error && (
-        <p role="alert" className="text-center text-sm text-red-500">
+        <p role="alert" className="text-center text-sm text-red-500 dark:text-red-400">
           {error}
         </p>
       )}
