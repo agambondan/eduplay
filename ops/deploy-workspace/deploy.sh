@@ -52,6 +52,20 @@ die()  { echo -e "${R}[✗]${N} $*" >&2; exit 1; }
 
 remote() { ssh -o BatchMode=yes -o ServerAliveInterval=30 "$SSH_HOST" "$@"; }
 
+# Noisy steps write here instead of the terminal. On failure the tail is printed,
+# because an opaque "Error 102" tells you nothing about what actually broke.
+LOGFILE="$(mktemp -t deploy-XXXXXX.log)"
+cleanup() {
+  local rc=$?
+  if [[ $rc -ne 0 && -s "$LOGFILE" ]]; then
+    echo >&2
+    warn "failed with exit $rc — last 40 lines:"
+    tail -40 "$LOGFILE" >&2
+  fi
+  rm -f "$LOGFILE"
+}
+trap cleanup EXIT
+
 need() {
   local v
   for v in "$@"; do
@@ -112,7 +126,7 @@ do_build() {
   done
 
   log "building $DEPLOY_IMAGE from $(basename "$repo")/$CONTEXT"
-  docker build "${args[@]}" -t "$DEPLOY_IMAGE" "$repo/$CONTEXT" >/dev/null
+  docker build "${args[@]}" -t "$DEPLOY_IMAGE" "$repo/$CONTEXT" >>"$LOGFILE" 2>&1
 }
 
 do_ship() {
@@ -125,13 +139,13 @@ do_ship() {
   # VPS's own localhost, and the Docker Desktop daemon runs in a VM that cannot
   # reach a port forwarded to this laptop. Stream over SSH and push from there.
   log "shipping $DEPLOY_IMAGE to $SSH_HOST"
-  docker save "$DEPLOY_IMAGE" | gzip -1 | remote 'gunzip | docker load' >/dev/null
+  docker save "$DEPLOY_IMAGE" | gzip -1 | remote 'gunzip | docker load' >>"$LOGFILE" 2>&1
 
   log "pushing to the registry as :prod and :$tag"
   remote "docker tag $DEPLOY_IMAGE $REGISTRY/$bare:prod \
        && docker tag $DEPLOY_IMAGE $REGISTRY/$bare:$tag \
        && docker push -q $REGISTRY/$bare:prod \
-       && docker push -q $REGISTRY/$bare:$tag" >/dev/null
+       && docker push -q $REGISTRY/$bare:$tag" >>"$LOGFILE" 2>&1
 }
 
 # Tag whatever is running now, so there is always a way back.
@@ -144,14 +158,14 @@ snapshot() {
     old=\$(docker inspect \"\$cid\" --format '{{.Image}}')
     new=\$(docker image inspect '$DEPLOY_IMAGE' --format '{{.Id}}' 2>/dev/null || true)
     [ -n \"\$old\" ] && [ \"\$old\" != \"\$new\" ] \
-      && docker tag \"\$old\" $bare:rollback-\$(date +%Y%m%d-%H%M%S) || true" >/dev/null
+      && docker tag \"\$old\" $bare:rollback-\$(date +%Y%m%d-%H%M%S) || true" >>"$LOGFILE" 2>&1
 }
 
 do_restart() {
   need DEPLOY_REMOTE_DIR DEPLOY_SERVICE
   reachable
   log "restarting $DEPLOY_SERVICE in $DEPLOY_REMOTE_DIR"
-  remote "cd '$DEPLOY_REMOTE_DIR' && docker compose up -d '$DEPLOY_SERVICE'" >/dev/null
+  remote "cd '$DEPLOY_REMOTE_DIR' && docker compose up -d '$DEPLOY_SERVICE'" >>"$LOGFILE" 2>&1
   sleep "$WAIT"
   remote "cd '$DEPLOY_REMOTE_DIR' && docker compose ps --format '    {{.Name}}  {{.Status}}' '$DEPLOY_SERVICE'"
 }
@@ -191,7 +205,7 @@ case "$ACTION" in
     last="$(remote "docker images $bare --format '{{.Tag}}' | grep '^rollback-' | sort -r | head -1")"
     [[ -n "$last" ]] || die "no rollback- tag exists for $bare"
     warn "restoring $bare:$last"
-    remote "docker tag $bare:$last $DEPLOY_IMAGE" >/dev/null
+    remote "docker tag $bare:$last $DEPLOY_IMAGE" >>"$LOGFILE" 2>&1
     do_restart
     log "rolled back $bare to $last"
     ;;
