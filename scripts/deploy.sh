@@ -10,7 +10,7 @@ set -euo pipefail
 #   scripts/deploy.sh api           build + deploy the API only
 #   scripts/deploy.sh web           build + deploy the web app only
 #   scripts/deploy.sh all           both
-#   scripts/deploy.sh rollback api  put the previous image back
+#   scripts/deploy.sh rollback api <sha>  redeploy an older build from the registry
 #   scripts/deploy.sh status        what is running and what is in the registry
 # ============================================================
 
@@ -72,24 +72,17 @@ ship() {
   remote "docker tag $img:prod $REGISTRY/$img:prod \
        && docker tag $img:prod $REGISTRY/$img:$SHA \
        && docker push -q $REGISTRY/$img:prod \
-       && docker push -q $REGISTRY/$img:$SHA" >/dev/null
-}
-
-# Tag whatever is running now, so there is always something to roll back to.
-snapshot() {
-  local svc="$1" img="eduplay-$1"
-  remote "
-    old=\$(docker inspect eduplay-${svc}-1 --format '{{.Image}}' 2>/dev/null || true)
-    new=\$(docker image inspect $img:prod --format '{{.Id}}' 2>/dev/null || true)
-    if [ -n \"\$old\" ] && [ \"\$old\" != \"\$new\" ]; then
-      docker tag \"\$old\" $img:rollback-\$(date +%Y%m%d-%H%M%S)
-    fi"
+       && docker push -q $REGISTRY/$img:$SHA \
+       && docker rmi $REGISTRY/$img:prod $REGISTRY/$img:$SHA" >/dev/null
 }
 
 roll() {
   local svc="$1"
   log "restarting $svc"
-  remote "cd $REMOTE_DIR && docker compose up -d $svc" >/dev/null
+  # --force-recreate is required: compose hashes the service definition, which
+  # names the image rather than pinning its id, so retagging :prod alone leaves
+  # the old container running.
+  remote "cd $REMOTE_DIR && docker compose up -d --force-recreate $svc" >/dev/null
   sleep 10
   remote "docker ps --filter name=eduplay-$svc --format '  {{.Names}}  {{.Status}}'"
 }
@@ -97,7 +90,6 @@ roll() {
 deploy() {
   local svc="$1" img="eduplay-$1"
   "build_$svc"
-  snapshot "$svc"
   ship "$img"
   roll "$svc"
   log "$svc deployed at $SHA"
@@ -108,12 +100,18 @@ case "${1:-}" in
   web) preflight; deploy web ;;
   all) preflight; deploy api; deploy web ;;
   rollback)
-    svc="${2:-}"; [[ -n "$svc" ]] || die "usage: $0 rollback <api|web>"
+    svc="${2:-}"; tag="${3:-}"
+    [[ -n "$svc" ]] || die "usage: $0 rollback <api|web> <commit-sha>"
     img="eduplay-$svc"
-    last="$(remote "docker images $img --format '{{.Tag}}' | grep '^rollback-' | sort -r | head -1")"
-    [[ -n "$last" ]] || die "no rollback tag found for $img"
-    warn "restoring $img:$last"
-    remote "docker tag $img:$last $img:prod && cd $REMOTE_DIR && docker compose up -d $svc" >/dev/null
+    if [[ -z "$tag" ]]; then
+      warn "no tag given. The registry holds:"
+      remote "curl -s http://127.0.0.1:5000/v2/$img/tags/list"; echo
+      die "pick one, e.g. $0 rollback $svc <commit-sha>"
+    fi
+    warn "restoring $img:$tag from the registry"
+    remote "docker pull -q $REGISTRY/$img:$tag \\
+         && docker tag $REGISTRY/$img:$tag $img:prod \\
+         && docker rmi $REGISTRY/$img:$tag" >/dev/null
     roll "$svc"
     ;;
   status)

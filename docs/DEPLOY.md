@@ -13,7 +13,7 @@ make help                   # every command
 make eduplay                # API + web
 make eduplay-web            # one service
 make eduplay.status
-make eduplay-web.rollback
+make eduplay-web.rollback TAG=<commit-sha>
 ```
 
 `~/works/me/deploy.sh` is generic and takes its target from the environment;
@@ -25,7 +25,7 @@ scripts/deploy.sh api       # API only
 scripts/deploy.sh web       # web only
 scripts/deploy.sh all       # both
 scripts/deploy.sh status    # what is running, what is in the registry
-scripts/deploy.sh rollback web
+scripts/deploy.sh rollback web <commit-sha>
 ```
 
 Either script is the whole procedure. The rest of this page explains what it does
@@ -99,33 +99,48 @@ ssh sumopod '
 '
 ```
 
-The `prod` tag is what gets deployed; the commit-sha tag is what lets you find
-out later which build is live.
+The `prod` tag is what gets deployed; the commit-sha tag is the history, and it
+is what a rollback pulls from. Drop the `localhost:5000/...` tags again right
+after pushing — the blobs live in the registry's own volume from then on, and
+leaving the tags behind only pins old images on the host so they can never be
+pruned. No `rollback-*` images are kept for the same reason.
 
 ### 4. Roll the container
 
-Tag the running image first, so there is always a way back:
-
 ```bash
-ssh sumopod '
-  old=$(docker inspect eduplay-web-1 --format "{{.Image}}")
-  docker tag "$old" eduplay-web:rollback-$(date +%Y%m%d-%H%M%S)
-  cd /works/me/games && docker compose up -d web
-'
+ssh sumopod 'cd /works/me/games && docker compose up -d --force-recreate web'
 ```
+
+`--force-recreate` is not optional. Compose decides whether to replace a
+container from a hash of the service definition, and the definition names the
+image (`eduplay-web:prod`) rather than pinning its id. Retagging `:prod` to a
+freshly built image leaves that hash untouched, so a plain `up -d` prints
+"Running" and the old container keeps serving the old build.
 
 ## Rollback
 
+Every deploy is in the registry under its commit sha, so a rollback is just
+redeploying one of those. Run it without a tag to see what is available:
+
 ```bash
-scripts/deploy.sh rollback web
+cd ~/works/me && make eduplay-web.rollback              # lists the tags
+cd ~/works/me && make eduplay-web.rollback TAG=3d45926
 ```
 
 By hand:
 
 ```bash
-ssh sumopod 'docker images eduplay-web --format "{{.Tag}}" | grep ^rollback- | sort -r | head -1'
-ssh sumopod 'docker tag eduplay-web:rollback-<ts> eduplay-web:prod \
-             && cd /works/me/games && docker compose up -d web'
+ssh sumopod 'curl -s http://127.0.0.1:5000/v2/eduplay-web/tags/list'
+ssh sumopod 'docker pull -q localhost:5000/eduplay-web:<sha> \
+             && docker tag localhost:5000/eduplay-web:<sha> eduplay-web:prod \
+             && docker rmi localhost:5000/eduplay-web:<sha> \
+             && cd /works/me/games && docker compose up -d --force-recreate web'
+```
+
+## Housekeeping
+
+```bash
+cd ~/works/me && make prune     # dangling images + build cache on the VPS
 ```
 
 ## Verify after deploying

@@ -15,15 +15,16 @@ set -euo pipefail
 #     restart    restart the service without rebuilding
 #     status     what is running in DEPLOY_REMOTE_DIR
 #     logs [n]   tail the service's logs (default 80 lines)
-#     rollback   restore the newest rollback- tag
+#     rollback   redeploy an older commit from the registry (needs DEPLOY_TAG)
 #     registry   list what the registry holds
+#     prune      reclaim dangling images and build cache on the server
 #
 #   Required, per action:
 #     build/ship/deploy    DEPLOY_REPO DEPLOY_IMAGE  (+ DEPLOY_CONTEXT, default .)
 #     ship/deploy          DEPLOY_REMOTE_DIR DEPLOY_SERVICE
 #     restart/logs         DEPLOY_REMOTE_DIR DEPLOY_SERVICE
 #     status               DEPLOY_REMOTE_DIR
-#     rollback             DEPLOY_IMAGE DEPLOY_REMOTE_DIR DEPLOY_SERVICE
+#     rollback             DEPLOY_IMAGE DEPLOY_REMOTE_DIR DEPLOY_SERVICE DEPLOY_TAG
 #
 #   Optional:
 #     DEPLOY_BUILD_ARGS  space separated KEY=VALUE passed as --build-arg.
@@ -33,7 +34,12 @@ set -euo pipefail
 #     DEPLOY_ROOT        where a relative DEPLOY_REPO resolves (default: here)
 #     DEPLOY_SSH_HOST    default sumopod
 #     DEPLOY_REGISTRY    default localhost:5000
-#     DEPLOY_TAG         second tag alongside :prod (default: repo git short sha)
+#     DEPLOY_TAG         second tag alongside :prod (default: repo git short sha);
+#                        for rollback, the tag to restore
+#
+# No rollback- images are kept on the host. Every deploy is already stored in
+# the registry under its commit sha, which is the same thing without leaving
+# duplicate tags pinning old images on disk.
 #     DEPLOY_WAIT        seconds to wait after a restart before reporting (default 8)
 # ============================================================
 
@@ -142,30 +148,26 @@ do_ship() {
   docker save "$DEPLOY_IMAGE" | gzip -1 | remote 'gunzip | docker load' >>"$LOGFILE" 2>&1
 
   log "pushing to the registry as :prod and :$tag"
+  # The registry-prefixed tags are dropped again straight after the push. The
+  # blobs live in the registry's own volume from then on, and leaving the tags
+  # behind only pins old images on the host so they can never be pruned.
   remote "docker tag $DEPLOY_IMAGE $REGISTRY/$bare:prod \
        && docker tag $DEPLOY_IMAGE $REGISTRY/$bare:$tag \
        && docker push -q $REGISTRY/$bare:prod \
-       && docker push -q $REGISTRY/$bare:$tag" >>"$LOGFILE" 2>&1
-}
-
-# Tag whatever is running now, so there is always a way back.
-snapshot() {
-  local bare; bare="$(bare_image)"
-  remote "
-    cd '$DEPLOY_REMOTE_DIR' || exit 0
-    cid=\$(docker compose ps -q '$DEPLOY_SERVICE' 2>/dev/null | head -1)
-    [ -n \"\$cid\" ] || exit 0
-    old=\$(docker inspect \"\$cid\" --format '{{.Image}}')
-    new=\$(docker image inspect '$DEPLOY_IMAGE' --format '{{.Id}}' 2>/dev/null || true)
-    [ -n \"\$old\" ] && [ \"\$old\" != \"\$new\" ] \
-      && docker tag \"\$old\" $bare:rollback-\$(date +%Y%m%d-%H%M%S) || true" >>"$LOGFILE" 2>&1
+       && docker push -q $REGISTRY/$bare:$tag \
+       && docker rmi $REGISTRY/$bare:prod $REGISTRY/$bare:$tag" >>"$LOGFILE" 2>&1
 }
 
 do_restart() {
   need DEPLOY_REMOTE_DIR DEPLOY_SERVICE
   reachable
+  # --force-recreate is not optional here. Compose decides whether to replace a
+  # container from a hash of the service definition, and the definition names
+  # the image ("eduplay-web:prod") rather than pinning its id. Retagging :prod
+  # to a freshly built image leaves that hash untouched, so a plain `up -d`
+  # reports "Running" and the old container keeps serving the old build.
   log "restarting $DEPLOY_SERVICE in $DEPLOY_REMOTE_DIR"
-  remote "cd '$DEPLOY_REMOTE_DIR' && docker compose up -d '$DEPLOY_SERVICE'" >>"$LOGFILE" 2>&1
+  remote "cd '$DEPLOY_REMOTE_DIR' && docker compose up -d --force-recreate '$DEPLOY_SERVICE'" >>"$LOGFILE" 2>&1
   sleep "$WAIT"
   remote "cd '$DEPLOY_REMOTE_DIR' && docker compose ps --format '    {{.Name}}  {{.Status}}' '$DEPLOY_SERVICE'"
 }
@@ -181,7 +183,7 @@ case "$ACTION" in
   deploy)
     need DEPLOY_REPO DEPLOY_IMAGE DEPLOY_REMOTE_DIR DEPLOY_SERVICE
     echo -e "${B}── $DEPLOY_IMAGE  ($DEPLOY_REPO @ $(git_sha))${N}"
-    do_build; do_ship; snapshot; do_restart
+    do_build; do_ship; do_restart
     log "deployed $DEPLOY_IMAGE at ${DEPLOY_TAG:-$(git_sha)}"
     ;;
   restart)
@@ -202,12 +204,18 @@ case "$ACTION" in
     need DEPLOY_IMAGE DEPLOY_REMOTE_DIR DEPLOY_SERVICE
     reachable
     bare="$(bare_image)"
-    last="$(remote "docker images $bare --format '{{.Tag}}' | grep '^rollback-' | sort -r | head -1")"
-    [[ -n "$last" ]] || die "no rollback- tag exists for $bare"
-    warn "restoring $bare:$last"
-    remote "docker tag $bare:$last $DEPLOY_IMAGE" >>"$LOGFILE" 2>&1
+    if [[ -z "${DEPLOY_TAG:-}" ]]; then
+      warn "no tag given. The registry holds:"
+      remote "curl -s http://127.0.0.1:5000/v2/$bare/tags/list" | sed 's/^/  /'
+      echo
+      die "pick one, e.g. TAG=<commit-sha>"
+    fi
+    log "pulling $bare:$DEPLOY_TAG back out of the registry"
+    remote "docker pull -q $REGISTRY/$bare:$DEPLOY_TAG \
+         && docker tag $REGISTRY/$bare:$DEPLOY_TAG $DEPLOY_IMAGE \
+         && docker rmi $REGISTRY/$bare:$DEPLOY_TAG" >>"$LOGFILE" 2>&1
     do_restart
-    log "rolled back $bare to $last"
+    log "rolled $bare back to $DEPLOY_TAG"
     ;;
   registry)
     reachable
@@ -216,6 +224,12 @@ case "$ACTION" in
       echo -n "  $(bare_image): "
       remote "curl -s http://127.0.0.1:5000/v2/$(bare_image)/tags/list"; echo
     fi
+    ;;
+  prune)
+    reachable
+    log "reclaiming dangling images and build cache on $SSH_HOST"
+    remote "docker image prune -f; docker builder prune -f" >>"$LOGFILE" 2>&1
+    remote "docker system df" | sed 's/^/  /'
     ;;
   help | -h | --help)
     sed -n '4,38p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'

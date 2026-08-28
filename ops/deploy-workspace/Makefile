@@ -72,9 +72,11 @@ help: ## Show this list
 	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-26s\033[0m %s\n", $$1, $$2}'
 	@echo
 	@echo "  N=200 sets how many lines the *.logs commands tail."
+	@echo "  TAG=<sha> picks which build the *.rollback commands restore."
 	@echo "  Script options: ./deploy.sh help"
 
 N ?= 80
+TAG ?=
 
 # ---------- EduPlay ----------
 .PHONY: eduplay eduplay-api eduplay-web
@@ -93,10 +95,10 @@ eduplay-web.logs: ## Tail the EduPlay web logs
 	@$(EDUPLAY_WEB) $(DEPLOY) logs $(N)
 
 .PHONY: eduplay-api.rollback eduplay-web.rollback
-eduplay-api.rollback: ## Roll the EduPlay API back one image
-	@$(EDUPLAY_API) $(DEPLOY) rollback
-eduplay-web.rollback: ## Roll the EduPlay web app back one image
-	@$(EDUPLAY_WEB) $(DEPLOY) rollback
+eduplay-api.rollback: ## Restore an older EduPlay API build (TAG=<sha>)
+	@$(EDUPLAY_API) DEPLOY_TAG=$(TAG) $(DEPLOY) rollback
+eduplay-web.rollback: ## Restore an older EduPlay web build (TAG=<sha>)
+	@$(EDUPLAY_WEB) DEPLOY_TAG=$(TAG) $(DEPLOY) rollback
 
 # ---------- Thullaabul 'Ilmi ----------
 .PHONY: thollabul thollabul-api thollabul-web
@@ -115,10 +117,10 @@ thollabul-web.logs: ## Tail the Thullaabul web logs
 	@$(THOLLABUL_WEB) $(DEPLOY) logs $(N)
 
 .PHONY: thollabul-api.rollback thollabul-web.rollback
-thollabul-api.rollback: ## Roll the Thullaabul API back one image
-	@$(THOLLABUL_API) $(DEPLOY) rollback
-thollabul-web.rollback: ## Roll the Thullaabul web app back one image
-	@$(THOLLABUL_WEB) $(DEPLOY) rollback
+thollabul-api.rollback: ## Restore an older Thullaabul API build (TAG=<sha>)
+	@$(THOLLABUL_API) DEPLOY_TAG=$(TAG) $(DEPLOY) rollback
+thollabul-web.rollback: ## Restore an older Thullaabul web build (TAG=<sha>)
+	@$(THOLLABUL_WEB) DEPLOY_TAG=$(TAG) $(DEPLOY) rollback
 
 # ---------- Wedding ----------
 .PHONY: wedding wedding-api wedding-web
@@ -138,14 +140,16 @@ wedding-web.logs: ## Tail the Wedding web logs
 	@$(WEDDING_WEB) $(DEPLOY) logs $(N)
 
 .PHONY: wedding-api.rollback wedding-web.rollback
-wedding-api.rollback: ## Roll the Wedding API back one image
-	@$(WEDDING_API) $(DEPLOY) rollback
-wedding-web.rollback: ## Roll the Wedding web app back one image
-	@$(WEDDING_WEB) $(DEPLOY) rollback
+wedding-api.rollback: ## Restore an older Wedding API build (TAG=<sha>)
+	@$(WEDDING_API) DEPLOY_TAG=$(TAG) $(DEPLOY) rollback
+wedding-web.rollback: ## Restore an older Wedding web build (TAG=<sha>)
+	@$(WEDDING_WEB) DEPLOY_TAG=$(TAG) $(DEPLOY) rollback
 
 # ---------- Everything ----------
-.PHONY: status registry all
+.PHONY: status registry prune all
 status: eduplay.status thollabul.status wedding.status ## What is running everywhere
 registry: ## What the VPS registry holds
 	@$(DEPLOY) registry
+prune: ## Reclaim dangling images and build cache on the VPS
+	@$(DEPLOY) prune
 all: eduplay thollabul wedding ## Rebuild and redeploy every service
