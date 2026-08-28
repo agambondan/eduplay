@@ -31,7 +31,7 @@ function VerifyContent() {
   }, [token, t]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+    <div className="flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 text-center shadow-md">
         <h2 className="text-3xl font-extrabold text-gray-900">{t('app.name')}</h2>
         {status === 'loading' && <p className="text-gray-600">{t('auth.verify_checking')}</p>}
