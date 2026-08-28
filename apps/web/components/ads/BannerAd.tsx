@@ -90,10 +90,14 @@ export function BannerAd({ slotId = 'default-banner', format = 'auto' }: BannerA
         };
         gt.pubads().addEventListener('slotRenderEnded', onRenderEnded);
 
-        // enableSingleRequest must run once, before services are enabled;
-        // calling it per slot makes GPT log an error and ignore it.
+        // Must run once, before services are enabled. GPT deprecated
+        // pubads().enableSingleRequest() in favour of setConfig.
         if (!singleRequestEnabled) {
-          gt.pubads().enableSingleRequest();
+          if (typeof gt.setConfig === 'function') {
+            gt.setConfig({ singleRequest: true });
+          } else {
+            gt.pubads().enableSingleRequest();
+          }
           singleRequestEnabled = true;
         }
         gt.enableServices();
