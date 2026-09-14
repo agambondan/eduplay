@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -13,7 +13,9 @@ import {
   Gamepad2,
   Globe,
   Layers,
+  Search,
   Swords,
+  X,
 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { gamesApi } from '@/lib/api/games';
@@ -101,6 +103,7 @@ function GamesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedCategory = searchParams.get('cat');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const {
     data: games,
@@ -122,6 +125,18 @@ function GamesContent() {
       .map(([id, config]) => ({ id, ...config, count: counts[id] || 0 }))
       .filter((c) => c.count > 0);
   }, [games]);
+
+  const searchResults = useMemo(() => {
+    if (!games || !searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return games.filter(
+      (g) =>
+        g.name.toLowerCase().includes(q) ||
+        g.description.toLowerCase().includes(q) ||
+        g.category.toLowerCase().includes(q) ||
+        g.slug.toLowerCase().includes(q)
+    );
+  }, [games, searchQuery]);
 
   const filteredGames = useMemo(() => {
     if (!games || !selectedCategory) return [];
@@ -196,12 +211,51 @@ function GamesContent() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.hub')}</h1>
-        <p className="text-gray-500 dark:text-slate-400">Pilih kategori game edukatif favoritmu!</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('game.hub')}</h1>
+          <p className="text-gray-500 dark:text-slate-400">Pilih kategori atau cari game edukatif favoritmu!</p>
+        </div>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari game..."
+            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {isLoading ? (
+      {searchQuery.trim() ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              Hasil Pencarian ({searchResults.length})
+            </h2>
+          </div>
+          {searchResults.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {searchResults.map((game) => (
+                <GameCard key={game.id} game={game} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-gray-200 py-16 text-center dark:border-slate-700">
+              <p className="text-gray-500 dark:text-slate-400">Tidak ada game dengan kata kunci &quot;{searchQuery}&quot;</p>
+            </div>
+          )}
+        </div>
+      ) : isLoading ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="h-44 animate-pulse rounded-2xl bg-gray-100 dark:bg-slate-800" />

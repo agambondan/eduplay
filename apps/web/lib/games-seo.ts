@@ -157,6 +157,10 @@ export const GAME_SEO: Record<string, GameSeo> = {
     description:
       'Uji kecepatan mengetikmu! Ketik kata-kata Bahasa Indonesia secepat mungkin dalam 60 detik.',
   },
+  'vector-slash': {
+    name: 'Vector Slash',
+    description: 'Pertarungan geometris serba cepat dengan input gestur mouse & sentuhan!',
+  },
   'word-chain': {
     name: 'Word Chain',
     description: 'Sambung kata dari huruf terakhir lawan — jangan sampai kehabisan ide!',

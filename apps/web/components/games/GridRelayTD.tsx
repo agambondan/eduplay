@@ -134,7 +134,7 @@ export function GridRelayTD() {
   const { t } = useLocale();
   const isTouch = useIsTouchDevice();
   const { playSound } = useSoundStore();
-  const { startGame, endGame, submitScore } = useGame('grid-relay-td', 'Grid Relay TD', 'STEM');
+  const { startGame, endGame, submitScore } = useGame('grid-relay-td', 'Grid Relay TD', 'science');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);

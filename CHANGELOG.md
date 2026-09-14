@@ -7,6 +7,33 @@
 
 ---
 
+## [2026-09-14] — Vector Slash: Gesture Skill Engine & Telegraphed Boss Battles
+
+### Added
+
+- **Vector Slash Game Engine** (`apps/web/components/games/VectorSlash.tsx`, `apps/web/components/games/dynamic/VectorSlashDynamic.tsx`, `apps/web/app/(main)/games/vector-slash/page.tsx`, `layout.tsx`): 2.5D fast-paced combat arena with stroke gesture recognition:
+  - **Whirlwind Slash (Circle Stroke)**: Detects closed loop strokes to trigger 360° radial shockwave knocking back surrounding enemies.
+  - **Dash Thrust (Line Stroke)**: Detects straight flick strokes to pierce enemies along a vector trajectory with hitstop combo counters.
+  - **Telegraphed Hazard Zones**: Golem boss warns of impending ground slams with shrinking red circle indicators requiring dodge rolls.
+  - **Dodge Roll with Invulnerability**: Shift/Space/Touch dodge roll with ghost afterimages.
+- **Web Audio Sound Synthesizer**: Custom procedural audio frequencies for whirlwind whooshes, vector thrusts, dodge rolls, and ground slams.
+- **SEO & Localization**: Registered `vector-slash` in `lib/games-seo.ts` and bilingual locale dictionaries (`id.ts`, `en.ts`).
+- **PRD Synchronization**: Updated `PRD_EduPlay_v2.md` Section 8 game matrix and Section 31 backlog.
+
+---
+
+## [2026-09-14] — Game Hub Instant Search & Zero-Creature Compliance
+
+### Added
+
+- **Instant Search on Game Hub (`apps/web/app/(main)/games/page.tsx`)**: Real-time interactive search across all 37+ games with instant name/category/description query matching and clear action.
+
+### Changed
+
+- **Onet Icon Theme Compliance (`apps/web/lib/game-engines/onetEngine.ts`)**: Replaced creature/animal icon set with geometric nature/botanical symbols (`nature`) ensuring strict compliance with zero-creature visual guidelines.
+
+---
+
 ## [2026-09-14] — Grid Relay TD: Multi-Turret Architecture & Circuit Mechanics
 
 ### Added

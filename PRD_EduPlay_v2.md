@@ -637,6 +637,7 @@ Buka App/Website
 | Color Shift         | Arcade   | ✅ Done (added) | Tantangan fokus efek Stroop warna-kata |
 | Stack Tower         | Arcade   | ✅ Done (added) | Tumpuk balok timing presisi Canvas 2D  |
 | Grid Relay TD       | Science  | ✅ Done (added) | Distribusi sirkuit daya & pertahanan geometris |
+| Vector Slash        | Arcade   | ✅ Done (added) | Pertarungan aksi geometris dengan gestur garis dan kalkulasi vektor |
 
 ---
 
@@ -3244,6 +3245,7 @@ messages/
 | Number Match game                    | P2 ✅    | New logic game — cross pairs summing to 10                                              |
 | Fraction Visualizer                  | P2 ✅    | New math game — identify/compare/simplify with visual bar                               |
 | Grid Relay TD                        | P2 ✅    | New STEM/science tower defense — circuit power distribution & laser overcharge         |
+| Vector Slash                         | P2 ✅    | New gesture combat game — shape recognition (circle AoE, straight thrust) & boss dodge |
 | Ad mediation (Ad Manager)            | P2       | Maximize ad revenue                                                                     |
 | Remove ads subscription / IAP        | P2       | Freemium monetization                                                                   |
 | Blog section                         | P3       | SEO content                                                                             |

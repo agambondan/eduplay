@@ -573,6 +573,7 @@ func seedGames() {
 		{Slug: "make-24", Name: "Make 24", Description: "Susun 4 angka dengan operasi matematika agar tepat 24!", Category: "math", IsActive: true},
 		{Slug: "color-shift", Name: "Color Shift", Description: "Uji fokus dan refleks otak melawan efek Stroop warna vs kata.", Category: "arcade", IsActive: true},
 		{Slug: "stack-tower", Name: "Stack Tower", Description: "Tumpuk balok setinggi mungkin dengan presisi timing.", Category: "arcade", IsActive: true},
+		{Slug: "vector-slash", Name: "Vector Slash", Description: "Pertarungan aksi geometris dengan gestur garis dan kalkulasi vektor.", Category: "arcade", IsActive: true},
 		{Slug: "grid-relay-td", Name: "Grid Relay TD", Description: "Atur distribusi daya listrik dan bangun jaringan turret untuk menahan musuh geometris.", Category: "science", IsActive: true},
 		{Slug: "onet", Name: "Onet", Description: "Cocokkan tile berpasangan dengan jalur bersih. Maksimal 2 tikungan!", Category: "logic", IsActive: true},
 		{Slug: "trivia-challenge", Name: "Trivia Challenge", Description: "Tantang teman dengan set soal yang sama, bandingkan skor!", Category: "multiplayer", IsActive: true},
