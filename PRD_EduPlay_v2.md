@@ -631,8 +631,12 @@ Buka App/Website
 | Typing Speed        | Language | ✅ Done (added) | WPM test 60 detik                      |
 | Simon Says          | Logic    | ✅ Done (added) | Urutan warna dari memori               |
 | Snake Classic       | Arcade   | ✅ Done (added) | Classic snake canvas game              |
-| Number Match        | Math     | Backlog         | Coret pasangan angka yang berjumlah 10 |
-| Fraction Visualizer | Math     | Backlog (v2.0)  | Visualisasi pecahan interaktif         |
+| Number Match        | Math     | ✅ Done (added) | Coret pasangan angka yang berjumlah 10 |
+| Fraction Visualizer | Math     | ✅ Done (added) | Visualisasi pecahan interaktif         |
+| Make 24             | Math     | ✅ Done (added) | Susun 4 kartu angka menghasilkan 24    |
+| Color Shift         | Arcade   | ✅ Done (added) | Tantangan fokus efek Stroop warna-kata |
+| Stack Tower         | Arcade   | ✅ Done (added) | Tumpuk balok timing presisi Canvas 2D  |
+| Grid Relay TD       | Science  | ✅ Done (added) | Distribusi sirkuit daya & pertahanan geometris |
 
 ---
 
@@ -3239,6 +3243,7 @@ messages/
 | Referral system                      | P2 ✅    | Kode referral → bonus XP — `ReferralCode` on User, `POST /referral/apply`, profile card |
 | Number Match game                    | P2 ✅    | New logic game — cross pairs summing to 10                                              |
 | Fraction Visualizer                  | P2 ✅    | New math game — identify/compare/simplify with visual bar                               |
+| Grid Relay TD                        | P2 ✅    | New STEM/science tower defense — circuit power distribution & laser overcharge         |
 | Ad mediation (Ad Manager)            | P2       | Maximize ad revenue                                                                     |
 | Remove ads subscription / IAP        | P2       | Freemium monetization                                                                   |
 | Blog section                         | P3       | SEO content                                                                             |

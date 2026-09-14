@@ -20,7 +20,7 @@ export function useCanvasGame(
       engine.stop();
       engineRef.current = null;
     };
-  }, [options.width, options.height]);
+  }, [canvasRef, options]);
 
   return engineRef;
 }

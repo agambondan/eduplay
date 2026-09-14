@@ -131,7 +131,7 @@ export default function TypingSpeed({ isDaily }: Props) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current!);
     };
-  }, [game.isPlaying]);
+  }, [game.isPlaying, startRound]);
 
   useEffect(() => {
     if (timeLeft === 0 && game.isPlaying) {
@@ -145,7 +145,7 @@ export default function TypingSpeed({ isDaily }: Props) {
           setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false })
         );
     }
-  }, [timeLeft]);
+  }, [timeLeft, game, correct]);
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;

@@ -7,6 +7,82 @@
 
 ---
 
+## [2026-09-14] — Grid Relay TD: Multi-Turret Architecture & Circuit Mechanics
+
+### Added
+
+- **Multi-Turret Arsenal** (`apps/web/components/games/GridRelayTD.tsx`): Added 3 distinct turret classes:
+  - `Pulse Turret` (30W): Rapid single-target laser against fast geometric crawlers.
+  - `Tesla AoE Coil` (50W): Multi-target electric arc chaining up to 5 enemies simultaneously.
+  - `Relay Capacitor Node` (20W): Power distribution booster extending grid reach and accelerating passive power regeneration.
+- **Circuit Drag & Touch Interaction**: Interactive pointer drag-to-cable linking adjacent cells with automatic BFS graph power connectivity.
+- **Power Severing & Emergency Alarm**: Disruptor enemy explosive radius severs active power lines, accompanied by visual strobe warning banners and synthesized Web Audio alert frequencies.
+- **Boss Waves**: Heavy Octagon geometric boss appearing every 5 waves with high HP and base impact damage.
+- **Web Audio Procedural Synthesizer**: Procedural oscillator-driven sound effects for lasers, electric arcs, alarms, and explosions.
+
+---
+
+## [2026-09-14] — Offline Score Queue & Automatic PWA Sync
+
+### Added
+
+- **Offline Score Queue (`apps/web/lib/utils/offlineQueue.ts`)**: Resilient offline storage queue using `safeStorage` to buffer score submissions when network is disconnected or server requests fail.
+- **Auto-Sync Lifecycle (`apps/web/components/layout/Providers.tsx`)**: Automatic queue synchronization triggered on `window.addEventListener('online')` and startup reconnection with toast feedback.
+- **Unit Tests (`apps/web/lib/utils/__tests__/offlineQueue.test.ts`)**: Test coverage for enqueue, removal, and online sync handling.
+
+### Changed
+
+- **`useGame` Hook (`apps/web/lib/hooks/useGame.ts`)**: Integrated offline detection and score queue fallback with optimistic XP calculations and user notification.
+
+---
+
+## [2026-09-14] — New Games Suite: Make 24, Color Shift, and Stack Tower
+
+### Added
+
+- **Make 24** (`apps/web/components/games/Make24.tsx`, `apps/web/app/(main)/games/make-24/page.tsx`): Classic math 24 puzzle with safe Shunting Yard evaluator, solvable 4-number generation algorithm, interactive operator controls, hint solver, and streak scoring.
+- **Color Shift (Stroop Effect)** (`apps/web/components/games/ColorShift.tsx`, `apps/web/app/(main)/games/color-shift/page.tsx`): Cognitive brain training game confronting color ink vs text meaning with combo multiplier and 3-life hard mode.
+- **Stack Tower** (`apps/web/components/games/StackTower.tsx`, `apps/web/app/(main)/games/stack-tower/page.tsx`): 2D Canvas block stacking game with overhang slicing mechanics, dynamic rainbow hue progression, perfect combo chimes, and speed ramping.
+- **Routing, Dynamic SSR Wrappers & SEO** (`apps/web/lib/games-seo.ts`): Registered metadata and dynamic imports for `/games/make-24`, `/games/color-shift`, and `/games/stack-tower`.
+- **Backend Seed Update** (`services/api/cmd/main.go`): Registered `make-24`, `color-shift`, and `stack-tower` into default game seeds.
+- **Localization** (`apps/web/lib/i18n/locales/id.ts`, `apps/web/lib/i18n/locales/en.ts`): Added English and Indonesian labels for all three new games.
+- **PRD Synchronization** (`PRD_EduPlay_v2.md`): Updated Section 8 Roadmap Games table.
+
+---
+
+## [2026-09-14] — Grid Relay TD Prototype & STEM Integration
+
+### Added
+
+- **Grid Relay TD Game Engine** (`components/games/GridRelayTD.tsx`, `components/games/dynamic/GridRelayTDDynamic.tsx`, `app/(main)/games/grid-relay-td/page.tsx`): 2D Canvas real-time power management tower defense game with circuit connections, turret placement, geometric disrupter enemies, overcharge mechanic, and educational electrical physics power surge quizzes.
+- **Game Metadata & SEO** (`lib/games-seo.ts`): Registered `grid-relay-td` route metadata and JSON-LD schema.
+- **Backend Game Seed** (`services/api/cmd/main.go`): Added `grid-relay-td` to database seeding under the `science` category.
+- **Localization** (`lib/i18n/locales/id.ts`, `lib/i18n/locales/en.ts`): Added English and Indonesian translations, how-to-play steps, and gameplay controls.
+- **PRD Synchronization** (`PRD_EduPlay_v2.md`): Registered Grid Relay TD into Section 8 game matrix and Section 31 backlog.
+
+---
+
+## [2026-09-14] — Phase 5: Notification System, Motion A11y & Production Verification
+
+### Added
+
+- **Global Toast Notification System** (`components/ui/ToastContainer.tsx`, `lib/stores/toastStore.ts`): Standalone animated toast notifications with support for `info`, `success`, `warning`, and `error` types mounted into the application shell.
+- **`usePrefersReducedMotion` Hook** (`lib/hooks/usePrefersReducedMotion.ts`): Media query listener for users with reduced motion accessibility preferences, wired into `ConfettiCanvas` to bypass particle physics loops.
+
+### Fixed
+
+- **`GridRelayTD.tsx` Result Typing**: Mapped `res.xp_earned` to `xp` for strict typecheck compliance.
+- **ESLint Warnings Cleaned**: Resolved missing dependencies in `Sudoku`, `Wordle`, `TypingSpeed`, `MemoryMatch`, `SimonSays`, `SnakeGame`, and `MainLayout`.
+
+### Verified
+
+- Frontend: `npm test` passed (24/24 unit tests).
+- Frontend: `npx tsc --noEmit` passed cleanly.
+- Frontend: `npm run build` compiled all 72 static and dynamic routes.
+- Backend: `go build ./...` and `go test ./...` passed.
+
+---
+
 ## [2026-09-14] — Phase 4: Frontend Game Polish (P2 Breakdown, Daily Seeds & Mobile UX)
 
 ### Added

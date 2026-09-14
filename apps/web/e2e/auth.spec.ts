@@ -48,7 +48,7 @@ test.describe('Auth — login page', () => {
   });
 
   test('has a link to the register page', async ({ page }) => {
-    await expect(page.getByRole('link', { name: /daftar/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /daftar/i }).first()).toBeVisible();
   });
 
   test('has a forgot password link', async ({ page }) => {
@@ -94,20 +94,20 @@ test.describe('Auth — register page', () => {
 
   test('has a link back to login page', async ({ page }) => {
     // t('auth.have_account') = 'Sudah punya akun? Masuk'
-    await expect(page.getByRole('link', { name: /sudah punya akun|masuk/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /sudah punya akun|masuk/i }).first()).toBeVisible();
   });
 });
 
 test.describe('Auth — navigation between auth pages', () => {
   test('register link on login page navigates to /register', async ({ page }) => {
     await page.goto('/login');
-    await page.getByRole('link', { name: /daftar/i }).click();
+    await page.getByRole('link', { name: /daftar/i }).first().click();
     await expect(page).toHaveURL(/\/register/);
   });
 
   test('login link on register page navigates to /login', async ({ page }) => {
     await page.goto('/register');
-    await page.getByRole('link', { name: /sudah punya akun|masuk/i }).click();
+    await page.getByRole('link', { name: /sudah punya akun|masuk/i }).first().click();
     await expect(page).toHaveURL(/\/login/);
   });
 });

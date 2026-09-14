@@ -29,9 +29,13 @@ export const GAME_SEO: Record<string, GameSeo> = {
     name: 'Capital City Quiz',
     description: 'Tebak ibukota negara-negara di dunia!',
   },
-  chess: {
+  'chess': {
     name: 'Catur Online',
     description: 'Main catur melawan bot atau lawan pemain lain secara real-time.',
+  },
+  'color-shift': {
+    name: 'Color Shift',
+    description: 'Uji fokus dan refleks otak melawan ilusi efek Stroop warna vs kata!',
   },
   crossword: {
     name: 'Crossword Indonesia',
@@ -60,6 +64,14 @@ export const GAME_SEO: Record<string, GameSeo> = {
   'fraction-visualizer': {
     name: 'Fraction Visualizer',
     description: 'Pahami konsep pecahan lewat visualisasi interaktif yang mudah dimengerti.',
+  },
+  'make-24': {
+    name: 'Make 24',
+    description: 'Susun 4 kartu angka dengan operasi matematika agar tepat menghasilkan 24!',
+  },
+  'grid-relay-td': {
+    name: 'Grid Relay TD',
+    description: 'Atur distribusi daya listrik dan bangun jaringan turret untuk menahan serangan musuh geometris!',
   },
   'math-battle': {
     name: 'Math Battle',
@@ -115,6 +127,10 @@ export const GAME_SEO: Record<string, GameSeo> = {
   'spelling-bee': {
     name: 'Spelling Bee',
     description: 'Susun huruf acak menjadi kata yang benar!',
+  },
+  'stack-tower': {
+    name: 'Stack Tower',
+    description: 'Tumpuk balok setinggi mungkin dengan presisi timing sempurna!',
   },
   sudoku: {
     name: 'Sudoku',

@@ -75,7 +75,6 @@ export function ResultScreen({
 
   const [displayScore, setDisplayScore] = useState(0);
   const [displayXp, setDisplayXp] = useState(0);
-  const [copied, setCopied] = useState(false);
 
   const { data: leaderboardData } = useQuery({
     queryKey: ['leaderboard', 'preview', gameSlug],
@@ -384,11 +383,6 @@ export function ResultScreen({
             <Copy className="h-4 w-4" />
           </button>
         </div>
-        {copied && (
-          <p className="mt-2 text-xs font-medium text-indigo-600 dark:text-indigo-400">
-            Tautan disalin!
-          </p>
-        )}
       </motion.div>
 
       {/* Actions */}

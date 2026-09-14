@@ -67,7 +67,7 @@ export default function MemoryMatch({ isDaily }: Props) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [game.isPlaying]);
+  }, [game.isPlaying, startRound]);
 
   const handleFlip = useCallback(
     async (id: number) => {

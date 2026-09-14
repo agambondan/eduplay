@@ -19,7 +19,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     resetGame();
-  }, [pathname]);
+  }, [pathname, resetGame]);
 
   return (
     <div

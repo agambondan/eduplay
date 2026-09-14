@@ -79,7 +79,7 @@ export default function SimonSays({ isDaily }: Props) {
   useEffect(() => {
     if (game.isPlaying) handleStart();
     return () => clearTimeouts();
-  }, [game.isPlaying]);
+  }, [game.isPlaying, handleStart]);
 
   const handlePress = useCallback(
     async (colorId: number) => {

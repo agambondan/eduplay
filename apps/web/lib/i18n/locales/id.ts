@@ -141,6 +141,23 @@ const id: Record<string, string> = {
   'game.nonogram.title': 'Nonogram',
   'game.nonogram.desc':
     'Isi grid berdasarkan petunjuk angka untuk mengungkapkan gambar tersembunyi!',
+  'game.grid_relay_td.title': 'Grid Relay TD',
+  'game.grid_relay_td.desc':
+    'Atur distribusi daya listrik dan bangun jaringan turret untuk menahan serangan musuh geometris!',
+  'game.grid_relay_td.howto.1': 'Klik petak grid untuk memasang Turret atau Kabel',
+  'game.grid_relay_td.howto.2': 'Sambungkan kabel dari Generator Biru ke Turret agar aktif',
+  'game.grid_relay_td.howto.3': 'Hati-hati musuh peledak yang bisa memutus jaringan kabel daya',
+  'game.grid_relay_td.howto.4': 'Tekan Spasi atau klik Turret aktif untuk Overcharge serangan laser super',
+  'game.grid_relay_td.cable_hint': 'Tarik/klik petak bersebelahan untuk menyambung kabel',
+  'game.grid_relay_td.power_severed': 'Jalur Daya Terputus! Sambung Ulang Kabel!',
+  'game.grid_relay_td.controls': 'Klik/tarik untuk pasang turret & kabel. Klik turret untuk overcharge.',
+  'game.grid_relay_td.touch_controls': 'Tap & geser jari untuk menyambungkan kabel daya antar petak.',
+  'game.make_24.title': 'Make 24',
+  'game.make_24.desc': 'Susun 4 kartu angka dengan operasi matematika agar tepat menghasilkan 24!',
+  'game.color_shift.title': 'Color Shift',
+  'game.color_shift.desc': 'Uji fokus dan refleks otak melawan efek Stroop warna vs kata!',
+  'game.stack_tower.title': 'Stack Tower',
+  'game.stack_tower.desc': 'Tumpuk balok setinggi mungkin dengan presisi timing sempurna!',
 
   'game.start': 'Mulai!',
   'game.correct': 'Benar!',

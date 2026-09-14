@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { usePrefersReducedMotion } from '@/lib/hooks/usePrefersReducedMotion';
 
 interface Particle {
   x: number;
@@ -46,9 +47,14 @@ export function ConfettiCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const startRef = useRef<number>(0);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     if (!active) return;
+    if (prefersReducedMotion) {
+      onDone?.();
+      return;
+    }
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -94,7 +100,7 @@ export function ConfettiCanvas({
 
     animRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animRef.current);
-  }, [active, duration, particleCount, onDone]);
+  }, [active, duration, particleCount, onDone, prefersReducedMotion]);
 
   if (!active) return null;
 

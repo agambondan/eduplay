@@ -127,17 +127,17 @@ export default function Sudoku({ isDaily = false }: { isDaily?: boolean }) {
     return null;
   };
 
-  const saveState = (state: any) => {
+  const saveState = useCallback((state: any) => {
     try {
       safeStorage.setItem(STORAGE_KEY, state);
     } catch {}
-  };
+  }, [STORAGE_KEY]);
 
-  const clearState = () => {
+  const clearState = useCallback(() => {
     try {
       safeStorage.removeItem(STORAGE_KEY);
     } catch {}
-  };
+  }, [STORAGE_KEY]);
 
   const saved = loadState();
 
@@ -163,7 +163,7 @@ export default function Sudoku({ isDaily = false }: { isDaily?: boolean }) {
         gameOver,
       });
     }
-  }, [isPlaying, gameOver, puzzle, solution, current, errors, diff, errorCount]);
+  }, [isPlaying, gameOver, puzzle, solution, current, errors, diff, errorCount, saveState]);
 
   const handleStart = () => {
     const rng = isDaily ? createSeededRNG(getDailySeed()) : Math.random;
@@ -185,7 +185,7 @@ export default function Sudoku({ isDaily = false }: { isDaily?: boolean }) {
     setSelected([r, c]);
   };
 
-  const handleWin = async () => {
+  const handleWin = useCallback(async () => {
     setGameOver(true);
     playSound('win');
     haptics.success();
@@ -193,7 +193,7 @@ export default function Sudoku({ isDaily = false }: { isDaily?: boolean }) {
     const res = await submitScore();
     setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
     clearState();
-  };
+  }, [endGame, submitScore, playSound, clearState]);
 
   const handleTimeUp = useCallback(async () => {
     setGameOver(true);
@@ -203,7 +203,7 @@ export default function Sudoku({ isDaily = false }: { isDaily?: boolean }) {
     const res = await submitScore();
     setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
     clearState();
-  }, [endGame, submitScore, playSound]);
+  }, [endGame, submitScore, playSound, clearState]);
 
   const handleNumberInput = useCallback(
     (num: number | null) => {
@@ -263,6 +263,7 @@ export default function Sudoku({ isDaily = false }: { isDaily?: boolean }) {
       errorCount,
       addScore,
       handleTimeUp,
+      handleWin,
       playSound,
     ]
   );

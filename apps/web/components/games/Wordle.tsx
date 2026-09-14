@@ -119,17 +119,17 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
     return null;
   };
 
-  const saveState = (state: any) => {
+  const saveState = useCallback((state: any) => {
     try {
       safeStorage.setItem(STORAGE_KEY, state);
     } catch {}
-  };
+  }, [STORAGE_KEY]);
 
-  const clearState = () => {
+  const clearState = useCallback(() => {
     try {
       safeStorage.removeItem(STORAGE_KEY);
     } catch {}
-  };
+  }, [STORAGE_KEY]);
 
   const saved = loadState();
 
@@ -162,7 +162,18 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
         hardMode,
       });
     }
-  }, [guesses, currentGuess, attempt, gameOver, won, usedLetters, hardMode, targetWord, result]);
+  }, [
+    guesses,
+    currentGuess,
+    attempt,
+    gameOver,
+    won,
+    usedLetters,
+    hardMode,
+    targetWord,
+    result,
+    saveState,
+  ]);
 
   const handleStart = () => {
     setTargetWord(isDaily ? getDailyItem(WORD_LIST).toUpperCase() : getRandomWord(WORD_LIST));
@@ -293,6 +304,9 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
     addScore,
     endGame,
     submitScore,
+    clearState,
+    playSound,
+    validateHardMode,
   ]);
 
   const handleKey = useCallback(

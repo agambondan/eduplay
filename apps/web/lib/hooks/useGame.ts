@@ -3,7 +3,9 @@ import { useCallback } from 'react';
 import { gamesApi } from '@/lib/api/games';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useGameStore } from '@/lib/stores/gameStore';
+import { toast } from '@/lib/stores/toastStore';
 import { analytics } from '@/lib/utils/analytics';
+import { enqueueOfflineScore } from '@/lib/utils/offlineQueue';
 
 export function useGame(gameSlug: string, gameName?: string, category?: string) {
   const store = useGameStore();
@@ -15,12 +17,26 @@ export function useGame(gameSlug: string, gameName?: string, category?: string) 
         return null;
       }
       const scoreToSubmit = scoreOverride ?? store.score;
+      const payload = {
+        score: scoreToSubmit,
+        duration: 60 - store.timeLeft,
+        difficulty: store.difficulty,
+      };
+
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+      if (isOffline) {
+        enqueueOfflineScore(gameSlug, payload);
+        toast.info('Offline: Skor tersimpan & akan disinkronkan saat online');
+        return {
+          session_id: `offline-${Date.now()}`,
+          xp_earned: Math.max(10, Math.floor(scoreToSubmit / 10)),
+          new_highscore: false,
+        };
+      }
+
       try {
-        const result = await gamesApi.submitScore(gameSlug, {
-          score: scoreToSubmit,
-          duration: 60 - store.timeLeft,
-          difficulty: store.difficulty,
-        });
+        const result = await gamesApi.submitScore(gameSlug, payload);
         if (result) {
           analytics.gameCompleted(
             gameSlug,
@@ -38,10 +54,16 @@ export function useGame(gameSlug: string, gameName?: string, category?: string) 
         }
         return result;
       } catch {
-        return null;
+        enqueueOfflineScore(gameSlug, payload);
+        toast.info('Koneksi terganggu: Skor tersimpan di antrean offline');
+        return {
+          session_id: `offline-${Date.now()}`,
+          xp_earned: Math.max(10, Math.floor(scoreToSubmit / 10)),
+          new_highscore: false,
+        };
       }
     },
-    [gameSlug, store.score, store.timeLeft, store.difficulty, accessToken]
+    [gameSlug, store.score, store.timeLeft, store.difficulty, store.setLevelUp, accessToken]
   );
 
   const startGame = useCallback(

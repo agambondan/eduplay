@@ -147,6 +147,8 @@ class GridBackground extends Entity {
   }
 }
 
+const SPEED_MAP = { easy: 0.18, medium: 0.11, hard: 0.065 };
+
 interface Props {
   isDaily?: boolean;
 }
@@ -160,8 +162,6 @@ export default function SnakeGame({ isDaily }: Props) {
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
   const [displayScore, setDisplayScore] = useState(0);
-
-  const speedMap = { easy: 0.18, medium: 0.11, hard: 0.065 };
 
   const handleEat = useCallback(() => {
     playSound('pop');
@@ -209,7 +209,7 @@ export default function SnakeGame({ isDaily }: Props) {
       const bg = new GridBackground();
       bg.zIndex = 0;
 
-      const snake = new SnakeEntity(speedMap[difficulty], handleEat, handleDie);
+      const snake = new SnakeEntity(SPEED_MAP[difficulty], handleEat, handleDie);
       snake.zIndex = 1;
       snakeRef.current = snake;
 
