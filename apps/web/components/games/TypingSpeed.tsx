@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useGame } from '@/lib/hooks/useGame';
+import { useSoundStore } from '@/lib/stores/soundStore';
 import { cn } from '@/lib/utils/cn';
+import { haptics } from '@/lib/utils/haptics';
+import { createSeededRNG, getDailySeed } from '@/lib/utils/seededRandom';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 
 const WORD_BANK = [
@@ -72,8 +75,8 @@ const WORD_BANK = [
   'malas',
 ];
 
-function buildWordList(count: number) {
-  const shuffled = [...WORD_BANK].sort(() => Math.random() - 0.5);
+function buildWordList(count: number, rng = Math.random) {
+  const shuffled = [...WORD_BANK].sort(() => rng() - 0.5);
   const list: string[] = [];
   while (list.length < count) list.push(...shuffled);
   return list.slice(0, count);
@@ -85,6 +88,7 @@ interface Props {
 
 export default function TypingSpeed({ isDaily }: Props) {
   const game = useGame('typing-speed', 'Typing Speed', 'language');
+  const { playSound } = useSoundStore();
   const DURATION = 60;
 
   const [words, setWords] = useState<string[]>([]);
@@ -101,7 +105,8 @@ export default function TypingSpeed({ isDaily }: Props) {
   const wordCount = game.difficulty === 'easy' ? 40 : game.difficulty === 'medium' ? 60 : 80;
 
   const startRound = useCallback(() => {
-    setWords(buildWordList(wordCount));
+    const rng = isDaily ? createSeededRNG(getDailySeed()) : Math.random;
+    setWords(buildWordList(wordCount, rng));
     setCurrentIdx(0);
     setInput('');
     setCorrect(0);
@@ -119,7 +124,7 @@ export default function TypingSpeed({ isDaily }: Props) {
         return t - 1;
       });
     }, 1000);
-  }, [wordCount]);
+  }, [wordCount, isDaily]);
 
   useEffect(() => {
     if (game.isPlaying) startRound();
@@ -148,8 +153,12 @@ export default function TypingSpeed({ isDaily }: Props) {
       const typed = val.trim();
       if (typed === words[currentIdx]) {
         setCorrect((c) => c + 1);
+        playSound('pop');
+        haptics.light();
       } else if (typed.length > 0) {
         setWrong((w) => w + 1);
+        playSound('wrong');
+        haptics.error();
       }
       setCurrentIdx((i) => i + 1);
       setInput('');
@@ -192,6 +201,12 @@ export default function TypingSpeed({ isDaily }: Props) {
         isNewHighscore={result?.highscore}
         gameSlug="typing-speed"
         gameName="Typing Speed"
+        breakdown={[
+          { label: 'Kecepatan', value: `${finalWpm} WPM`, isBonus: finalWpm >= 50 },
+          { label: 'Akurasi', value: `${accuracy}%`, isBonus: accuracy >= 90 },
+          { label: 'Kata Benar', value: correct },
+          { label: 'Kata Salah', value: wrong },
+        ]}
         description={`${finalWpm} WPM • Akurasi ${accuracy}% • ${correct} kata`}
         onReplay={() => game.startGame(game.difficulty)}
       />
@@ -242,7 +257,7 @@ export default function TypingSpeed({ isDaily }: Props) {
           e.key === 'Enter' && handleInput({ target: { value: input + ' ' } } as any)
         }
         className={cn(
-          'w-full rounded-xl border-2 bg-white px-4 py-3 font-mono text-lg focus:outline-none dark:bg-slate-900 dark:text-white',
+          'touch-target w-full rounded-xl border-2 bg-white px-4 py-3 font-mono text-lg focus:outline-none dark:bg-slate-900 dark:text-white',
           input.length > 0 && words[currentIdx]?.startsWith(input)
             ? 'border-emerald-400 dark:border-emerald-600'
             : input.length > 0
@@ -250,9 +265,12 @@ export default function TypingSpeed({ isDaily }: Props) {
               : 'border-gray-300 dark:border-slate-600'
         )}
         placeholder="Ketik kata di sini, tekan spasi untuk lanjut…"
+        inputMode="text"
+        autoCapitalize="none"
         autoComplete="off"
         autoCorrect="off"
         spellCheck={false}
+        enterKeyHint="next"
       />
 
       <div className="flex gap-6 text-sm text-gray-500 dark:text-slate-400">

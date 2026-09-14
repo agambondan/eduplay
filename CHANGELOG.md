@@ -7,6 +7,22 @@
 
 ---
 
+## [2026-09-14] — Phase 4: Frontend Game Polish (P2 Breakdown, Daily Seeds & Mobile UX)
+
+### Added
+
+- **Score Breakdown in `ResultScreen`**: Interactive visual breakdown cards displaying accuracy, max streak, trial count, and speed metrics across quiz and puzzle games.
+- **Top 3 Leaderboard Preview in `ResultScreen`**: Embedded instant leaderboard snapshot query so players see live top ranks upon game completion.
+- **Seeded Deterministic Daily RNG (`lib/utils/seededRandom.ts`)**: Date-based pseudo-random generator `createSeededRNG` ensuring identical daily challenges across all players for Wordle, Sudoku, and Math Quiz.
+- **Mobile Touch Optimization for Typing Speed**: Configured `inputMode="text"`, disabled mobile autocorrect interference, and added audio/haptic feedback on word submission.
+
+### Changed
+
+- Updated `Wordle`, `Sudoku`, and `MathQuiz` to leverage deterministic daily puzzles when `isDaily` is active.
+- Enhanced `useQuizGame` to collect and provide accurate game breakdown metrics (accuracy %, max streak, correct/total).
+
+---
+
 ## [2026-09-14] — Phase 3: Frontend Modernization & ESLint Flat Config Alignment
 
 ### Changed

@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { Difficulty, ScoreSubmitResponse } from '@/types/game';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AIQuestion, aiApi } from '@/lib/api/ai';
-import { useGame } from './useGame';
 import { useSoundStore } from '@/lib/stores/soundStore';
 import { haptics } from '@/lib/utils/haptics';
 import { ScoreBreakdownItem } from '@/components/ui/ResultScreen';
+import { useGame } from './useGame';
 
 export interface QuizQuestion<TAnswer = string, TExtra = Record<string, unknown>> {
   question: string;

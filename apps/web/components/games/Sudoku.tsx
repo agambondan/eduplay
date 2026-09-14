@@ -526,6 +526,16 @@ export default function Sudoku({ isDaily = false }: { isDaily?: boolean }) {
             gameSlug="sudoku"
             gameName={t('game.sudoku.title')}
             onReplay={handleStart}
+            breakdown={[
+              { label: 'Tingkat', value: DIFF_LABEL[diff]?.label || diff },
+              {
+                label: 'Kesalahan',
+                value: `${errorCount}/${MAX_ERRORS}`,
+                isBonus: errorCount === 0,
+              },
+              { label: 'Mode', value: isDaily ? 'Harian' : 'Latihan', isBonus: isDaily },
+              { label: 'Skor Akhir', value: score, isBonus: true },
+            ]}
             description={
               errorCount < MAX_ERRORS &&
               current.flat().every((cell, i) => cell === solution.flat()[i])

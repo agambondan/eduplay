@@ -197,7 +197,7 @@ export function ResultScreen({
           {breakdown.map((item, i) => (
             <div
               key={i}
-              className="flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-xs dark:bg-slate-800"
+              className="shadow-xs flex items-center justify-between rounded-xl bg-white px-3 py-2 dark:bg-slate-800"
             >
               <span className="text-xs text-gray-500 dark:text-slate-400">{item.label}</span>
               <span
