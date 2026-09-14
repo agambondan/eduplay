@@ -80,6 +80,17 @@ a:focus:not(:focus-visible) {
   outline: none;
 }
 
+@media (prefers-contrast: more) {
+  :root {
+    --border: 220 20% 50%;
+    --input: 220 20% 50%;
+  }
+  .dark {
+    --border: 217.2 32.6% 40%;
+    --input: 217.2 32.6% 40%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

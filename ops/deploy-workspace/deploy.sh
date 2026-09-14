@@ -177,9 +177,13 @@ do_sync() {
   local repo; repo="$(repo_path)"
   local p
   for p in $DEPLOY_SYNC_PATHS; do
-    [[ -e "$repo/$p" ]] || die "sync path not found: $repo/$p"
+    local source_base="$repo/$CONTEXT"
+    if [[ ! -e "$source_base/$p" ]]; then
+      source_base="$repo"
+    fi
+    [[ -e "$source_base/$p" ]] || die "sync path not found: $p (checked in $repo/$CONTEXT/ and $repo/)"
     log "syncing $p to $DEPLOY_REMOTE_DIR"
-    tar czf - -C "$repo" "$p" \
+    tar czf - -C "$source_base" "$p" \
       | remote "cd '$DEPLOY_REMOTE_DIR' && tar xzf -" >>"$LOGFILE" 2>&1 \
       || die "syncing $p failed — see $LOGFILE"
   done

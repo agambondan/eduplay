@@ -16,6 +16,9 @@ func NewTournamentController(svc service.TournamentService) *TournamentControlle
 
 func (h *TournamentController) List(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	items, err := h.svc.List(userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, err.Error())
@@ -25,6 +28,9 @@ func (h *TournamentController) List(c *fiber.Ctx) error {
 
 func (h *TournamentController) Create(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	var req service.CreateTournamentInput
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
@@ -46,6 +52,9 @@ func (h *TournamentController) Get(c *fiber.Ctx) error {
 
 func (h *TournamentController) Join(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	item, err := h.svc.Join(c.Params("id"), userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())
@@ -55,6 +64,9 @@ func (h *TournamentController) Join(c *fiber.Ctx) error {
 
 func (h *TournamentController) Start(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	item, err := h.svc.Start(c.Params("id"), userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())
@@ -64,6 +76,9 @@ func (h *TournamentController) Start(c *fiber.Ctx) error {
 
 func (h *TournamentController) ReportMatch(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	var req service.ReportTournamentMatchInput
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")

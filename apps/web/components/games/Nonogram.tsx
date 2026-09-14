@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { useSoundStore } from '@/lib/stores/soundStore';
 import { cn } from '@/lib/utils/cn';
+import { haptics } from '@/lib/utils/haptics';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
@@ -136,6 +138,7 @@ function selectPuzzle(diff: Difficulty): NonogramPuzzle {
 export default function Nonogram() {
   const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
     useGame('nonogram');
+  const { playSound } = useSoundStore();
   const { t } = useLocale();
 
   const [puzzle, setPuzzle] = useState<NonogramPuzzle | null>(null);
@@ -186,32 +189,33 @@ export default function Nonogram() {
 
   const handleWin = useCallback(async () => {
     setGameOver(true);
+    playSound('win');
+    haptics.success();
     endGame();
 
-    // Calculate score based on difficulty and size
     const baseScore = diff === 'easy' ? 100 : diff === 'medium' ? 250 : 500;
     addScore(baseScore);
 
     const res = await submitScore();
     setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
-  }, [diff, addScore, endGame, submitScore]);
+  }, [diff, addScore, endGame, submitScore, playSound]);
 
   const handleCellAction = useCallback(
     (r: number, c: number, actionMode?: CellState) => {
       if (gameOver || !isPlaying) return;
 
+      playSound('click');
+      haptics.light();
+
       setBoard((prev) => {
         const newBoard = [...prev.map((row) => [...row])];
         const currentState = newBoard[r][c];
 
-        // Determine what state to apply
         let targetState: CellState;
 
         if (actionMode) {
-          // If an explicit action mode was provided (during drag)
           targetState = actionMode;
         } else {
-          // Toggle logic for single clicks
           if (mode === 'fill') {
             targetState = currentState === 'filled' ? 'empty' : 'filled';
           } else {
@@ -221,7 +225,6 @@ export default function Nonogram() {
 
         newBoard[r][c] = targetState;
 
-        // Only check win if we filled something
         if (targetState === 'filled' && checkWin(newBoard)) {
           setTimeout(handleWin, 100);
         }
@@ -229,15 +232,17 @@ export default function Nonogram() {
         return newBoard;
       });
     },
-    [gameOver, isPlaying, mode, checkWin, handleWin]
+    [gameOver, isPlaying, mode, checkWin, handleWin, playSound]
   );
 
   const handleTimeUp = useCallback(async () => {
     setGameOver(true);
+    playSound('lose');
+    haptics.error();
     endGame();
     const res = await submitScore();
     setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
-  }, [endGame, submitScore]);
+  }, [endGame, submitScore, playSound]);
 
   // Pointer events for drag-to-paint
   const onPointerDown = (r: number, c: number, e: React.PointerEvent) => {

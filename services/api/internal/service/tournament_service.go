@@ -919,14 +919,16 @@ func (s *tournamentService) finishTournament(tx *gorm.DB, tournament *model.Tour
 		} else if participant.FinalRank == 3 {
 			xp = 150
 		}
-		var user model.User
-		if err := tx.Where("id = ?", *participant.UserID).First(&user).Error; err != nil {
+		if err := tx.Model(&model.User{}).Where("id = ?", *participant.UserID).
+			UpdateColumn("xp", gorm.Expr("xp + ?", xp)).Error; err != nil {
 			return err
 		}
-		user.XP += xp
-		user.Level = model.LevelFromXP(user.XP)
-		if err := tx.Save(&user).Error; err != nil {
-			return err
+		var user model.User
+		if err := tx.Select("id, xp, level").First(&user, "id = ?", *participant.UserID).Error; err == nil {
+			newLevel := model.LevelFromXP(user.XP)
+			if newLevel != user.Level {
+				_ = tx.Model(&user).UpdateColumn("level", newLevel).Error
+			}
 		}
 	}
 

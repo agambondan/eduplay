@@ -27,7 +27,7 @@ func AuthMiddleware(cfg *config.Config) fiber.Handler {
 		tokenString := parts[1]
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return []byte(cfg.JWT.Secret), nil
-		})
+		}, jwt.WithValidMethods([]string{"HS256"}))
 
 		if err != nil || !token.Valid {
 			return response.Error(c, fiber.StatusUnauthorized, "Invalid or expired token")
@@ -38,7 +38,11 @@ func AuthMiddleware(cfg *config.Config) fiber.Handler {
 			return response.Error(c, fiber.StatusUnauthorized, "Invalid token type")
 		}
 
-		jti, _ := claims["jti"].(string)
+		jti, ok := claims["jti"].(string)
+		if !ok || jti == "" {
+			return response.Error(c, fiber.StatusUnauthorized, "Invalid token claims")
+		}
+
 		ctx := context.Background()
 		val, _ := database.RDB.Get(ctx, "jwt:blacklist:"+jti).Result()
 		if val != "" {
@@ -71,18 +75,20 @@ func OptionalAuthMiddleware(cfg *config.Config) fiber.Handler {
 		tokenString := parts[1]
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return []byte(cfg.JWT.Secret), nil
-		})
+		}, jwt.WithValidMethods([]string{"HS256"}))
 
 		if err == nil && token.Valid {
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && claims["typ"] == "access" {
-				jti := claims["jti"].(string)
-				ctx := context.Background()
-				val, _ := database.RDB.Get(ctx, "jwt:blacklist:"+jti).Result()
-				if val == "" {
-					sub, _ := claims["sub"].(string)
-					if sub != "" {
-						c.Locals("user", token)
-						c.Locals("user_id", sub)
+				jti, ok := claims["jti"].(string)
+				if ok && jti != "" {
+					ctx := context.Background()
+					val, _ := database.RDB.Get(ctx, "jwt:blacklist:"+jti).Result()
+					if val == "" {
+						sub, _ := claims["sub"].(string)
+						if sub != "" {
+							c.Locals("user", token)
+							c.Locals("user_id", sub)
+						}
 					}
 				}
 			}

@@ -376,7 +376,7 @@ function BattleRoom({ matchInfo, onBack }: { matchInfo: QuickMatchResult; onBack
     };
   }, [connect]);
 
-  const submitAnswer = (answer: string) => {
+  const submitAnswer = useCallback((answer: string) => {
     if (!currentQuestion || answerLocked || gameState !== 'playing') return;
     const elapsedMs = Math.max(
       100,
@@ -394,7 +394,7 @@ function BattleRoom({ matchInfo, onBack }: { matchInfo: QuickMatchResult; onBack
         },
       })
     );
-  };
+  }, [answerLocked, currentQuestion, gameState, matchInfo.room_id]);
 
   const myTeamPlayers = useMemo(
     () => players.filter((player) => teams[player.id] === myTeam),

@@ -24,6 +24,9 @@ type CreateBattleshipInput struct {
 
 func (h *BattleshipController) List(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	items, err := h.svc.List(userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, err.Error())
@@ -33,6 +36,9 @@ func (h *BattleshipController) List(c *fiber.Ctx) error {
 
 func (h *BattleshipController) Create(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	var req CreateBattleshipInput
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
@@ -49,6 +55,9 @@ func (h *BattleshipController) Create(c *fiber.Ctx) error {
 
 func (h *BattleshipController) Get(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	item, err := h.svc.Get(c.Params("id"), userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())
@@ -63,6 +72,9 @@ type BattleshipTargetInput struct {
 
 func (h *BattleshipController) Target(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	var req BattleshipTargetInput
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
@@ -83,6 +95,9 @@ type BattleshipShotInput struct {
 
 func (h *BattleshipController) Shot(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	var req BattleshipShotInput
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
@@ -96,6 +111,9 @@ func (h *BattleshipController) Shot(c *fiber.Ctx) error {
 
 func (h *BattleshipController) Reveal(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	item, err := h.svc.Reveal(c.Params("id"), userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())
@@ -105,6 +123,9 @@ func (h *BattleshipController) Reveal(c *fiber.Ctx) error {
 
 func (h *BattleshipController) Resign(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	item, err := h.svc.Resign(c.Params("id"), userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())

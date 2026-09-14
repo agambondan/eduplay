@@ -24,6 +24,9 @@ type CreateChessInput struct {
 
 func (h *ChessController) List(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	items, err := h.svc.List(userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, err.Error())
@@ -33,6 +36,9 @@ func (h *ChessController) List(c *fiber.Ctx) error {
 
 func (h *ChessController) Create(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	var req CreateChessInput
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
@@ -54,6 +60,9 @@ func (h *ChessController) Create(c *fiber.Ctx) error {
 
 func (h *ChessController) Get(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	item, err := h.svc.Get(c.Params("id"), userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())
@@ -67,6 +76,9 @@ type ChessMoveInput struct {
 
 func (h *ChessController) Move(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	var req ChessMoveInput
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
@@ -83,6 +95,9 @@ func (h *ChessController) Move(c *fiber.Ctx) error {
 
 func (h *ChessController) Resign(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	item, err := h.svc.Resign(c.Params("id"), userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())

@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Pause } from 'lucide-react';
-import { AIQuestion, aiApi } from '@/lib/api/ai';
+import { AIQuestion } from '@/lib/api/ai';
 import { contentApi } from '@/lib/api/content';
-import { useGame } from '@/lib/hooks/useGame';
+import { useQuizGame } from '@/lib/hooks/useQuizGame';
 import { useLocale } from '@/lib/i18n';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
@@ -16,6 +16,13 @@ import { Timer } from '@/components/ui/Timer';
 interface TimelineEvent {
   year: number;
   event: string;
+}
+
+interface TimelineQuestion {
+  question: string;
+  answer: string;
+  options: string[];
+  event: TimelineEvent;
 }
 
 const FALLBACK_EVENTS: TimelineEvent[] = [
@@ -45,17 +52,31 @@ function generateOptions(correctYear: number): number[] {
   return [...opts].sort((a, b) => a - b);
 }
 
-function generateLocalQuestion(EVENTS: TimelineEvent[]): {
-  event: TimelineEvent;
-  options: number[];
-} {
+function generateLocalQuestion(EVENTS: TimelineEvent[]): TimelineQuestion {
   const target = EVENTS[Math.floor(Math.random() * EVENTS.length)];
-  return { event: target, options: generateOptions(target.year) };
+  return {
+    question: target.event,
+    answer: String(target.year),
+    options: generateOptions(target.year).map(String),
+    event: target,
+  };
+}
+
+function convertAIQuestion(q: AIQuestion): TimelineQuestion | null {
+  const eventText = q.question;
+  const year = Number(q.answer);
+  const opts = q.options?.map(Number).filter((n) => !isNaN(n));
+  if (!opts || opts.length < 4 || isNaN(year)) return null;
+
+  return {
+    question: eventText,
+    answer: String(year),
+    options: opts.map(String).sort((a, b) => Number(a) - Number(b)),
+    event: { year, event: eventText },
+  };
 }
 
 export default function TimelineHistory() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
-    useGame('timeline-history');
   const { t } = useLocale();
 
   const { data: historyData } = useQuery({
@@ -63,85 +84,47 @@ export default function TimelineHistory() {
     queryFn: () => contentApi.getHistory(),
     staleTime: 24 * 60 * 60 * 1000,
   });
-  const EVENTS =
-    historyData?.map((e) => ({ year: e.year, event: e.description })) ?? FALLBACK_EVENTS;
+  const events = useMemo(
+    () => historyData?.map((e) => ({ year: e.year, event: e.description })) ?? FALLBACK_EVENTS,
+    [historyData]
+  );
 
-  const [currentEvent, setCurrentEvent] = useState<TimelineEvent | null>(null);
-  const [options, setOptions] = useState<number[]>([]);
-  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
-  const [gameOver, setGameOver] = useState(false);
-  const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
-  const [count, setCount] = useState(0);
-  const [useAI, setUseAI] = useState(false);
-  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
-  const [aiLoading, setAiLoading] = useState(false);
-
-  const nextQuestion = useCallback(() => {
-    if (useAI && aiQuestions.length > 0) {
-      const q = aiQuestions.shift();
-      if (q) {
-        const eventText = q.question;
-        const year = Number(q.answer);
-        const opts = q.options?.map(Number).filter((n) => !isNaN(n));
-        if (opts && opts.length >= 4 && !isNaN(year)) {
-          setCurrentEvent({ year, event: eventText });
-          setOptions(opts.sort((a, b) => a - b));
-          setAiQuestions([...aiQuestions]);
-          setFeedback(null);
-          return;
-        }
-      }
-    }
-    const local = generateLocalQuestion(EVENTS);
-    setCurrentEvent(local.event);
-    setOptions(local.options);
-    setFeedback(null);
-  }, [EVENTS, useAI, aiQuestions]);
-
-  const fetchAIQuestions = async () => {
-    setAiLoading(true);
-    try {
-      const q = await aiApi.getQuestions('timeline-history', 'medium', 10);
-      if (q && q.length > 0) setAiQuestions(q);
-    } catch {
-      console.error('Failed to fetch AI questions');
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleStart = async () => {
-    setCount(0);
-    setGameOver(false);
-    setResult(null);
-    if (useAI) await fetchAIQuestions();
-    nextQuestion();
-    startGame('medium');
-  };
-
-  const handleAnswer = async (year: number) => {
-    if (feedback || !currentEvent) return;
-
-    if (year === currentEvent.year) {
-      setFeedback('correct');
-      addScore(20);
-    } else {
-      setFeedback('wrong');
-      addScore(-5);
-    }
-
-    setCount((c) => c + 1);
-    if (count + 1 >= 10) {
-      setTimeout(async () => {
-        setGameOver(true);
-        endGame();
-        const res = await submitScore();
-        setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
-      }, 600);
-    } else {
-      setTimeout(nextQuestion, 600);
-    }
-  };
+  const {
+    question,
+    feedback,
+    questionCount,
+    gameOver,
+    result,
+    score,
+    isPlaying,
+    useAI,
+    setUseAI,
+    aiLoading,
+    breakdown,
+    handleStart,
+    handleAnswer,
+    handleTimeUp,
+    pauseGame,
+  } = useQuizGame<TimelineQuestion>({
+    gameSlug: 'timeline-history',
+    gameName: 'Timeline History',
+    category: 'history',
+    totalQuestions: 10,
+    difficulty: 'medium',
+    hasTimer: true,
+    timerSeconds: 90,
+    generateQuestion: () => generateLocalQuestion(events),
+    convertAIQuestion,
+    fallbackData: events,
+    scoring: {
+      correct: 20,
+      wrong: -5,
+    },
+    aiConfig: {
+      count: 10,
+      difficulty: 'medium',
+    },
+  });
 
   if (!isPlaying && !gameOver) {
     return (
@@ -185,17 +168,10 @@ export default function TimelineHistory() {
   return (
     <div className="flex flex-col items-center gap-6 py-6">
       <div className="flex w-full max-w-md items-center justify-between">
-        <Timer
-          initialSeconds={90}
-          onTimeUp={() => {
-            setGameOver(true);
-            endGame();
-          }}
-          isRunning={isPlaying && !gameOver}
-        />
+        <Timer initialSeconds={90} onTimeUp={handleTimeUp} isRunning={isPlaying && !gameOver} />
         <ScoreBoard score={score} />
         <span className="text-sm font-bold text-gray-500">
-          {t('game.questions', { n: count, total: 10 })}
+          {t('game.questions', { n: questionCount, total: 10 })}
         </span>
         <button
           onClick={pauseGame}
@@ -206,19 +182,19 @@ export default function TimelineHistory() {
         </button>
       </div>
 
-      {currentEvent && !gameOver && (
+      {question && !gameOver && (
         <div className="w-full max-w-lg space-y-8">
           <div className="rounded-3xl border-2 border-indigo-100 bg-white p-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
             <p className="text-2xl font-bold leading-tight text-gray-900 dark:text-white">
               Kapan terjadi peristiwa:
             </p>
             <h2 className="mt-4 text-3xl font-black leading-snug text-indigo-600 dark:text-indigo-400">
-              {currentEvent.event}
+              {question.event.event}
             </h2>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {options.map((year) => (
+            {question.options.map((year) => (
               <button
                 key={year}
                 onClick={() => handleAnswer(year)}
@@ -227,7 +203,7 @@ export default function TimelineHistory() {
                   'rounded-2xl border-2 px-6 py-4 text-xl font-bold transition-all active:scale-95',
                   feedback === null
                     ? 'border-gray-200 bg-white text-gray-800 hover:border-indigo-400 hover:bg-indigo-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white'
-                    : year === currentEvent.year
+                    : year === question.answer
                       ? 'border-emerald-500 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                       : 'border-gray-200 bg-gray-50 text-gray-400 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-500'
                 )}
@@ -247,7 +223,8 @@ export default function TimelineHistory() {
             gameSlug="timeline-history"
             gameName="Timeline History"
             onReplay={handleStart}
-            description={`${count}/10 soal dijawab`}
+            breakdown={breakdown}
+            description={`${questionCount}/10 soal dijawab`}
           />
         </div>
       )}

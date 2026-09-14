@@ -63,7 +63,15 @@ func (c *AdController) Create(ctx *fiber.Ctx) error {
 	}
 
 	if file, err := ctx.FormFile("image"); err == nil {
+		const maxFileSize = 2 * 1024 * 1024
+		if file.Size > maxFileSize {
+			return response.Error(ctx, fiber.StatusRequestEntityTooLarge, "image file too large (max 2MB)")
+		}
 		ext := strings.ToLower(filepath.Ext(file.Filename))
+		allowedExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
+		if !allowedExts[ext] {
+			return response.Error(ctx, fiber.StatusBadRequest, "invalid image type (allowed: jpg, jpeg, png, webp)")
+		}
 		filename := fmt.Sprintf("ads/%s%s", uuid.New().String(), ext)
 		if err := ctx.SaveFile(file, "./uploads/"+filename); err != nil {
 			return response.Error(ctx, fiber.StatusInternalServerError, "failed to save image")

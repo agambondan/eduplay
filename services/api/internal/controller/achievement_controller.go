@@ -30,7 +30,10 @@ func (h *AchievementController) GetAll(c *fiber.Ctx) error {
 }
 
 func (h *AchievementController) GetUserAchievements(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(string)
+	userID, ok := c.Locals("user_id").(string)
+	if !ok || userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	uas, err := h.svc.GetUserAchievements(userID)
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, err.Error())

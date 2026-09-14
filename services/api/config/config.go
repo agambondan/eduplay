@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"strings"
 
@@ -20,6 +21,7 @@ type Config struct {
 		Name     string
 		User     string
 		Password string
+		SSLMode  string
 	}
 	Redis struct {
 		URL string
@@ -69,8 +71,19 @@ func Load() (*Config, error) {
 	cfg.DB.Name = os.Getenv("DB_NAME")
 	cfg.DB.User = os.Getenv("DB_USER")
 	cfg.DB.Password = os.Getenv("DB_PASSWORD")
+	cfg.DB.SSLMode = os.Getenv("DB_SSLMODE")
+	if cfg.DB.SSLMode == "" {
+		if cfg.App.Env == "production" {
+			cfg.DB.SSLMode = "require"
+		} else {
+			cfg.DB.SSLMode = "disable"
+		}
+	}
 	cfg.Redis.URL = os.Getenv("REDIS_URL")
 	cfg.JWT.Secret = os.Getenv("JWT_SECRET")
+	if cfg.App.Env == "production" && cfg.JWT.Secret == "" {
+		return nil, errors.New("JWT_SECRET is required in production")
+	}
 	cfg.JWT.AccessExpiry = os.Getenv("JWT_ACCESS_EXPIRY")
 	cfg.JWT.RefreshExpiry = os.Getenv("JWT_REFRESH_EXPIRY")
 	cfg.AI.Provider = os.Getenv("AI_PROVIDER")

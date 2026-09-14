@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { authApi } from '@/lib/api/auth';
@@ -42,12 +43,12 @@ function VerifyContent() {
             <div className="rounded-md bg-green-50 p-4 text-sm text-green-700 dark:bg-emerald-900/20 dark:text-emerald-300">
               {message}
             </div>
-            <a
+            <Link
               href="/login"
               className="block text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
             >
               {t('auth.login')}
-            </a>
+            </Link>
           </div>
         )}
         {status === 'error' && (
@@ -55,12 +56,12 @@ function VerifyContent() {
             <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
               {message}
             </div>
-            <a
+            <Link
               href="/"
               className="block text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
             >
               {t('common.back')}
-            </a>
+            </Link>
           </div>
         )}
       </div>

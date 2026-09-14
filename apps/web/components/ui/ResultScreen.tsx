@@ -2,15 +2,34 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Copy, Home, LogIn, RotateCcw, Share2, Star, TrendingUp, Trophy } from 'lucide-react';
+import {
+  Copy,
+  Home,
+  LogIn,
+  Medal,
+  RotateCcw,
+  Share2,
+  Star,
+  TrendingUp,
+  Trophy,
+} from 'lucide-react';
+import { leaderboardApi } from '@/lib/api/leaderboard';
 import { useLocale } from '@/lib/i18n';
 import { SITE_URL } from '@/lib/site';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { cn } from '@/lib/utils/cn';
 
 interface Achievement {
   name: string;
   xp_reward: number;
+}
+
+export interface ScoreBreakdownItem {
+  label: string;
+  value: number | string;
+  isBonus?: boolean;
 }
 
 interface ResultScreenProps {
@@ -26,6 +45,8 @@ interface ResultScreenProps {
   onReplay?: () => void;
   shareText?: string;
   description?: string;
+  breakdown?: ScoreBreakdownItem[];
+  showLeaderboard?: boolean;
   /** @deprecated pass nothing — ResultScreen reads isGuest from authStore automatically */
   guestMode?: boolean;
 }
@@ -43,6 +64,8 @@ export function ResultScreen({
   onReplay,
   shareText,
   description,
+  breakdown = [],
+  showLeaderboard = true,
   guestMode,
 }: ResultScreenProps) {
   const { t } = useLocale();
@@ -52,6 +75,13 @@ export function ResultScreen({
   const [displayScore, setDisplayScore] = useState(0);
   const [displayXp, setDisplayXp] = useState(0);
   const [copied, setCopied] = useState(false);
+
+  const { data: leaderboardData } = useQuery({
+    queryKey: ['leaderboard', 'preview', gameSlug],
+    queryFn: () => leaderboardApi.getGameLeaderboard(gameSlug, 'all'),
+    enabled: !!gameSlug && showLeaderboard,
+    staleTime: 60 * 1000,
+  });
 
   useEffect(() => {
     const steps = 20;
@@ -155,6 +185,86 @@ export function ResultScreen({
           </motion.div>
         )}
       </motion.div>
+
+      {/* Score Breakdown */}
+      {breakdown.length > 0 && (
+        <motion.div
+          className="grid w-full grid-cols-2 gap-2 rounded-2xl bg-gray-50 p-3 dark:bg-slate-800/60"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.3 }}
+        >
+          {breakdown.map((item, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between rounded-xl bg-white px-3 py-2 shadow-xs dark:bg-slate-800"
+            >
+              <span className="text-xs text-gray-500 dark:text-slate-400">{item.label}</span>
+              <span
+                className={cn(
+                  'font-mono text-xs font-bold',
+                  item.isBonus
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-gray-900 dark:text-white'
+                )}
+              >
+                {typeof item.value === 'number' ? item.value.toLocaleString('id-ID') : item.value}
+              </span>
+            </div>
+          ))}
+        </motion.div>
+      )}
+
+      {/* Leaderboard Top 3 Preview */}
+      {showLeaderboard && leaderboardData?.entries && leaderboardData.entries.length > 0 && (
+        <motion.div
+          className="w-full rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18, duration: 0.3 }}
+        >
+          <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+            <span className="flex items-center gap-1">
+              <Medal className="h-3.5 w-3.5 text-amber-500" /> {t('leaderboard.top_players')}
+            </span>
+            <Link
+              href={`/leaderboard?game=${gameSlug}`}
+              className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+            >
+              {t('common.view_all')}
+            </Link>
+          </div>
+          <div className="space-y-1.5">
+            {leaderboardData.entries.slice(0, 3).map((entry, idx) => (
+              <div
+                key={entry.rank || idx}
+                className="flex items-center justify-between rounded-lg px-2 py-1 text-xs font-medium hover:bg-gray-50 dark:hover:bg-slate-700/50"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold',
+                      idx === 0
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                        : idx === 1
+                          ? 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                          : 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
+                    )}
+                  >
+                    {idx + 1}
+                  </span>
+                  <span className="max-w-[140px] truncate text-gray-800 dark:text-slate-200">
+                    {entry.username}
+                  </span>
+                </div>
+                <span className="font-mono font-bold text-gray-900 dark:text-white">
+                  {entry.score.toLocaleString('id-ID')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* XP / Guest CTA */}
       <motion.div

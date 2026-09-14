@@ -174,10 +174,19 @@ func (h *AuthController) Refresh(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Router /auth/logout [post]
 func (h *AuthController) Logout(c *fiber.Ctx) error {
-	userToken := c.Locals("user").(*jwt.Token)
-	claims := userToken.Claims.(jwt.MapClaims)
-	jti := claims["jti"].(string)
-	exp := claims["exp"].(float64)
+	userToken, ok := c.Locals("user").(*jwt.Token)
+	if !ok || userToken == nil {
+		return response.Error(c, fiber.StatusUnauthorized, "Invalid token")
+	}
+	claims, ok := userToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return response.Error(c, fiber.StatusUnauthorized, "Invalid token claims")
+	}
+	jti, _ := claims["jti"].(string)
+	exp, _ := claims["exp"].(float64)
+	if jti == "" || exp == 0 {
+		return response.Error(c, fiber.StatusUnauthorized, "Invalid token claims")
+	}
 
 	expiry := time.Until(time.Unix(int64(exp), 0))
 	if expiry > 0 {

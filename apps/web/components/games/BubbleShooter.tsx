@@ -9,28 +9,10 @@ import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import { Timer } from '@/components/ui/Timer';
-
-interface Bubble {
-  x: number;
-  y: number;
-  radius: number;
-  value: number;
-  color: string;
-  gradient: CanvasGradient;
-  isTarget: boolean;
-  opacity: number;
-}
-
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  color: string;
-  size: number;
-}
+import {
+  CanvasEngine,
+  Entity,
+} from '@/lib/game-engines/CanvasEngine';
 
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 const GRADIENT_COLORS: Record<string, [string, string]> = {
@@ -43,259 +25,418 @@ const GRADIENT_COLORS: Record<string, [string, string]> = {
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 640;
 
+class BackgroundGrid extends Entity {
+  update() {}
+
+  render(ctx: CanvasRenderingContext2D) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.03)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < CANVAS_WIDTH; x += 30) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, CANVAS_HEIGHT);
+      ctx.stroke();
+    }
+    for (let y = 0; y < CANVAS_HEIGHT; y += 30) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(CANVAS_WIDTH, y);
+      ctx.stroke();
+    }
+  }
+}
+
+class BubbleEntity extends Entity {
+  radius = 25;
+  value = 1;
+  color = '#4f46e5';
+
+  constructor(x: number, y: number, value: number, color: string) {
+    super();
+    this.position = { x, y };
+    this.value = value;
+    this.color = color;
+  }
+
+  update(dt: number) {
+    this.position.y += 0.5 * dt * 60;
+  }
+
+  render(ctx: CanvasRenderingContext2D) {
+    const [c1, c2] = GRADIENT_COLORS[this.color] || ['#6366f1', '#3730a3'];
+
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.radius + 4, 0, Math.PI * 2);
+    ctx.fillStyle = this.color + '30';
+    ctx.fill();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+    const g = ctx.createRadialGradient(
+      this.position.x - 5,
+      this.position.y - 5,
+      0,
+      this.position.x,
+      this.position.y,
+      this.radius
+    );
+    g.addColorStop(0, c1);
+    g.addColorStop(1, c2);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.arc(this.position.x - 6, this.position.y - 6, this.radius * 0.3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fill();
+    ctx.closePath();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 15px Inter';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.value.toString(), this.position.x, this.position.y);
+  }
+
+  isOffScreen(): boolean {
+    return this.position.y + this.radius > CANVAS_HEIGHT - 20;
+  }
+}
+
+class ProjectileEntity extends Entity {
+  radius = 10;
+  value = 1;
+
+  constructor(x: number, y: number, dx: number, dy: number, value: number) {
+    super();
+    this.position = { x, y };
+    this.velocity = { x: dx, y: dy };
+    this.value = value;
+  }
+
+  update(dt: number) {
+    this.position.x += this.velocity.x * dt * 60;
+    this.position.y += this.velocity.y * dt * 60;
+  }
+
+  render(ctx: CanvasRenderingContext2D) {
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, 14, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(99,102,241,0.2)';
+    ctx.fill();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+    const pGrad = ctx.createRadialGradient(
+      this.position.x - 2,
+      this.position.y - 2,
+      0,
+      this.position.x,
+      this.position.y,
+      this.radius
+    );
+    pGrad.addColorStop(0, '#818cf8');
+    pGrad.addColorStop(1, '#3730a3');
+    ctx.fillStyle = pGrad;
+    ctx.fill();
+    ctx.closePath();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px Inter';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.value.toString(), this.position.x, this.position.y);
+  }
+
+  isOffScreen(): boolean {
+    return (
+      this.position.y <= 0 ||
+      this.position.x <= 0 ||
+      this.position.x >= CANVAS_WIDTH
+    );
+  }
+}
+
+class ParticleEntity extends Entity {
+  life = 1;
+  size = 4;
+  color = '#fff';
+
+  constructor(x: number, y: number, vx: number, vy: number, color: string) {
+    super();
+    this.position = { x, y };
+    this.velocity = { x: vx, y: vy };
+    this.color = color;
+    this.size = 4 + Math.random() * 4;
+    this.life = 1;
+  }
+
+  update(dt: number) {
+    this.position.x += this.velocity.x * dt * 60;
+    this.position.y += this.velocity.y * dt * 60;
+    this.velocity.y += 0.05 * dt * 60;
+    this.life -= 0.03 * dt * 60;
+  }
+
+  render(ctx: CanvasRenderingContext2D) {
+    if (this.life <= 0) return;
+    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.size * this.life, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.closePath();
+    ctx.globalAlpha = 1;
+  }
+}
+
+class CannonEntity extends Entity {
+  radius = 30;
+
+  constructor() {
+    super();
+    this.position = { x: 300, y: CANVAS_HEIGHT };
+  }
+
+  update() {}
+
+  render(ctx: CanvasRenderingContext2D) {
+    const cGrad = ctx.createRadialGradient(
+      this.position.x,
+      this.position.y - 10,
+      0,
+      this.position.x,
+      this.position.y,
+      35
+    );
+    cGrad.addColorStop(0, '#6366f1');
+    cGrad.addColorStop(1, '#312e81');
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.radius, Math.PI, 0);
+    ctx.fillStyle = cGrad;
+    ctx.fill();
+    ctx.closePath();
+
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y - 5, 10, Math.PI, 0);
+    ctx.fillStyle = '#4338ca';
+    ctx.fill();
+    ctx.closePath();
+  }
+}
+
+class GameControllerEntity extends Entity {
+  cannon: CannonEntity;
+  bubbles: BubbleEntity[] = [];
+  projectiles: ProjectileEntity[] = [];
+  particles: ParticleEntity[] = [];
+  targetSum = 0;
+  lastSpawn = 0;
+  onGameOver: () => void;
+  onScore: (delta: number) => void;
+  onNewTarget: (sum: number) => void;
+
+  constructor(
+    cannon: CannonEntity,
+    onGameOver: () => void,
+    onScore: (delta: number) => void,
+    onNewTarget: (sum: number) => void
+  ) {
+    super();
+    this.cannon = cannon;
+    this.onGameOver = onGameOver;
+    this.onScore = onScore;
+    this.onNewTarget = onNewTarget;
+  }
+
+  update(dt: number) {
+    const now = performance.now();
+
+    if (now - this.lastSpawn > 2000) {
+      this.spawnBubble();
+      this.lastSpawn = now;
+    }
+
+    for (const b of this.bubbles) {
+      b.update(dt);
+    }
+
+    for (const p of this.projectiles) {
+      p.update(dt);
+    }
+
+    for (const pt of this.particles) {
+      pt.update(dt);
+    }
+
+    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      const p = this.projectiles[i];
+      if (p.isOffScreen()) {
+        this.projectiles.splice(i, 1);
+        continue;
+      }
+
+      for (let j = this.bubbles.length - 1; j >= 0; j--) {
+        const b = this.bubbles[j];
+        const dist = Math.sqrt(
+          (p.position.x - b.position.x) ** 2 + (p.position.y - b.position.y) ** 2
+        );
+        if (dist < p.radius + b.radius + 10) {
+          for (let k = 0; k < 12; k++) {
+            const angle = (Math.PI * 2 * k) / 12;
+            const speed = 2 + Math.random() * 3;
+            this.particles.push(
+              new ParticleEntity(
+                b.position.x,
+                b.position.y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                b.color
+              )
+            );
+          }
+
+          if (p.value + b.value === this.targetSum) {
+            this.onScore(20);
+            this.bubbles.splice(j, 1);
+            this.targetSum = Math.floor(Math.random() * 15) + 5;
+            this.onNewTarget(this.targetSum);
+          } else {
+            this.onScore(-5);
+          }
+          this.projectiles.splice(i, 1);
+          break;
+        }
+      }
+    }
+
+    for (let i = this.bubbles.length - 1; i >= 0; i--) {
+      if (this.bubbles[i].isOffScreen()) {
+        this.onGameOver();
+        break;
+      }
+    }
+
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      if (this.particles[i].life <= 0) {
+        this.particles.splice(i, 1);
+      }
+    }
+  }
+
+  render(ctx: CanvasRenderingContext2D) {
+    for (const b of this.bubbles) {
+      b.render(ctx);
+    }
+    for (const p of this.projectiles) {
+      p.render(ctx);
+    }
+    for (const pt of this.particles) {
+      pt.render(ctx);
+    }
+  }
+
+  spawnBubble() {
+    const radius = 25;
+    const x = Math.random() * (CANVAS_WIDTH - radius * 2) + radius;
+    const value = Math.floor(Math.random() * 10) + 1;
+    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    this.bubbles.push(new BubbleEntity(x, -radius, value, color));
+  }
+
+  fireProjectile(targetX: number, targetY: number) {
+    const dx = targetX - this.cannon.position.x;
+    const dy = targetY - this.cannon.position.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return;
+
+    const speed = 7;
+    const value = Math.floor(Math.random() * 9) + 1;
+    this.projectiles.push(
+      new ProjectileEntity(
+        this.cannon.position.x,
+        this.cannon.position.y - 10,
+        (dx / dist) * speed,
+        (dy / dist) * speed,
+        value
+      )
+    );
+  }
+}
+
 export default function BubbleShooter() {
   const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
     useGame('bubble-shooter');
   const { t } = useLocale();
   const isTouch = useIsTouchDevice();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [targetSum, setTargetSum] = useState(0);
+  const engineRef = useRef<CanvasEngine | null>(null);
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
+  const [targetSum, setTargetSum] = useState(0);
 
-  const gameState = useRef({
-    bubbles: [] as Bubble[],
-    cannonX: 300,
-    projectiles: [] as {
-      x: number;
-      y: number;
-      dx: number;
-      dy: number;
-      value: number;
-      radius: number;
-    }[],
-    lastSpawn: 0,
-    particles: [] as Particle[],
-  });
-
-  const spawnBubble = useCallback(() => {
-    const radius = 25;
-    const x = Math.random() * (CANVAS_WIDTH - radius * 2) + radius;
-    const value = Math.floor(Math.random() * 10) + 1;
-    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-    const [c1, c2] = GRADIENT_COLORS[color];
-    const grad = document.createElement('canvas').getContext('2d')!;
-    const g = grad.createRadialGradient(0, 0, 0, 0, 0, radius);
-    g.addColorStop(0, c1);
-    g.addColorStop(1, c2);
-
-    gameState.current.bubbles.push({
-      x,
-      y: -radius,
-      radius,
-      value,
-      color,
-      gradient: g,
-      isTarget: false,
-      opacity: 1,
+  const handleGameOver = useCallback(() => {
+    setGameOver(true);
+    engineRef.current?.stop();
+    endGame();
+    submitScore().then((res) => {
+      setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
     });
+  }, [endGame, submitScore]);
+
+  const handleScore = useCallback(
+    (delta: number) => {
+      addScore(delta);
+    },
+    [addScore]
+  );
+
+  const handleNewTarget = useCallback((sum: number) => {
+    setTargetSum(sum);
   }, []);
 
   const handleStart = () => {
-    gameState.current.bubbles = [];
-    gameState.current.projectiles = [];
-    setTargetSum(Math.floor(Math.random() * 15) + 5);
-    setGameOver(false);
-    setResult(null);
-    startGame('medium');
-  };
-
-  useEffect(() => {
-    if (!isPlaying || gameOver) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
 
-    let animationFrameId: number;
+    if (engineRef.current) engineRef.current.stop();
 
-    const draw = (time: number) => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const engine = new CanvasEngine(canvas, {
+      width: CANVAS_WIDTH,
+      height: CANVAS_HEIGHT,
+      fixedTimestep: 1 / 60,
+      pixelRatio: 1,
+    });
+    engineRef.current = engine;
 
-      // Spawn bubbles
-      if (time - gameState.current.lastSpawn > 2000) {
-        spawnBubble();
-        gameState.current.lastSpawn = time;
-      }
+    const bg = new BackgroundGrid();
+    bg.zIndex = 0;
 
-      // Draw background grid
-      ctx.strokeStyle = 'rgba(0,0,0,0.03)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 30) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < canvas.height; y += 30) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
+    const cannon = new CannonEntity();
+    cannon.zIndex = 2;
 
-      // Draw Cannon with gradient
-      const cGrad = ctx.createRadialGradient(
-        gameState.current.cannonX,
-        canvas.height - 10,
-        0,
-        gameState.current.cannonX,
-        canvas.height,
-        35
-      );
-      cGrad.addColorStop(0, '#6366f1');
-      cGrad.addColorStop(1, '#312e81');
-      ctx.beginPath();
-      ctx.arc(gameState.current.cannonX, canvas.height, 30, Math.PI, 0);
-      ctx.fillStyle = cGrad;
-      ctx.fill();
-      ctx.closePath();
+    const controller = new GameControllerEntity(
+      cannon,
+      handleGameOver,
+      handleScore,
+      handleNewTarget
+    );
+    controller.targetSum = Math.floor(Math.random() * 15) + 5;
+    setTargetSum(controller.targetSum);
+    controller.zIndex = 3;
 
-      // Cannon barrel
-      ctx.beginPath();
-      ctx.arc(gameState.current.cannonX, canvas.height - 5, 10, Math.PI, 0);
-      ctx.fillStyle = '#4338ca';
-      ctx.fill();
-      ctx.closePath();
+    engine.entities.add(bg);
+    engine.entities.add(cannon);
+    engine.entities.add(controller);
 
-      // Draw projectiles with glow
-      gameState.current.projectiles.forEach((p, pi) => {
-        p.x += p.dx;
-        p.y += p.dy;
-
-        // Glow
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 14, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(99,102,241,0.2)';
-        ctx.fill();
-        ctx.closePath();
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
-        const pGrad = ctx.createRadialGradient(p.x - 2, p.y - 2, 0, p.x, p.y, 10);
-        pGrad.addColorStop(0, '#818cf8');
-        pGrad.addColorStop(1, '#3730a3');
-        ctx.fillStyle = pGrad;
-        ctx.fill();
-        ctx.closePath();
-
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 11px Inter';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(p.value.toString(), p.x, p.y);
-
-        // Collision with bubbles
-        gameState.current.bubbles.forEach((b, bi) => {
-          const dist = Math.sqrt((p.x - b.x) ** 2 + (p.y - b.y) ** 2);
-          if (dist < p.radius + b.radius + 10) {
-            // Particle burst
-            for (let i = 0; i < 12; i++) {
-              const angle = (Math.PI * 2 * i) / 12;
-              const speed = 2 + Math.random() * 3;
-              gameState.current.particles.push({
-                x: b.x,
-                y: b.y,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
-                life: 1,
-                color: b.color,
-                size: 4 + Math.random() * 4,
-              });
-            }
-
-            if (p.value + b.value === targetSum) {
-              addScore(20);
-              gameState.current.bubbles.splice(bi, 1);
-              setTargetSum(Math.floor(Math.random() * 15) + 5);
-            } else {
-              addScore(-5);
-            }
-            gameState.current.projectiles.splice(pi, 1);
-          }
-        });
-      });
-
-      // Update & Draw Particles
-      gameState.current.particles.forEach((pt, i) => {
-        pt.x += pt.vx;
-        pt.y += pt.vy;
-        pt.vy += 0.05;
-        pt.life -= 0.03;
-
-        if (pt.life <= 0) {
-          gameState.current.particles.splice(i, 1);
-          return;
-        }
-
-        ctx.globalAlpha = pt.life;
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, pt.size * pt.life, 0, Math.PI * 2);
-        ctx.fillStyle = pt.color;
-        ctx.fill();
-        ctx.closePath();
-        ctx.globalAlpha = 1;
-      });
-
-      // Update & Draw Bubbles with gradient
-      gameState.current.bubbles.forEach((b) => {
-        b.y += 0.5;
-
-        // Glow
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius + 4, 0, Math.PI * 2);
-        ctx.fillStyle = b.color + '30';
-        ctx.fill();
-        ctx.closePath();
-
-        // Bubble body with gradient
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-        const g = ctx.createRadialGradient(b.x - 5, b.y - 5, 0, b.x, b.y, b.radius);
-        const [c1, c2] = GRADIENT_COLORS[b.color];
-        g.addColorStop(0, c1);
-        g.addColorStop(1, c2);
-        ctx.fillStyle = g;
-        ctx.fill();
-        ctx.closePath();
-
-        // Highlight
-        ctx.beginPath();
-        ctx.arc(b.x - 6, b.y - 6, b.radius * 0.3, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.fill();
-        ctx.closePath();
-
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 15px Inter';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(b.value.toString(), b.x, b.y);
-
-        // Ground collision
-        if (b.y + b.radius > canvas.height - 20) {
-          setGameOver(true);
-          endGame();
-          submitScore().then((res) => {
-            setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
-          });
-        }
-      });
-
-      // Cleanup off-screen projectiles
-      gameState.current.projectiles = gameState.current.projectiles.filter(
-        (p) => p.y > 0 && p.x > 0 && p.x < canvas.width
-      );
-
-      if (!gameOver && isPlaying) {
-        animationFrameId = requestAnimationFrame(draw);
-      }
-    };
-
-    animationFrameId = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [isPlaying, gameOver, targetSum, addScore, endGame, submitScore, spawnBubble]);
+    setGameOver(false);
+    setResult(null);
+    engine.start();
+    startGame('medium');
+  };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isPlaying || gameOver) return;
@@ -306,19 +447,10 @@ export default function BubbleShooter() {
     const pX = (e.clientX - rect.left) * (canvas.width / rect.width);
     const pY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-    const dx = pX - gameState.current.cannonX;
-    const dy = pY - canvas.height;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist === 0) return;
-
-    const speed = 7;
-    gameState.current.projectiles.push({
-      x: gameState.current.cannonX,
-      y: canvas.height - 10,
-      dx: (dx / dist) * speed,
-      dy: (dy / dist) * speed,
-      value: Math.floor(Math.random() * 9) + 1,
-      radius: 10,
+    engineRef.current?.entities.getAll().forEach((entity) => {
+      if (entity instanceof GameControllerEntity) {
+        entity.fireProjectile(pX, pY);
+      }
     });
   };
 
@@ -326,8 +458,19 @@ export default function BubbleShooter() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    gameState.current.cannonX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    engineRef.current?.entities.getAll().forEach((entity) => {
+      if (entity instanceof CannonEntity) {
+        entity.position.x = x;
+      }
+    });
   };
+
+  useEffect(() => {
+    return () => {
+      engineRef.current?.stop();
+    };
+  }, []);
 
   if (!isPlaying && !gameOver) {
     return (

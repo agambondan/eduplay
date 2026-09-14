@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { useSoundStore } from '@/lib/stores/soundStore';
 import { cn } from '@/lib/utils/cn';
+import { haptics } from '@/lib/utils/haptics';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 
@@ -33,6 +35,7 @@ interface Props {
 
 export default function MemoryMatch({ isDaily }: Props) {
   const { t } = useLocale();
+  const { playSound } = useSoundStore();
   const game = useGame('memory-match', 'Memory Match', 'logic');
 
   const [cards, setCards] = useState<Card[]>([]);
@@ -72,6 +75,9 @@ export default function MemoryMatch({ isDaily }: Props) {
       const card = cards[id];
       if (card.flipped || card.matched) return;
 
+      playSound('click');
+      haptics.light();
+
       const newCards = cards.map((c) => (c.id === id ? { ...c, flipped: true } : c));
       setCards(newCards);
       const newFlipped = [...flipped, id];
@@ -89,11 +95,18 @@ export default function MemoryMatch({ isDaily }: Props) {
           setFlipped([]);
           lockRef.current = false;
 
+          playSound('correct');
+          haptics.success();
+
           if (matched.every((c) => c.matched)) {
             clearInterval(timerRef.current!);
             const score = Math.max(0, 2000 - moves * 20 - elapsed * 5);
             game.setScore(score);
             setGameOver(true);
+
+            playSound('win');
+            haptics.success();
+
             game.endGame();
             const res = await game.submitScore();
             setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
@@ -105,11 +118,14 @@ export default function MemoryMatch({ isDaily }: Props) {
             );
             setFlipped([]);
             lockRef.current = false;
+
+            playSound('pop');
+            haptics.error();
           }, 900);
         }
       }
     },
-    [cards, flipped, game, moves, elapsed]
+    [cards, flipped, game, moves, elapsed, playSound]
   );
 
   if (!game.isPlaying && !gameOver) {

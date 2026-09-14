@@ -11,6 +11,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/pkg/cache"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type DailyChallengeResponse struct {
@@ -135,14 +136,25 @@ func (s *dailyService) SubmitChallenge(userID string, challengeID string, score 
 	streakUpdated := false
 	if err := database.DB.Where("id = ?", userID).First(&u).Error; err == nil {
 		now := time.Now()
+		newStreak := u.Streak
 		if u.LastActive == nil || now.Truncate(24*time.Hour).Sub(u.LastActive.Truncate(24*time.Hour)).Hours()/24 >= 1 {
-			u.Streak++
+			newStreak++
 			streakUpdated = true
 		}
-		u.XP += xp
-		u.Level = model.LevelFromXP(u.XP)
-		u.LastActive = &now
-		database.DB.Save(&u)
+		_ = database.DB.Model(&model.User{}).Where("id = ?", u.ID).Updates(map[string]interface{}{
+			"xp":          gorm.Expr("xp + ?", xp),
+			"streak":      newStreak,
+			"last_active": now,
+		}).Error
+
+		var updatedUser model.User
+		if err := database.DB.Select("id, xp, level").First(&updatedUser, "id = ?", u.ID).Error; err == nil {
+			newLevel := model.LevelFromXP(updatedUser.XP)
+			if newLevel != updatedUser.Level {
+				_ = database.DB.Model(&updatedUser).UpdateColumn("level", newLevel).Error
+			}
+		}
+		u.Streak = newStreak
 	}
 
 	cache.Del(context.Background(), "daily_history", userID)

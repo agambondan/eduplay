@@ -4,7 +4,9 @@ import { useCallback, useState } from 'react';
 import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { useSoundStore } from '@/lib/stores/soundStore';
 import { cn } from '@/lib/utils/cn';
+import { haptics } from '@/lib/utils/haptics';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
@@ -12,6 +14,7 @@ import { ScoreBoard } from '@/components/ui/ScoreBoard';
 export default function TimesTable() {
   const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
     useGame('times-table');
+  const { playSound } = useSoundStore();
   const { t } = useLocale();
   const [selectedTable, setSelectedTable] = useState<number | 'mix'>(1);
   const [numA, setNumA] = useState(1);
@@ -48,9 +51,13 @@ export default function TimesTable() {
 
     if (isCorrect) {
       setFeedback('correct');
+      playSound('correct');
+      haptics.success();
       addScore(10);
     } else {
       setFeedback('wrong');
+      playSound('wrong');
+      haptics.error();
       addScore(-2);
     }
 

@@ -187,7 +187,7 @@ func (s *subscriptionService) HandleMidtransWebhook(payload map[string]interface
 
 	if txnStatus == "settlement" || txnStatus == "capture" {
 		database.DB.Model(&model.Subscription{}).
-			Where("status = ?", "pending").
+			Where("id = ? AND status = ?", orderID, "pending").
 			Update("status", "active")
 	}
 	return nil

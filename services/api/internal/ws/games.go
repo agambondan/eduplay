@@ -3,6 +3,7 @@ package ws
 import (
 	"math/rand"
 	"strings"
+	"sync"
 
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 )
@@ -18,21 +19,27 @@ type WordleGuess struct {
 	Result string `json:"result"`
 }
 
-var wordleWords []string
+var (
+	wordleWords []string
+	wordleOnce  sync.Once
+)
 
 func initWordleWords() {
-	if len(wordleWords) > 0 {
-		return
-	}
-	type row struct{ Word string }
-	var rows []row
-	database.DB.Raw("SELECT word FROM wordle_words WHERE LENGTH(word) = 5 AND language = 'id'").Scan(&rows)
-	for _, r := range rows {
-		wordleWords = append(wordleWords, strings.ToLower(r.Word))
-	}
-	if len(wordleWords) == 0 {
-		wordleWords = []string{"rumah", "makan", "minum", "buku", "meja", "kursi", "pintu", "lampu", "kertas", "sepatu"}
-	}
+	wordleOnce.Do(func() {
+		type row struct{ Word string }
+		var rows []row
+		if database.DB != nil {
+			database.DB.Raw("SELECT word FROM wordle_words WHERE LENGTH(word) = 5 AND language = 'id'").Scan(&rows)
+		}
+		var words []string
+		for _, r := range rows {
+			words = append(words, strings.ToLower(r.Word))
+		}
+		if len(words) == 0 {
+			words = []string{"rumah", "makan", "minum", "buku", "meja", "kursi", "pintu", "lampu", "kertas", "sepatu"}
+		}
+		wordleWords = words
+	})
 }
 
 func pickWordleWord() string {

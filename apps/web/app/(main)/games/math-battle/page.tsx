@@ -416,7 +416,7 @@ function SearchingScreen({
     showInterstitial();
   }, [gameResult, showInterstitial, tournamentParams]);
 
-  const handleAnswer = (answer: string) => {
+  const handleAnswer = useCallback((answer: string) => {
     if (!currentQ || gameState !== 'playing' || lastResult || tournamentParams?.spectator) return;
     const elapsedMs = Math.max(
       200,
@@ -433,7 +433,7 @@ function SearchingScreen({
         },
       })
     );
-  };
+  }, [currentQ, gameState, lastResult, matchInfo.room_id, tournamentParams?.spectator]);
 
   if (gameResult) {
     const myResult = gameResult.results?.find((r) => r.player_id === userId);

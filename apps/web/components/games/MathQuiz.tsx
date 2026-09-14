@@ -8,6 +8,7 @@ import { AIQuestion, aiApi } from '@/lib/api/ai';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
 import { useSoundStore } from '@/lib/stores/soundStore';
+import { createSeededRNG, getDailySeed } from '@/lib/utils/seededRandom';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
@@ -20,32 +21,32 @@ interface Question {
   answer: number;
 }
 
-function generateQuestion(difficulty: Difficulty): Question {
+function generateQuestion(difficulty: Difficulty, rng = Math.random): Question {
   let a: number, b: number, op: string, answer: number;
 
   const max = difficulty === 'easy' ? 20 : difficulty === 'medium' ? 100 : 1000;
   const ops = difficulty === 'hard' ? ['+', '-', '×', '÷'] : ['+', '-', '×'];
-  op = ops[Math.floor(Math.random() * ops.length)];
+  op = ops[Math.floor(rng() * ops.length)];
 
   switch (op) {
     case '+':
-      a = Math.floor(Math.random() * max) + 1;
-      b = Math.floor(Math.random() * max) + 1;
+      a = Math.floor(rng() * max) + 1;
+      b = Math.floor(rng() * max) + 1;
       answer = a + b;
       break;
     case '-':
-      a = Math.floor(Math.random() * max) + 1;
-      b = Math.floor(Math.random() * a) + 1;
+      a = Math.floor(rng() * max) + 1;
+      b = Math.floor(rng() * a) + 1;
       answer = a - b;
       break;
     case '×':
-      a = Math.floor(Math.random() * (difficulty === 'easy' ? 12 : 20)) + 1;
-      b = Math.floor(Math.random() * (difficulty === 'easy' ? 12 : 20)) + 1;
+      a = Math.floor(rng() * (difficulty === 'easy' ? 12 : 20)) + 1;
+      b = Math.floor(rng() * (difficulty === 'easy' ? 12 : 20)) + 1;
       answer = a * b;
       break;
     case '÷':
-      b = Math.floor(Math.random() * 12) + 1;
-      answer = Math.floor(Math.random() * 12) + 1;
+      b = Math.floor(rng() * 12) + 1;
+      answer = Math.floor(rng() * 12) + 1;
       a = b * answer;
       break;
     default:
@@ -54,20 +55,20 @@ function generateQuestion(difficulty: Difficulty): Question {
       answer = 2;
   }
 
-  const options = generateOptions(answer);
+  const options = generateOptions(answer, rng);
 
   return { text: `${a} ${op} ${b} = ?`, options, answer };
 }
 
-function generateOptions(answer: number): number[] {
+function generateOptions(answer: number, rng = Math.random): number[] {
   const opts = new Set<number>([answer]);
   while (opts.size < 4) {
-    const offset = Math.floor(Math.random() * 10) + 1;
-    const sign = Math.random() > 0.5 ? 1 : -1;
+    const offset = Math.floor(rng() * 10) + 1;
+    const sign = rng() > 0.5 ? 1 : -1;
     const wrong = answer + offset * sign;
     if (wrong >= 0 && wrong !== answer) opts.add(wrong);
   }
-  return [...opts].sort(() => Math.random() - 0.5);
+  return [...opts].sort(() => rng() - 0.5);
 }
 
 export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
@@ -116,9 +117,10 @@ export default function MathQuiz({ isDaily = false }: { isDaily?: boolean }) {
     }
 
     // Fallback to local generator
-    setQuestion(generateQuestion(difficulty));
+    const rng = isDaily ? createSeededRNG(getDailySeed() + questionCount * 13) : Math.random;
+    setQuestion(generateQuestion(difficulty, rng));
     setFeedback(null);
-  }, [difficulty, useAI, aiQuestions]);
+  }, [difficulty, useAI, aiQuestions, isDaily, questionCount]);
 
   useEffect(() => {
     if (isPlaying) nextQuestion();

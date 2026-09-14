@@ -35,6 +35,8 @@ type UserRepository interface {
 	Create(user *model.User) error
 	FindByEmail(email string) (*model.User, error)
 	FindByID(id string) (*model.User, error)
+	FindByVerificationToken(token string) (*model.User, error)
+	FindByResetToken(token string) (*model.User, error)
 	Update(user *model.User) error
 	GetStats(id string) (*Stats, error)
 	UpdateStreak(id string) error
@@ -59,6 +61,18 @@ func (r *userRepository) FindByEmail(email string) (*model.User, error) {
 func (r *userRepository) FindByID(id string) (*model.User, error) {
 	var user model.User
 	err := database.DB.Where("id = ?", id).First(&user).Error
+	return &user, err
+}
+
+func (r *userRepository) FindByVerificationToken(token string) (*model.User, error) {
+	var user model.User
+	err := database.DB.Where("verification_token = ?", token).First(&user).Error
+	return &user, err
+}
+
+func (r *userRepository) FindByResetToken(token string) (*model.User, error) {
+	var user model.User
+	err := database.DB.Where("reset_token = ?", token).First(&user).Error
 	return &user, err
 }
 

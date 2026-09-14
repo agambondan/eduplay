@@ -200,6 +200,7 @@ const en: Record<string, string> = {
   'leaderboard.empty': 'No scores yet. Be the first!',
   'leaderboard.per_game': 'Per Game',
   'leaderboard.weekly': 'Weekly',
+  'leaderboard.top_players': 'Top Players',
 
   'daily.title': 'Daily Challenge',
   'daily.bonus': '2x XP Bonus',

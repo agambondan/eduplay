@@ -256,7 +256,7 @@ export default function QuizShowdownPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleAnswer = (answer: string) => {
+  const handleAnswer = useCallback((answer: string) => {
     if (!currentQ || lastResult) return;
     const elapsedMs = Math.max(
       200,
@@ -273,7 +273,7 @@ export default function QuizShowdownPage() {
         },
       })
     );
-  };
+  }, [currentQ, lastResult, roomCode]);
 
   if (screen === 'menu') {
     return (

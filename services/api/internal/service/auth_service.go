@@ -391,8 +391,8 @@ func (s *authService) RequestVerificationEmail(userID string) error {
 }
 
 func (s *authService) VerifyEmail(token string) error {
-	var u model.User
-	if err := database.DB.Where("verification_token = ?", token).First(&u).Error; err != nil {
+	u, err := s.userRepo.FindByVerificationToken(token)
+	if err != nil {
 		return errors.New("invalid or expired verification token")
 	}
 
@@ -403,12 +403,12 @@ func (s *authService) VerifyEmail(token string) error {
 	now := time.Now()
 	u.EmailVerifiedAt = &now
 	u.VerificationToken = nil
-	return database.DB.Save(&u).Error
+	return s.userRepo.Update(u)
 }
 
 func (s *authService) ForgotPassword(req ForgotPasswordRequest) error {
-	var u model.User
-	if err := database.DB.Where("email = ?", req.Email).First(&u).Error; err != nil {
+	u, err := s.userRepo.FindByEmail(req.Email)
+	if err != nil {
 		return nil
 	}
 
@@ -424,7 +424,7 @@ func (s *authService) ForgotPassword(req ForgotPasswordRequest) error {
 	expiry := time.Now().Add(1 * time.Hour)
 	u.ResetToken = &token
 	u.ResetTokenExpiry = &expiry
-	database.DB.Save(&u)
+	s.userRepo.Update(u)
 
 	resetURL := s.cfg.FrontendURL + "/reset-password?token=" + token
 	subject := "Reset Password EduPlay"
@@ -446,8 +446,8 @@ func (s *authService) ForgotPassword(req ForgotPasswordRequest) error {
 }
 
 func (s *authService) ResetPassword(req ResetPasswordRequest) error {
-	var u model.User
-	if err := database.DB.Where("reset_token = ?", req.Token).First(&u).Error; err != nil {
+	u, err := s.userRepo.FindByResetToken(req.Token)
+	if err != nil {
 		return errors.New("invalid or expired reset token")
 	}
 
@@ -463,7 +463,7 @@ func (s *authService) ResetPassword(req ResetPasswordRequest) error {
 	u.Password = string(hashedPassword)
 	u.ResetToken = nil
 	u.ResetTokenExpiry = nil
-	return database.DB.Save(&u).Error
+	return s.userRepo.Update(u)
 }
 
 // googleBool decodes the booleans in Google's tokeninfo response, which arrive

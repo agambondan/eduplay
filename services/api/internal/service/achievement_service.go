@@ -9,6 +9,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/pkg/cache"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type AchievementService interface {
@@ -83,11 +84,15 @@ func (s *achievementService) CheckAndUnlock(userID string, slug string) (bool, e
 	cache.Del(context.Background(), "user_achievements", userID)
 	cache.Del(context.Background(), "user_profile", userID)
 
-	var u model.User
-	if err := database.DB.Where("id = ?", userID).First(&u).Error; err == nil {
-		u.XP += a.XPReward
-		u.Level = model.LevelFromXP(u.XP)
-		database.DB.Save(&u)
+	if err := database.DB.Model(&model.User{}).Where("id = ?", userID).
+		UpdateColumn("xp", gorm.Expr("xp + ?", a.XPReward)).Error; err == nil {
+		var u model.User
+		if err := database.DB.Select("id, xp, level").First(&u, "id = ?", userID).Error; err == nil {
+			newLevel := model.LevelFromXP(u.XP)
+			if newLevel != u.Level {
+				_ = database.DB.Model(&u).UpdateColumn("level", newLevel).Error
+			}
+		}
 	}
 
 	return true, nil

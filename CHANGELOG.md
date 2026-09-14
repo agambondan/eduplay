@@ -7,6 +7,143 @@
 
 ---
 
+## [2026-09-14] — Phase 3: Frontend Modernization & ESLint Flat Config Alignment
+
+### Changed
+
+- **React 19 Upgrade**: Upgraded `react` and `react-dom` to `^19.0.0` (resolving version mismatch with Next.js 16).
+- **TypeScript Types**: Upgraded `@types/react` and `@types/react-dom` to `^19`.
+- **ESLint 9 Flat Config**: Migrated to ESLint 9 flat config (`eslint.config.mjs`) using native `eslint-config-next` 16.3.5 presets. Updated `npm run lint` script to `eslint .`.
+- **React 19 Hook Purity Fixes**: Wrapped event handlers with `useCallback` in `flag-team-battle/page.tsx`, `math-battle/page.tsx`, and `quiz-showdown/page.tsx` to fix React 19 `react-hooks/purity` rules regarding `Date.now()`.
+
+### Verified
+
+- Frontend: `npm run lint` passes with 0 errors across entire workspace.
+- Frontend: `npm run build` succeeds (all 71 routes compiled).
+- Frontend: `npm test` passes (24/24 unit tests green).
+- Backend: `go build ./...` and `go test ./...` pass clean.
+
+---
+
+## [2026-09-14] — Frontend UX, A11y & Architecture Hardening (P0 + P1)
+
+### Added
+
+- **`useQuizGame` Hook** (`lib/hooks/useQuizGame.ts`): Unified quiz game state engine with generic question typing, streak multiplier, AI question generation, and score submissions.
+- **Haptic & Sound Engine**: Synthesized Web Audio sounds (`win`, `lose`, `click`, `pop`, `correct`, `wrong`) in `soundStore.ts` and navigator haptics (`lib/utils/haptics.ts`) integrated into 10+ games.
+- **Progress Persistence**: `safeStorage` utility and `useGameStorage` hook; state auto-resumes in Wordle and Sudoku upon reload.
+- **Per-Game Error Boundary**: `GameContainer` wrapped in `ErrorBoundary` with fallback and retry buttons.
+- **`CanvasEngine` & `useCanvasGame` Hook** (`lib/game-engines/CanvasEngine.ts`): Standardized 60fps canvas game loop with input management (pointer + keyboard `isKeyPressed`), entity layers, and lifecycle controls for arcade games.
+- **Unified Difficulty Selector** (`components/ui/DifficultySelector.tsx`): Reusable level picker component across games.
+- **Keyboard Navigation**: Added hotkeys (1-4 / A-D) across quiz games and (1-4 / Arrow Keys / QWAS) in Simon Says.
+- **High-Contrast & Color-Blind Styles**: Added `@media (prefers-contrast: more)` tokens to `globals.css`.
+
+### Fixed
+
+- **Axios 401 Race Condition**: Implemented refresh token mutex and failed request queue in `lib/api/client.ts` to prevent parallel invalidations.
+- **AI Question Loading**: `useQuizGame` immediately consumes freshly fetched questions without stale React closures.
+- **Timer Submissions**: Synchronized quiz and puzzle timers with score submit handlers.
+
+---
+
+## [2026-09-14] — Phase 1: Security Hardening (Backend + Frontend)
+
+### Fixed
+
+- JWT `alg:none` vulnerability: added `jwt.WithValidMethods([]string{"HS256"})` to both `AuthMiddleware` and `OptionalAuthMiddleware` in `services/api/internal/middleware/auth.go`.
+- Unsafe type assertions on `jti` claim replaced with comma-ok idiom in both middlewares.
+- `JWT_SECRET` validation: fail fast on startup if empty in production (`services/api/config/config.go`).
+- PostgreSQL `sslmode` now configurable via `DB_SSLMODE` env (default `disable` dev, `require` prod) in `config.go` and `postgres.go`.
+- Midtrans webhook scope fix: update only the specific `order_id` instead of all pending subscriptions (`subscription_service.go`).
+- Ad upload validation: max 2MB, whitelist extensions (jpg, jpeg, png, webp) in `ad_controller.go`.
+- Safe type assertions & auth guards added across controllers:
+  - `auth_controller.go` (Logout): comma-ok checks for token, claims, jti, exp.
+  - `achievement_controller.go` (GetUserAchievements): guard on `user_id`.
+  - `battleship_controller.go` (7 handlers): guard on `user_id`.
+  - `chess_controller.go` (5 handlers): guard on `user_id`.
+  - `tournament_controller.go` (4 handlers): guard on `user_id`.
+  - `multiplayer_leaderboard.go` (CreateRematch): guard on `user_id`.
+- Next.js middleware renamed from `proxy.ts` to `middleware.ts` with proper export for App Router security headers (CSP, HSTS, X-Frame-Options, etc.).
+
+### Verified
+
+- Backend: `go build ./...` and `go test ./...` pass.
+- Frontend: `npm test` (vitest) 24 tests pass.
+
+---
+
+## [2026-09-14] — Phase 2: Data Integrity & Race Condition Fixes (Backend)
+
+### Fixed
+
+- **Atomic XP updates** across 5 services using `gorm.Expr("xp + ?")` + transaction:
+  - `referral_service.go`: `ApplyReferral` wrapped in `DB.Transaction` — race-free XP award + referral creation.
+  - `game_service.go`: `SubmitScore` uses atomic XP increment + re-read for level calculation.
+  - `achievement_service.go`: `CheckAndUnlock` uses atomic `UpdateColumn("xp", gorm.Expr(...))`.
+  - `daily_service.go`: `SubmitChallenge` atomic XP + streak increment + re-read level.
+  - `tournament_service.go`: `distributeRewards` atomic XP per participant inside transaction.
+- **Wordle wordlist data race** in `ws/games.go`: replaced lazy `initWordleWords` with `sync.Once` + safe initialization.
+- **Redis `KEYS` blocking call** in `ws/matchmaking.go:165` replaced with `SCAN` iterator in `CancelQueue`.
+- **Frontend timer leak** in `lib/hooks/useQuizGame.ts`: split `timerRef` into `gameTimerRef` + `transitionTimerRef` with cleanup on unmount.
+
+### Added
+
+- New test `TestReferralService_ApplyReferral` verifying atomic XP award + duplicate/self/invalid code guards.
+
+### Verified
+
+- Backend: `go build ./...` and `go test ./...` pass (30 tests incl. new referral test).
+- Frontend: `npm test` (vitest) 24 tests pass; `npm run build` TypeScript clean.
+
+---
+
+## [2026-09-14] — Canvas 2D Engine Foundation & Game Migrations
+
+### Added
+
+- `CanvasEngine` 2D framework (`apps/web/lib/game-engines/CanvasEngine.ts`) with fixed-timestep `GameLoop`, `InputManager` (keyboard, pointer, touch), `EntityManager` with z-indexing, `AssetManager` with audio/image caching, and DPR-aware `CanvasRenderer`.
+- `useCanvasGame` React hook for declarative canvas lifecycle integration.
+- Asset caching configuration in `next.config.js` for `/games-assets/*` edge cache (1 year, immutable).
+- Migrated 3 games to `CanvasEngine`:
+  - `SnakeGame` (`SnakeEntity`, `GridBackground`, touch gesture support).
+  - `BrickBreaker` (`BallEntity`, `PaddleEntity`, `BrickEntity`, `BackgroundGrid`, `GameControllerEntity` with math question bonus pause/resume).
+  - `BubbleShooter` (`BubbleEntity`, `ProjectileEntity`, `ParticleEntity`, `CannonEntity`, `GameControllerEntity` with target sum matching and particle bursts).
+- ESLint 9 flat config (`apps/web/eslint.config.mjs`) supporting TypeScript and Next.js rules.
+
+### Fixed
+
+- Fixed `CanvasEngine` initial state from `loading` to `ready` for games without external asset manifests.
+- Fixed `npm run lint` script in `apps/web/package.json` to use `eslint .` (compatibility with Next.js 16).
+- Fixed unescaped HTML `<a>` navigation in `verify-email/page.tsx` with Next.js `<Link>`.
+- Verified games in live browser automation using Playwright (zero runtime errors).
+
+### Changed
+
+- Replaced raw `requestAnimationFrame` loops in `SnakeGame`, `BrickBreaker`, and `BubbleShooter` with decoupled `update(dt)` and `render(ctx)` entity pattern.
+- Removed duplicate `useIsTouchDevice` hook from games in favor of shared hook.
+
+---
+
+## [2026-09-14] — Frontend Games P0 UX Polish
+
+### Added
+
+- Shared quiz gameplay hook for reusable question flow, scoring, AI questions, feedback, and timer finish handling.
+- Sound and haptic feedback utilities for correct, wrong, win, lose, click, and tap interactions.
+- Local progress persistence utilities, with Wordle and Sudoku resume state support.
+- GameContainer-level error boundary so game crashes show retry UI instead of breaking the app shell.
+
+### Fixed
+
+- Quiz AI first-question flow now uses freshly fetched AI questions instead of stale state.
+- Timeline History and Element Quiz timers now submit results on timeout through the shared quiz hook.
+- Wordle and Sudoku now clear persisted progress after win/loss.
+
+### Changed
+
+- Capital Quiz, Element Quiz, Flag Quiz, and Timeline History now use the shared quiz hook.
+- Times Table, Spelling Bee, Wordle, Game2048, Memory Match, Snake, Simon Says, Sudoku, and Nonogram now emit audio/haptic gameplay feedback.
+
 ## [2026-05-22] — Responsive Game Boards (No More Overflow)
 
 ### Fixed

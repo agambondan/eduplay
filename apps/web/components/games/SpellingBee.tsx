@@ -5,7 +5,9 @@ import { Pause } from 'lucide-react';
 import { AIQuestion, aiApi } from '@/lib/api/ai';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { useSoundStore } from '@/lib/stores/soundStore';
 import { cn } from '@/lib/utils/cn';
+import { haptics } from '@/lib/utils/haptics';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
@@ -37,6 +39,7 @@ function generateQuestion(): SpellQuestion {
 export default function SpellingBee() {
   const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
     useGame('spelling-bee');
+  const { playSound } = useSoundStore();
   const { t } = useLocale();
   const [question, setQuestion] = useState<SpellQuestion | null>(null);
   const [userLetters, setUserLetters] = useState<string[]>([]);
@@ -119,9 +122,13 @@ export default function SpellingBee() {
 
     if (isCorrect) {
       setFeedback('correct');
+      playSound('correct');
+      haptics.success();
       addScore(15);
     } else {
       setFeedback('wrong');
+      playSound('wrong');
+      haptics.error();
       addScore(-3);
     }
 

@@ -52,6 +52,10 @@ func NewRematchController(svc service.RematchService) *RematchController {
 }
 
 func (h *RematchController) CreateRematch(c *fiber.Ctx) error {
+	userID, _ := c.Locals("user_id").(string)
+	if userID == "" {
+		return response.Error(c, fiber.StatusUnauthorized, "Unauthorized")
+	}
 	code := c.Params("code")
 	if code == "" {
 		return response.Error(c, fiber.StatusBadRequest, "Kode room diperlukan")

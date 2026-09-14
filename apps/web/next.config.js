@@ -13,6 +13,19 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  async headers() {
+    return [
+      {
+        source: '/games-assets/:all*(svg|jpg|jpeg|png|webp|glb|gltf|ogg|mp3|woff2|json)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = withPWA(nextConfig);

@@ -203,6 +203,7 @@ const id: Record<string, string> = {
   'leaderboard.empty': 'Belum ada skor. Jadilah yang pertama!',
   'leaderboard.per_game': 'Per Game',
   'leaderboard.weekly': 'Mingguan',
+  'leaderboard.top_players': 'Pemain Terbaik',
 
   'daily.title': 'Tantangan Harian',
   'daily.bonus': 'Bonus XP 2x',

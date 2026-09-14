@@ -8,7 +8,7 @@ interface SoundState {
   musicEnabled: boolean;
   toggleSound: () => void;
   toggleMusic: () => void;
-  playSound: (type: 'win' | 'lose' | 'click' | 'pop') => void;
+  playSound: (type: 'win' | 'lose' | 'click' | 'pop' | 'correct' | 'wrong') => void;
 }
 
 export const useSoundStore = create<SoundState>()(
@@ -21,8 +21,6 @@ export const useSoundStore = create<SoundState>()(
       playSound: (type) => {
         if (!get().soundEnabled) return;
 
-        // In a real app, you would play actual audio files here.
-        // For this demo/v1, we use simple oscillator beeps to avoid needing external audio assets.
         try {
           const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
           if (!AudioContext) return;
@@ -73,8 +71,27 @@ export const useSoundStore = create<SoundState>()(
               osc.start();
               osc.stop(ctx.currentTime + 0.3);
               break;
+            case 'correct':
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+              osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08);
+              osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.16);
+              gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+              gainNode.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+              osc.start();
+              osc.stop(ctx.currentTime + 0.25);
+              break;
+            case 'wrong':
+              osc.type = 'sawtooth';
+              osc.frequency.setValueAtTime(200, ctx.currentTime);
+              osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.2);
+              gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+              gainNode.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+              osc.start();
+              osc.stop(ctx.currentTime + 0.2);
+              break;
           }
-        } catch (e) {
+        } catch {
           // Silent catch for browsers blocking AudioContext without interaction
         }
       },

@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Pause } from 'lucide-react';
-import { AIQuestion, aiApi } from '@/lib/api/ai';
+import { AIQuestion } from '@/lib/api/ai';
 import { contentApi } from '@/lib/api/content';
-import { useGame } from '@/lib/hooks/useGame';
+import { useQuizGame } from '@/lib/hooks/useQuizGame';
 import { useLocale } from '@/lib/i18n';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
@@ -14,9 +14,11 @@ import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
 
 interface ElementQuestion {
+  question: string;
+  answer: string;
+  options: string[];
   symbol: string;
   name: string;
-  options: string[];
 }
 
 const FALLBACK_ELEMENTS = [
@@ -56,29 +58,31 @@ function generateQuestion(ELEMENTS: { symbol: string; name: string }[]): Element
     options.add(wrong);
   }
   return {
+    question: `Apa nama unsur kimia dari simbol ${target.symbol}?`,
+    answer: target.name,
     symbol: target.symbol,
     name: target.name,
     options: [...options].sort(() => Math.random() - 0.5),
   };
 }
 
-function convertAIQuestion(
-  q: AIQuestion
-): { symbol: string; name: string; options: string[] } | null {
+function convertAIQuestion(q: AIQuestion): ElementQuestion | null {
   const options = q.options?.map(String);
   if (!options || options.length < 4) return null;
+  const sym = String(q.question).includes(' simbol ')
+    ? q.question.split('simbol ')[1]?.trim() || '?'
+    : '?';
+  const name = String(q.answer);
   return {
-    symbol: String(q.question).includes(' simbol ')
-      ? q.question.split('simbol ')[1]?.trim() || '?'
-      : '?',
-    name: String(q.answer),
+    question: `Apa nama unsur kimia dari simbol ${sym}?`,
+    answer: name,
+    symbol: sym,
+    name,
     options,
   };
 }
 
 export default function ElementQuiz() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
-    useGame('element-quiz');
   const { t } = useLocale();
 
   const { data: elementsData } = useQuery({
@@ -86,96 +90,48 @@ export default function ElementQuiz() {
     queryFn: contentApi.getElements,
     staleTime: 24 * 60 * 60 * 1000,
   });
-  const ELEMENTS =
-    elementsData?.map((e) => ({ symbol: e.symbol, name: e.name })) ?? FALLBACK_ELEMENTS;
+  const elementsDataRef = useMemo(
+    () => elementsData?.map((e) => ({ symbol: e.symbol, name: e.name })) ?? FALLBACK_ELEMENTS,
+    [elementsData]
+  );
 
-  const [question, setQuestion] = useState<ElementQuestion | null>(null);
-  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
-  const [questionCount, setQuestionCount] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
-  const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
-  const [useAI, setUseAI] = useState(false);
-  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
-  const [aiLoading, setAiLoading] = useState(false);
-
-  const nextQuestion = useCallback(() => {
-    if (useAI && aiQuestions.length > 0) {
-      const q = aiQuestions.shift();
-      if (q) {
-        const converted = convertAIQuestion(q);
-        if (converted) {
-          const element = ELEMENTS.find(
-            (e) => e.name.toLowerCase() === converted.name.toLowerCase()
-          );
-          if (element) {
-            setQuestion({
-              symbol: element.symbol,
-              name: element.name,
-              options: converted.options,
-            });
-            setAiQuestions([...aiQuestions]);
-            setFeedback(null);
-            return;
-          }
-        }
-      }
-    }
-    setQuestion(generateQuestion(ELEMENTS));
-    setFeedback(null);
-  }, [ELEMENTS, useAI, aiQuestions]);
-
-  const fetchAIQuestions = async () => {
-    setAiLoading(true);
-    try {
-      const q = await aiApi.getQuestions('element-quiz', 'medium', 10);
-      if (q && q.length > 0) setAiQuestions(q);
-    } catch {
-      console.error('Failed to fetch AI questions');
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleStart = async () => {
-    setQuestionCount(0);
-    setGameOver(false);
-    setResult(null);
-    if (useAI) await fetchAIQuestions();
-    nextQuestion();
-    startGame('medium');
-  };
-
-  const handleAnswer = async (selected: string) => {
-    if (feedback || !question) return;
-
-    if (selected === question.name) {
-      setFeedback('correct');
-      addScore(15);
-    } else {
-      setFeedback('wrong');
-      addScore(-5);
-    }
-
-    setQuestionCount((c) => c + 1);
-
-    if (questionCount + 1 >= 10) {
-      setTimeout(async () => {
-        setGameOver(true);
-        endGame();
-        const res = await submitScore();
-        setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
-      }, 600);
-    } else {
-      setTimeout(() => nextQuestion(), 600);
-    }
-  };
-
-  const handleTimeUp = useCallback(async () => {
-    setGameOver(true);
-    endGame();
-    const res = await submitScore();
-    setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
-  }, [endGame, submitScore]);
+  const {
+    question,
+    feedback,
+    questionCount,
+    gameOver,
+    result,
+    score,
+    isPlaying,
+    useAI,
+    setUseAI,
+    aiLoading,
+    streak,
+    breakdown,
+    handleStart,
+    handleAnswer,
+    handleTimeUp,
+    pauseGame,
+  } = useQuizGame<ElementQuestion>({
+    gameSlug: 'element-quiz',
+    gameName: 'Element Quiz',
+    category: 'science',
+    totalQuestions: 10,
+    difficulty: 'medium',
+    hasTimer: true,
+    timerSeconds: 60,
+    generateQuestion: () => generateQuestion(elementsDataRef),
+    convertAIQuestion,
+    fallbackData: elementsDataRef,
+    scoring: {
+      correct: 15,
+      wrong: -5,
+    },
+    aiConfig: {
+      count: 10,
+      difficulty: 'medium',
+    },
+  });
 
   if (!isPlaying && !gameOver) {
     return (
@@ -189,7 +145,7 @@ export default function ElementQuiz() {
         <HowToPlay
           steps={[
             { emoji: '⚗️', text: 'Simbol unsur kimia ditampilkan (contoh: Au, Fe, O)' },
-            { emoji: '✏️', text: 'Ketik nama unsur tersebut dalam Bahasa Indonesia' },
+            { emoji: '✏️', text: 'Pilih nama unsur yang benar dari 4 opsi' },
             { emoji: '⏱️', text: 'Jawab sebanyak mungkin sebelum waktu 60 detik habis!' },
           ]}
         />
@@ -274,6 +230,7 @@ export default function ElementQuiz() {
             gameSlug="element-quiz"
             gameName="Element Quiz"
             onReplay={handleStart}
+            breakdown={breakdown}
             description={`${questionCount}/10 soal dijawab`}
           />
         </div>

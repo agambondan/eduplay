@@ -6,7 +6,11 @@ import { Pause, Share2 } from 'lucide-react';
 import { contentApi } from '@/lib/api/content';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { useSoundStore } from '@/lib/stores/soundStore';
 import { cn } from '@/lib/utils/cn';
+import { haptics } from '@/lib/utils/haptics';
+import { safeStorage } from '@/lib/utils/safeStorage';
+import { getDailyItem } from '@/lib/utils/seededRandom';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
@@ -93,6 +97,7 @@ function getRandomWord(wordList: string[]): string {
 
 export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
   const { t } = useLocale();
+  const { playSound } = useSoundStore();
   const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
     useGame('wordle');
 
@@ -103,19 +108,64 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
   });
   const WORD_LIST = wordsData?.map((w) => w.word) ?? FALLBACK_WORD_LIST;
 
-  const [targetWord, setTargetWord] = useState('');
-  const [guesses, setGuesses] = useState<LetterCell[][]>([]);
-  const [currentGuess, setCurrentGuess] = useState('');
-  const [attempt, setAttempt] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
-  const [won, setWon] = useState(false);
-  const [usedLetters, setUsedLetters] = useState<Record<string, LetterStatus>>({});
-  const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
+  const STORAGE_KEY = `eduplay-wordle-${isDaily ? 'daily' : 'practice'}`;
+
+  const loadState = () => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = safeStorage.getItem<any>(STORAGE_KEY, null);
+      if (stored && !stored.gameOver) return stored;
+    } catch {}
+    return null;
+  };
+
+  const saveState = (state: any) => {
+    try {
+      safeStorage.setItem(STORAGE_KEY, state);
+    } catch {}
+  };
+
+  const clearState = () => {
+    try {
+      safeStorage.removeItem(STORAGE_KEY);
+    } catch {}
+  };
+
+  const saved = loadState();
+
+  const [targetWord, setTargetWord] = useState(saved?.targetWord || '');
+  const [guesses, setGuesses] = useState<LetterCell[][]>(saved?.guesses || []);
+  const [currentGuess, setCurrentGuess] = useState(saved?.currentGuess || '');
+  const [attempt, setAttempt] = useState(saved?.attempt || 0);
+  const [gameOver, setGameOver] = useState(saved?.gameOver || false);
+  const [won, setWon] = useState(saved?.won || false);
+  const [usedLetters, setUsedLetters] = useState<Record<string, LetterStatus>>(
+    saved?.usedLetters || {}
+  );
+  const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(
+    saved?.result || null
+  );
   const [gridCopied, setGridCopied] = useState(false);
-  const [hardMode, setHardMode] = useState(false);
+  const [hardMode, setHardMode] = useState(saved?.hardMode || false);
+
+  useEffect(() => {
+    if (!gameOver) {
+      saveState({
+        targetWord,
+        guesses,
+        currentGuess,
+        attempt,
+        gameOver,
+        won,
+        usedLetters,
+        result,
+        hardMode,
+      });
+    }
+  }, [guesses, currentGuess, attempt, gameOver, won, usedLetters, hardMode, targetWord, result]);
 
   const handleStart = () => {
-    setTargetWord(getRandomWord(WORD_LIST));
+    setTargetWord(isDaily ? getDailyItem(WORD_LIST).toUpperCase() : getRandomWord(WORD_LIST));
     setGuesses([]);
     setCurrentGuess('');
     setAttempt(0);
@@ -123,6 +173,7 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
     setWon(false);
     setUsedLetters({});
     setResult(null);
+    clearState();
     startGame('medium');
   };
 
@@ -213,14 +264,23 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
       addScore(scoreMap[newAttempt] || 10);
       setWon(true);
       setGameOver(true);
+      playSound('win');
+      haptics.success();
       endGame();
       const res = await submitScore();
       setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
+      clearState();
     } else if (newAttempt >= 6) {
       setGameOver(true);
+      playSound('lose');
+      haptics.error();
       endGame();
       const res = await submitScore();
       setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
+      clearState();
+    } else {
+      playSound('pop');
+      haptics.medium();
     }
   }, [
     currentGuess,
@@ -241,9 +301,9 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
       if (key === 'ENTER') {
         handleSubmitGuess();
       } else if (key === '⌫' || key === 'BACKSPACE') {
-        setCurrentGuess((g) => g.slice(0, -1));
+        setCurrentGuess((g: string) => g.slice(0, -1));
       } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
-        setCurrentGuess((g) => g + key);
+        setCurrentGuess((g: string) => g + key);
       }
     },
     [gameOver, currentGuess, handleSubmitGuess]

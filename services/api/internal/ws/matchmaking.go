@@ -162,9 +162,9 @@ func (m *MatchmakingService) CancelQueue(userID, gameSlug string) {
 
 	m.queues.Delete(userID)
 
-	keys, _ := database.RDB.Keys(ctx, fmt.Sprintf("matchmaking:%s:*", gameSlug)).Result()
-	for _, key := range keys {
-		database.RDB.LRem(ctx, key, 0, userID)
+	iter := database.RDB.Scan(ctx, 0, fmt.Sprintf("matchmaking:%s:*", gameSlug), 100).Iterator()
+	for iter.Next(ctx) {
+		database.RDB.LRem(ctx, iter.Val(), 0, userID)
 	}
 }
 

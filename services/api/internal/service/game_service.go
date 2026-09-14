@@ -200,18 +200,26 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 		s.achSvc.CheckTop10(userID)
 	}
 
-	oldLevel := u.Level
-	u.XP += xp
-	u.Level = model.LevelFromXP(u.XP)
-	levelUp := u.Level > oldLevel
-
-	if u.Level >= 5 && s.achSvc != nil {
-		s.achSvc.CheckAndUnlock(userID, "level-5")
-	}
-
 	now := time.Now()
-	u.LastActive = &now
-	database.DB.Save(&u)
+	_ = database.DB.Model(&model.User{}).Where("id = ?", u.ID).Updates(map[string]interface{}{
+		"xp":          gorm.Expr("xp + ?", xp),
+		"last_active": now,
+	}).Error
+
+	levelUp := false
+	newLevel := u.Level
+	var updatedUser model.User
+	if err := database.DB.Select("id, xp, level").First(&updatedUser, "id = ?", u.ID).Error; err == nil {
+		calculatedLevel := model.LevelFromXP(updatedUser.XP)
+		levelUp = calculatedLevel > u.Level
+		newLevel = calculatedLevel
+		if calculatedLevel != updatedUser.Level {
+			_ = database.DB.Model(&updatedUser).UpdateColumn("level", calculatedLevel).Error
+		}
+		if calculatedLevel >= 5 && s.achSvc != nil {
+			s.achSvc.CheckAndUnlock(userID, "level-5")
+		}
+	}
 
 	s.recordGhost(g.ID, uid, req.Score, req.Duration, req.Difficulty)
 
@@ -220,7 +228,7 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 		XPEarned:     xp,
 		NewHighscore: newHighscore,
 		LevelUp:      levelUp,
-		NewLevel:     u.Level,
+		NewLevel:     newLevel,
 	}, nil
 }
 

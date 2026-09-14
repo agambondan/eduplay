@@ -1,12 +1,12 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useState } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Pause } from 'lucide-react';
-import { AIQuestion, aiApi } from '@/lib/api/ai';
+import { AIQuestion } from '@/lib/api/ai';
 import { contentApi } from '@/lib/api/content';
-import { useGame } from '@/lib/hooks/useGame';
+import { useQuizGame } from '@/lib/hooks/useQuizGame';
 import { useLocale } from '@/lib/i18n';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
@@ -16,6 +16,13 @@ import { ScoreBoard } from '@/components/ui/ScoreBoard';
 interface FlagItem {
   country: string;
   code: string;
+}
+
+interface FlagQuestion {
+  question: string;
+  answer: string;
+  options: string[];
+  correct: FlagItem;
 }
 
 const FALLBACK_FLAGS: FlagItem[] = [
@@ -39,27 +46,37 @@ const FALLBACK_FLAGS: FlagItem[] = [
   { country: 'Vietnam', code: 'vn' },
 ];
 
-function generateQuestion(FLAGS: FlagItem[]) {
+function generateQuestion(FLAGS: FlagItem[]): FlagQuestion {
   const correct = FLAGS[Math.floor(Math.random() * FLAGS.length)];
   const options = new Set<string>([correct.country]);
   while (options.size < 4) {
     const opt = FLAGS[Math.floor(Math.random() * FLAGS.length)].country;
     options.add(opt);
   }
-  return { correct, options: [...options].sort(() => Math.random() - 0.5) };
+  return {
+    question: 'Bendera negara apa ini?',
+    correct,
+    answer: correct.country,
+    options: [...options].sort(() => Math.random() - 0.5),
+  };
 }
 
-function convertAIQuestion(q: AIQuestion) {
+function convertAIQuestion(q: AIQuestion, flags: FlagItem[]): FlagQuestion | null {
   const options = q.options?.map(String) || [];
+  if (options.length < 4) return null;
+  const countryName = String(q.answer);
+  const flag = flags.find((f) => f.country.toLowerCase() === countryName.toLowerCase());
+  if (!flag) return null;
+
   return {
-    country: String(q.answer),
-    options: options.length === 4 ? options : undefined,
+    question: 'Bendera negara apa ini?',
+    correct: flag,
+    answer: flag.country,
+    options,
   };
 }
 
 export default function FlagQuiz() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
-    useGame('flag-quiz');
   const { t } = useLocale();
 
   const { data: flagsData } = useQuery({
@@ -67,79 +84,48 @@ export default function FlagQuiz() {
     queryFn: contentApi.getFlags,
     staleTime: 24 * 60 * 60 * 1000,
   });
-  const FLAGS =
-    flagsData?.map((c) => ({ country: c.name, code: c.flag_code.toLowerCase() })) ?? FALLBACK_FLAGS;
+  const flags = useMemo(
+    () =>
+      flagsData?.map((c) => ({ country: c.name, code: c.flag_code.toLowerCase() })) ??
+      FALLBACK_FLAGS,
+    [flagsData]
+  );
 
-  const [question, setQuestion] = useState<{ correct: FlagItem; options: string[] } | null>(null);
-  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
-  const [count, setCount] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
-  const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
-  const [useAI, setUseAI] = useState(false);
-  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
-  const [aiLoading, setAiLoading] = useState(false);
-
-  const next = useCallback(() => {
-    if (useAI && aiQuestions.length > 0) {
-      const q = aiQuestions.shift();
-      if (q) {
-        const converted = convertAIQuestion(q);
-        const flag = FLAGS.find((f) => f.country.toLowerCase() === converted.country.toLowerCase());
-        if (flag && converted.options) {
-          setQuestion({ correct: flag, options: converted.options });
-          setAiQuestions([...aiQuestions]);
-          setFeedback(null);
-          return;
-        }
-      }
-    }
-    setQuestion(generateQuestion(FLAGS));
-    setFeedback(null);
-  }, [FLAGS, useAI, aiQuestions]);
-
-  const fetchAIQuestions = async () => {
-    setAiLoading(true);
-    try {
-      const q = await aiApi.getQuestions('flag-quiz', 'medium', 12);
-      if (q && q.length > 0) setAiQuestions(q);
-    } catch {
-      console.error('Failed to fetch AI questions');
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleStart = async () => {
-    setCount(0);
-    setGameOver(false);
-    setResult(null);
-    if (useAI) await fetchAIQuestions();
-    next();
-    startGame('easy');
-  };
-
-  const handleAnswer = async (choice: string) => {
-    if (!question || feedback) return;
-    const isCorrect = choice === question.correct.country;
-    if (isCorrect) {
-      setFeedback('correct');
-      addScore(8);
-    } else {
-      setFeedback('wrong');
-      addScore(-2);
-    }
-    setCount((c) => c + 1);
-    if (count + 1 >= 12) {
-      setTimeout(async () => {
-        setGameOver(true);
-        endGame();
-        const res = await submitScore();
-        setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
-      }, 600);
-    } else {
-      setTimeout(() => next(), 600);
-    }
-  };
+  const {
+    question,
+    feedback,
+    questionCount,
+    gameOver,
+    result,
+    score,
+    isPlaying,
+    useAI,
+    setUseAI,
+    aiLoading,
+    streak,
+    breakdown,
+    handleStart,
+    handleAnswer,
+    pauseGame,
+  } = useQuizGame<FlagQuestion>({
+    gameSlug: 'flag-quiz',
+    gameName: 'Flag Quiz',
+    category: 'geography',
+    totalQuestions: 12,
+    difficulty: 'easy',
+    hasTimer: false,
+    generateQuestion: () => generateQuestion(flags),
+    convertAIQuestion: (q) => convertAIQuestion(q, flags),
+    fallbackData: flags,
+    scoring: {
+      correct: 8,
+      wrong: -2,
+    },
+    aiConfig: {
+      count: 12,
+      difficulty: 'medium',
+    },
+  });
 
   if (!isPlaying && !gameOver) {
     return (
@@ -156,7 +142,7 @@ export default function FlagQuiz() {
             { emoji: '🔤', text: 'Pilih nama negara yang benar dari 4 pilihan yang tersedia' },
             {
               emoji: '⚡',
-              text: 'Setiap jawaban benar menambah skor, jawaban salah mengurangi waktu!',
+              text: 'Setiap jawaban benar menambah skor!',
             },
           ]}
         />
@@ -188,7 +174,7 @@ export default function FlagQuiz() {
       <div className="flex items-center gap-4">
         <ScoreBoard score={score} />
         <span className="text-sm text-gray-500 dark:text-slate-400">
-          {t('game.questions', { n: count, total: 12 })}
+          {t('game.questions', { n: questionCount, total: 12 })}
         </span>
         <button
           onClick={pauseGame}
@@ -251,7 +237,8 @@ export default function FlagQuiz() {
             gameSlug="flag-quiz"
             gameName="Flag Quiz"
             onReplay={handleStart}
-            description={`${count}/12 soal dijawab`}
+            breakdown={breakdown}
+            description={`${questionCount}/12 soal dijawab`}
           />
         </div>
       )}

@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Delete, Pause, RotateCcw } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { useSoundStore } from '@/lib/stores/soundStore';
 import { cn } from '@/lib/utils/cn';
+import { haptics } from '@/lib/utils/haptics';
+import { safeStorage } from '@/lib/utils/safeStorage';
+import { createSeededRNG, getDailySeed } from '@/lib/utils/seededRandom';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
@@ -43,13 +47,13 @@ const DIFF_LABEL: Record<Difficulty, { label: string; color: string; desc: strin
   },
 };
 
-function generateSudoku(diff: Difficulty): { puzzle: Board; solution: Board } {
-  const solution = generateSolution();
+function generateSudoku(diff: Difficulty, rng = Math.random): { puzzle: Board; solution: Board } {
+  const solution = generateSolution(rng);
   const puzzle: Board = solution.map((row) => [...row]);
   const remove = 81 - CLUES[diff];
   const positions = Array.from({ length: 81 }, (_, i) => i);
   for (let i = positions.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [positions[i], positions[j]] = [positions[j], positions[i]];
   }
   for (let i = 0; i < remove; i++) {
@@ -59,21 +63,21 @@ function generateSudoku(diff: Difficulty): { puzzle: Board; solution: Board } {
   return { puzzle, solution };
 }
 
-function generateSolution(): number[][] {
+function generateSolution(rng = Math.random): number[][] {
   const board: number[][] = Array.from({ length: 9 }, () => Array(9).fill(0));
-  fillBoard(board);
+  fillBoard(board, rng);
   return board;
 }
 
-function fillBoard(board: number[][]): boolean {
+function fillBoard(board: number[][], rng = Math.random): boolean {
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
       if (board[r][c] !== 0) continue;
-      const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], rng);
       for (const n of nums) {
         if (isValid(board, r, c, n)) {
           board[r][c] = n;
-          if (fillBoard(board)) return true;
+          if (fillBoard(board, rng)) return true;
           board[r][c] = 0;
         }
       }
@@ -97,31 +101,73 @@ function isValid(board: number[][], r: number, c: number, n: number): boolean {
   return true;
 }
 
-function shuffle<T>(arr: T[]): T[] {
+function shuffle<T>(arr: T[], rng = Math.random): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
 
-export default function Sudoku() {
+export default function Sudoku({ isDaily = false }: { isDaily?: boolean }) {
   const { t } = useLocale();
-  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
+  const { playSound } = useSoundStore();
+  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
     useGame('sudoku');
-  const [puzzle, setPuzzle] = useState<Board>([]);
-  const [solution, setSolution] = useState<Board>([]);
-  const [current, setCurrent] = useState<Board>([]);
+
+  const STORAGE_KEY = isDaily ? 'eduplay-sudoku-daily' : 'eduplay-sudoku-state';
+
+  const loadState = () => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = safeStorage.getItem<any>(STORAGE_KEY, null);
+      if (stored && !stored.gameOver && stored.current && stored.current.length > 0) return stored;
+    } catch {}
+    return null;
+  };
+
+  const saveState = (state: any) => {
+    try {
+      safeStorage.setItem(STORAGE_KEY, state);
+    } catch {}
+  };
+
+  const clearState = () => {
+    try {
+      safeStorage.removeItem(STORAGE_KEY);
+    } catch {}
+  };
+
+  const saved = loadState();
+
+  const [puzzle, setPuzzle] = useState<Board>(saved?.puzzle || []);
+  const [solution, setSolution] = useState<Board>(saved?.solution || []);
+  const [current, setCurrent] = useState<Board>(saved?.current || []);
   const [selected, setSelected] = useState<[number, number] | null>(null);
-  const [errors, setErrors] = useState<Set<string>>(new Set());
-  const [diff, setDiff] = useState<Difficulty>('easy');
+  const [errors, setErrors] = useState<Set<string>>(new Set(saved?.errors || []));
+  const [diff, setDiff] = useState<Difficulty>(saved?.diff || 'easy');
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
-  const [errorCount, setErrorCount] = useState(0);
+  const [errorCount, setErrorCount] = useState(saved?.errorCount || 0);
+
+  useEffect(() => {
+    if (isPlaying && !gameOver && current.length > 0) {
+      saveState({
+        puzzle,
+        solution,
+        current,
+        errors: Array.from(errors),
+        diff,
+        errorCount,
+        gameOver,
+      });
+    }
+  }, [isPlaying, gameOver, puzzle, solution, current, errors, diff, errorCount]);
 
   const handleStart = () => {
-    const { puzzle: p, solution: s } = generateSudoku(diff);
+    const rng = isDaily ? createSeededRNG(getDailySeed()) : Math.random;
+    const { puzzle: p, solution: s } = generateSudoku(diff, rng);
     setPuzzle(p);
     setSolution(s);
     setCurrent(p.map((row) => [...row]));
@@ -130,6 +176,7 @@ export default function Sudoku() {
     setErrorCount(0);
     setGameOver(false);
     setResult(null);
+    clearState();
     startGame(diff as any);
   };
 
@@ -140,17 +187,23 @@ export default function Sudoku() {
 
   const handleWin = async () => {
     setGameOver(true);
+    playSound('win');
+    haptics.success();
     endGame();
     const res = await submitScore();
     setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
+    clearState();
   };
 
   const handleTimeUp = useCallback(async () => {
     setGameOver(true);
+    playSound('lose');
+    haptics.error();
     endGame();
     const res = await submitScore();
     setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
-  }, [endGame, submitScore]);
+    clearState();
+  }, [endGame, submitScore, playSound]);
 
   const handleNumberInput = useCallback(
     (num: number | null) => {
@@ -169,8 +222,17 @@ export default function Sudoku() {
         newErrors.add(key);
         newErrorCount = errorCount + 1;
         setErrorCount(newErrorCount);
+        playSound('wrong');
+        haptics.error();
       } else {
         newErrors.delete(key);
+        if (num !== null) {
+          playSound('click');
+          haptics.light();
+        } else {
+          playSound('pop');
+          haptics.light();
+        }
       }
       setErrors(newErrors);
 
@@ -191,7 +253,18 @@ export default function Sudoku() {
         handleWin();
       }
     },
-    [selected, gameOver, puzzle, current, solution, errors, errorCount, addScore, handleTimeUp]
+    [
+      selected,
+      gameOver,
+      puzzle,
+      current,
+      solution,
+      errors,
+      errorCount,
+      addScore,
+      handleTimeUp,
+      playSound,
+    ]
   );
 
   useEffect(() => {

@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type MotionProps, motion } from 'framer-motion';
 import { useGame } from '@/lib/hooks/useGame';
+import { useSoundStore } from '@/lib/stores/soundStore';
 import { cn } from '@/lib/utils/cn';
+import { haptics } from '@/lib/utils/haptics';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 
 type MotionButtonProps = MotionProps & React.ButtonHTMLAttributes<HTMLButtonElement>;
@@ -23,6 +25,7 @@ interface Props {
 }
 
 export default function SimonSays({ isDaily }: Props) {
+  const { playSound } = useSoundStore();
   const game = useGame('simon-says', 'Simon Says', 'logic');
 
   const [sequence, setSequence] = useState<number[]>([]);
@@ -81,12 +84,17 @@ export default function SimonSays({ isDaily }: Props) {
   const handlePress = useCallback(
     async (colorId: number) => {
       if (phase !== 'input') return;
+      playSound('click');
+      haptics.light();
+
       const newPlayer = [...playerSeq, colorId];
       const idx = newPlayer.length - 1;
 
       if (newPlayer[idx] !== sequence[idx]) {
         clearTimeouts();
         setPhase('fail');
+        playSound('lose');
+        haptics.error();
         game.setScore(level * 100);
         game.endGame();
         const res = await game.submitScore();
@@ -100,12 +108,38 @@ export default function SimonSays({ isDaily }: Props) {
         const newLevel = level + 1;
         setLevel(newLevel);
         game.setScore(newLevel * 100);
+        playSound('correct');
+        haptics.success();
         setPhase('showing');
         setTimeout(() => addStep(sequence), 600);
       }
     },
-    [phase, playerSeq, sequence, level, game, addStep]
+    [phase, playerSeq, sequence, level, game, addStep, playSound]
   );
+
+  useEffect(() => {
+    if (phase !== 'input') return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const key = e.key;
+      let colorId = -1;
+
+      if (['1', 'ArrowUp', 'q', 'Q'].includes(key)) colorId = 0;
+      else if (['2', 'ArrowRight', 'w', 'W'].includes(key)) colorId = 1;
+      else if (['3', 'ArrowDown', 'a', 'A'].includes(key)) colorId = 2;
+      else if (['4', 'ArrowLeft', 's', 'S'].includes(key)) colorId = 3;
+
+      if (colorId !== -1) {
+        e.preventDefault();
+        handlePress(colorId);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [phase, handlePress]);
 
   if (!game.isPlaying && phase !== 'fail') {
     return (

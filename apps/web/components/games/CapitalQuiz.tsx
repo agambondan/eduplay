@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Pause } from 'lucide-react';
-import { AIQuestion, aiApi } from '@/lib/api/ai';
+import { AIQuestion } from '@/lib/api/ai';
 import { contentApi } from '@/lib/api/content';
-import { useGame } from '@/lib/hooks/useGame';
+import { useQuizGame } from '@/lib/hooks/useQuizGame';
 import { useLocale } from '@/lib/i18n';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
@@ -16,7 +16,6 @@ interface CapitalQuestion {
   question: string;
   answer: string;
   options: string[];
-  type?: 'country-to-capital' | 'capital-to-country';
 }
 
 const FALLBACK_CAPITAL_DATA = [
@@ -59,13 +58,20 @@ function generateQuestion(CAPITAL_DATA: { country: string; capital: string }[]):
       : `Negara yang beribukota di ${target.capital}?`,
     answer,
     options: [...options].sort(() => Math.random() - 0.5),
-    type: isC2Cap ? 'country-to-capital' : 'capital-to-country',
+  };
+}
+
+function convertAIQuestion(q: AIQuestion): CapitalQuestion | null {
+  const options = q.options?.map(String);
+  if (!options || options.length < 4) return null;
+  return {
+    question: q.question,
+    answer: String(q.answer),
+    options,
   };
 }
 
 export default function CapitalQuiz() {
-  const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
-    useGame('capital-quiz');
   const { t } = useLocale();
 
   const { data: capitalsData } = useQuery({
@@ -73,90 +79,48 @@ export default function CapitalQuiz() {
     queryFn: contentApi.getCapitals,
     staleTime: 24 * 60 * 60 * 1000,
   });
-  const CAPITAL_DATA =
-    capitalsData?.map((c) => ({ country: c.name, capital: c.capital })) ?? FALLBACK_CAPITAL_DATA;
+  const capitalData = useMemo(
+    () =>
+      capitalsData?.map((c) => ({ country: c.name, capital: c.capital })) ?? FALLBACK_CAPITAL_DATA,
+    [capitalsData]
+  );
 
-  const [question, setQuestion] = useState<CapitalQuestion | null>(null);
-  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
-  const [questionCount, setQuestionCount] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
-  const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
-  const [streak, setStreak] = useState(0);
-
-  // AI questions state
-  const [aiQuestions, setAiQuestions] = useState<AIQuestion[]>([]);
-  const [useAI, setUseAI] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-
-  const fetchAIQuestions = async (diff: string) => {
-    setAiLoading(true);
-    try {
-      const q = await aiApi.getQuestions('capital-quiz', diff, 15);
-      if (q && q.length > 0) setAiQuestions(q);
-    } catch (e) {
-      console.error('Failed to fetch AI questions');
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const nextQuestion = useCallback(() => {
-    if (useAI && aiQuestions.length > 0) {
-      const q = aiQuestions.shift();
-      if (q) {
-        setQuestion({
-          question: q.question,
-          answer: String(q.answer),
-          options: q.options.map(String),
-        });
-        setAiQuestions([...aiQuestions]);
-        setFeedback(null);
-        return;
-      }
-    }
-    setQuestion(generateQuestion(CAPITAL_DATA));
-    setFeedback(null);
-  }, [useAI, aiQuestions, CAPITAL_DATA]);
-
-  const handleStart = async () => {
-    setResult(null);
-    setQuestionCount(0);
-    setStreak(0);
-    if (useAI) {
-      await fetchAIQuestions('medium');
-    }
-    startGame('easy');
-  };
-
-  const handleAnswer = async (selected: string) => {
-    if (feedback || !question) return;
-
-    const isCorrect = selected === question.answer;
-    if (isCorrect) {
-      setFeedback('correct');
-      const newStreak = streak + 1;
-      setStreak(newStreak);
-      const multiplier = newStreak >= 3 ? 2 : 1;
-      addScore(10 * multiplier);
-    } else {
-      setFeedback('wrong');
-      setStreak(0);
-      addScore(-3);
-    }
-
-    setQuestionCount((c) => c + 1);
-
-    if (questionCount + 1 >= 15) {
-      setTimeout(async () => {
-        setGameOver(true);
-        endGame();
-        const res = await submitScore();
-        setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
-      }, 600);
-    } else {
-      setTimeout(() => nextQuestion(), 600);
-    }
-  };
+  const {
+    question,
+    feedback,
+    questionCount,
+    gameOver,
+    result,
+    score,
+    isPlaying,
+    useAI,
+    setUseAI,
+    aiLoading,
+    streak,
+    breakdown,
+    handleStart,
+    handleAnswer,
+    pauseGame,
+  } = useQuizGame<CapitalQuestion>({
+    gameSlug: 'capital-quiz',
+    gameName: 'Capital City Quiz',
+    category: 'geography',
+    totalQuestions: 15,
+    difficulty: 'easy',
+    hasTimer: false,
+    generateQuestion: () => generateQuestion(capitalData),
+    convertAIQuestion,
+    fallbackData: capitalData,
+    scoring: {
+      correct: 10,
+      wrong: -3,
+      streakBonus: { threshold: 3, multiplier: 2 },
+    },
+    aiConfig: {
+      count: 15,
+      difficulty: 'medium',
+    },
+  });
 
   if (!isPlaying && !gameOver) {
     return (
@@ -170,7 +134,7 @@ export default function CapitalQuiz() {
         <HowToPlay
           steps={[
             { emoji: '🌍', text: 'Nama sebuah negara ditampilkan di layar' },
-            { emoji: '✏️', text: 'Ketik nama ibukotanya lalu tekan Enter' },
+            { emoji: '✏️', text: 'Pilih nama ibukota yang benar dari 4 opsi' },
             { emoji: '🔥', text: 'Jawab 3x berturut-turut untuk mendapatkan poin 2x lipat!' },
           ]}
         />
@@ -253,6 +217,7 @@ export default function CapitalQuiz() {
             gameSlug="capital-quiz"
             gameName="Capital City Quiz"
             onReplay={handleStart}
+            breakdown={breakdown}
             description={`${questionCount}/15 soal dijawab`}
           />
         </div>

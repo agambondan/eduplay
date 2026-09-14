@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
+import { useSoundStore } from '@/lib/stores/soundStore';
 import { cn } from '@/lib/utils/cn';
+import { haptics } from '@/lib/utils/haptics';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
@@ -102,6 +104,7 @@ const TILE_COLORS: Record<number, string> = {
 
 export default function Game2048() {
   const { t } = useLocale();
+  const { playSound } = useSoundStore();
   const { score, isPlaying, addScore, setScore, startGame, endGame, submitScore, pauseGame } =
     useGame('2048');
   const [board, setBoard] = useState<Board>(createEmptyBoard);
@@ -130,15 +133,30 @@ export default function Game2048() {
       if (!moved) return;
       const withTile = addRandomTile(newBoard);
       setBoard(withTile);
-      if (gained > 0) addScore(gained);
+      if (gained > 0) {
+        addScore(gained);
+        playSound('click');
+        haptics.medium();
+      } else {
+        playSound('pop');
+        haptics.light();
+      }
       if (isGameOver(withTile)) {
         setGameOver(true);
+        playSound('lose');
+        haptics.error();
         endGame();
         const res = await submitScore();
         setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
+      } else {
+        const has2048 = withTile.some((row) => row.includes(2048));
+        if (has2048 && gained > 0) {
+          playSound('win');
+          haptics.success();
+        }
       }
     },
-    [board, isPlaying, gameOver, addScore, endGame, submitScore]
+    [board, isPlaying, gameOver, addScore, endGame, submitScore, playSound]
   );
 
   useEffect(() => {
