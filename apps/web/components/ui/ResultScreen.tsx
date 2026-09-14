@@ -19,6 +19,7 @@ import { leaderboardApi } from '@/lib/api/leaderboard';
 import { useLocale } from '@/lib/i18n';
 import { SITE_URL } from '@/lib/site';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { toast } from '@/lib/stores/toastStore';
 import { cn } from '@/lib/utils/cn';
 
 interface Achievement {
@@ -113,8 +114,7 @@ export function ResultScreen({
       navigator.clipboard
         .writeText(`${text} ${url}`)
         .then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
+          toast.success(t('common.link_copied') || 'Tautan disalin ke clipboard!');
         })
         .catch(() => {});
     }
@@ -140,8 +140,7 @@ export function ResultScreen({
   const handleCopyLink = () => {
     const { url } = getShareContent();
     navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      toast.success(t('common.link_copied') || 'Tautan disalin ke clipboard!');
     });
   };
 

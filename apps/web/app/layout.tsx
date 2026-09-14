@@ -9,6 +9,7 @@ import { SkipLink } from '@/components/layout/SkipLink';
 import { WebAppJsonLd } from '@/components/seo/JsonLd';
 import { AchievementToast } from '@/components/ui/AchievementToast';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { ToastContainer } from '@/components/ui/ToastContainer';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -88,6 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <ErrorBoundary>{children}</ErrorBoundary>
           <AchievementToast />
+          <ToastContainer />
           <CookieBanner />
         </Providers>
         <WebAppJsonLd />
