@@ -444,6 +444,12 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
             gameSlug="wordle"
             gameName={t('game.wordle.title')}
             onReplay={handleStart}
+            breakdown={[
+              { label: 'Percobaan', value: `${attempt}/6` },
+              { label: 'Status', value: won ? 'Menang' : 'Gagal', isBonus: won },
+              { label: 'Mode', value: hardMode ? 'Hard' : 'Normal', isBonus: hardMode },
+              { label: 'Kata', value: targetWord },
+            ]}
             description={
               won
                 ? t('game.congrats_word')
