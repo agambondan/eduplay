@@ -73,11 +73,7 @@ func Load() (*Config, error) {
 	cfg.DB.Password = os.Getenv("DB_PASSWORD")
 	cfg.DB.SSLMode = os.Getenv("DB_SSLMODE")
 	if cfg.DB.SSLMode == "" {
-		if cfg.App.Env == "production" {
-			cfg.DB.SSLMode = "require"
-		} else {
-			cfg.DB.SSLMode = "disable"
-		}
+		cfg.DB.SSLMode = "disable"
 	}
 	cfg.Redis.URL = os.Getenv("REDIS_URL")
 	cfg.JWT.Secret = os.Getenv("JWT_SECRET")
