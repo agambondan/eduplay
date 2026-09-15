@@ -8,6 +8,7 @@ import {
   Flame,
   Pause,
   Radio,
+  RotateCcw,
   ShieldAlert,
   Sparkles,
   Zap,
@@ -18,6 +19,7 @@ import { useIsTouchDevice } from '@/lib/hooks/useIsTouchDevice';
 import { useLocale } from '@/lib/i18n';
 import { useSoundStore } from '@/lib/stores/soundStore';
 import { playTone } from '@/lib/utils/audioSynth';
+import { toCanvasCoords } from '@/lib/utils/canvasCoords';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
@@ -314,18 +316,20 @@ export function GridRelayTD() {
 
       canvas.setPointerCapture(e.pointerId);
 
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = CANVAS_WIDTH / rect.width;
-      const scaleY = CANVAS_HEIGHT / rect.height;
-      const clickX = (e.clientX - rect.left) * scaleX;
-      const clickY = (e.clientY - rect.top) * scaleY;
+      const { x: clickX, y: clickY } = toCanvasCoords(
+        canvas,
+        e.clientX,
+        e.clientY,
+        CANVAS_WIDTH,
+        CANVAS_HEIGHT
+      );
 
       const gx = Math.floor(clickX / CELL_SIZE);
       const gy = Math.floor(clickY / CELL_SIZE);
       if (gx < 0 || gx >= COLS || gy < 0 || gy >= ROWS) return;
 
       const clickedTurret = turretsRef.current.find((t) => t.gx === gx && t.gy === gy);
-      if (clickedTurret) {
+      if (clickedTurret && buildMode !== 'cable') {
         selectedTurretRef.current = clickedTurret.id;
         setSelectedTurret(clickedTurret);
         playSound('click');
@@ -387,11 +391,13 @@ export function GridRelayTD() {
         return;
       }
 
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = CANVAS_WIDTH / rect.width;
-      const scaleY = CANVAS_HEIGHT / rect.height;
-      const clickX = (e.clientX - rect.left) * scaleX;
-      const clickY = (e.clientY - rect.top) * scaleY;
+      const { x: clickX, y: clickY } = toCanvasCoords(
+        canvas,
+        e.clientX,
+        e.clientY,
+        CANVAS_WIDTH,
+        CANVAS_HEIGHT
+      );
 
       const gx = Math.floor(clickX / CELL_SIZE);
       const gy = Math.floor(clickY / CELL_SIZE);
@@ -667,7 +673,7 @@ export function GridRelayTD() {
 
             // Target Finding
             const enemiesInRange = enemiesRef.current.filter(
-              (e) => Math.hypot(e.x - tx, e.y - ty) <= t.range
+              (e) => e.hp > 0 && Math.hypot(e.x - tx, e.y - ty) <= t.range
             );
             enemiesInRange.sort((a, b) => a.x - b.x); // Prioritize closest to base
 
@@ -675,6 +681,24 @@ export function GridRelayTD() {
             if (target) {
               t.angle = Math.atan2(target.y - ty, target.x - tx);
             }
+
+            const applyKill = (e: Enemy) => {
+              if (e.hp > 0) return;
+              scoreRef.current += e.isBoss ? 500 : e.isDisrupter ? 140 : 90;
+              setScore(scoreRef.current);
+              triggerExplosion(e.x, e.y, e.color, e.isBoss ? 35 : 16);
+              playSynthesizedTone('boom');
+
+              // Disruptor explodes and damages/severs cables
+              if (e.isDisrupter) {
+                const cutRadius = CELL_SIZE * 2.2;
+                cablesRef.current = cablesRef.current.filter((c) => {
+                  const cx = (c.fromX + c.toX) * 0.5 * CELL_SIZE + CELL_SIZE / 2;
+                  const cy = (c.fromY + c.toY) * 0.5 * CELL_SIZE + CELL_SIZE / 2;
+                  return Math.hypot(cx - e.x, cy - e.y) > cutRadius;
+                });
+              }
+            };
 
             // Shooting execution
             t.fireCooldown -= dt;
@@ -694,6 +718,7 @@ export function GridRelayTD() {
                   isOvercharge: isOver,
                 });
                 playSynthesizedTone('laser');
+                applyKill(target);
               } else if (t.type === 'tesla') {
                 // AoE chain lightning to up to 3 enemies
                 t.fireCooldown = isOver ? 0.4 : 0.9;
@@ -709,6 +734,7 @@ export function GridRelayTD() {
                     isOvercharge: isOver,
                     isTesla: true,
                   });
+                  applyKill(ct);
                 }
                 playSynthesizedTone('shock');
               } else if (t.type === 'repeater') {
@@ -716,26 +742,6 @@ export function GridRelayTD() {
                 t.fireCooldown = 3.0;
                 powerRef.current = Math.min(100, powerRef.current + 8);
                 triggerExplosion(tx, ty, '#fbbf24', 8);
-              }
-
-              // Check kills
-              for (const e of enemiesRef.current) {
-                if (e.hp <= 0) {
-                  scoreRef.current += e.isBoss ? 500 : e.isDisrupter ? 140 : 90;
-                  setScore(scoreRef.current);
-                  triggerExplosion(e.x, e.y, e.color, e.isBoss ? 35 : 16);
-                  playSynthesizedTone('boom');
-
-                  // Disruptor explodes and damages/severs cables
-                  if (e.isDisrupter) {
-                    const cutRadius = CELL_SIZE * 2.2;
-                    cablesRef.current = cablesRef.current.filter((c) => {
-                      const cx = (c.fromX + c.toX) * 0.5 * CELL_SIZE + CELL_SIZE / 2;
-                      const cy = (c.fromY + c.toY) * 0.5 * CELL_SIZE + CELL_SIZE / 2;
-                      return Math.hypot(cx - e.x, cy - e.y) > cutRadius;
-                    });
-                  }
-                }
               }
             }
 
@@ -964,8 +970,35 @@ export function GridRelayTD() {
     );
   }
 
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const check = () => {
+      const w = typeof window !== 'undefined' ? window.innerWidth : 768;
+      setIsLandscape(
+        w >= 768 ||
+          (typeof screen !== 'undefined' &&
+            screen.orientation &&
+            screen.orientation.type.includes('landscape'))
+      );
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   return (
     <div className="flex flex-col items-center gap-4 py-2">
+      {/* Landscape Prompt for Mobile Portrait */}
+      {isTouch && !isLandscape && (
+        <div className="flex w-full max-w-md flex-col items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-center dark:border-amber-800 dark:bg-amber-950/30">
+          <RotateCcw className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+          <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+            Putar HP ke mode Landscape untuk grid optimal!
+          </p>
+        </div>
+      )}
+
       {/* Top HUD */}
       <div className="flex w-full max-w-[640px] flex-wrap items-center justify-between gap-x-2 gap-y-2 px-2">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -1085,14 +1118,17 @@ export function GridRelayTD() {
       </div>
 
       {/* Canvas Area */}
-      <div className="relative w-full max-w-[640px] overflow-hidden rounded-xl border border-gray-800 bg-slate-950 shadow-2xl">
+      <div
+        className="relative w-full max-w-[640px] overflow-hidden rounded-xl border border-gray-800 bg-slate-950 shadow-2xl"
+        style={{ aspectRatio: '4/3' }}
+      >
         <canvas
           ref={canvasRef}
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
-          className="block h-auto w-full cursor-pointer touch-none"
+          className="block h-full w-full cursor-pointer touch-none"
         />
 
         {/* Power Severed Emergency Alert Banner */}

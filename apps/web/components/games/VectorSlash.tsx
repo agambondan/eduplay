@@ -7,6 +7,7 @@ import { useIsTouchDevice } from '@/lib/hooks/useIsTouchDevice';
 import { useLocale } from '@/lib/i18n';
 import { useSoundStore } from '@/lib/stores/soundStore';
 import { playTone } from '@/lib/utils/audioSynth';
+import { toCanvasCoords } from '@/lib/utils/canvasCoords';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
@@ -117,6 +118,7 @@ export function VectorSlash() {
   const isDrawingRef = useRef(false);
   const spawnTimerRef = useRef(0);
   const waveRef = useRef(1);
+  const waveTimerRef = useRef(0);
 
   // Web Audio Synth for Custom Slashes
   const playSfx = useCallback(
@@ -229,9 +231,9 @@ export function VectorSlash() {
       const aspectRatio = boxW / boxH;
 
       // 1. Check Circle Gesture (Whirlwind Slash)
-      const isClosedLoop = distStartEnd < 55 || distStartEnd / totalLen < 0.28;
-      const isBigEnough = totalLen > 110 && boxW > 40 && boxH > 40;
-      const isRoughlyCircular = aspectRatio >= 0.45 && aspectRatio <= 2.2;
+      const isClosedLoop = distStartEnd < 75 || distStartEnd / totalLen < 0.35;
+      const isBigEnough = totalLen > 80 && boxW > 30 && boxH > 30;
+      const isRoughlyCircular = aspectRatio >= 0.4 && aspectRatio <= 2.5;
 
       if (isClosedLoop && isBigEnough && isRoughlyCircular) {
         // Execute Whirlwind Slash
@@ -268,7 +270,7 @@ export function VectorSlash() {
       }
 
       // 2. Check Line Gesture (Dash Thrust)
-      const isStraightLine = distStartEnd / totalLen > 0.78 && totalLen > 65;
+      const isStraightLine = distStartEnd / totalLen > 0.72 && totalLen > 45;
       if (isStraightLine) {
         const p = playerRef.current;
         const dirX = (end.x - start.x) / distStartEnd;
@@ -348,11 +350,7 @@ export function VectorSlash() {
 
     canvas.setPointerCapture(e.pointerId);
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = CANVAS_WIDTH / rect.width;
-    const scaleY = CANVAS_HEIGHT / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    const { x, y } = toCanvasCoords(canvas, e.clientX, e.clientY, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     isDrawingRef.current = true;
     gestureTrailRef.current = [{ x, y, time: performance.now() }];
@@ -363,11 +361,7 @@ export function VectorSlash() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = CANVAS_WIDTH / rect.width;
-    const scaleY = CANVAS_HEIGHT / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    const { x, y } = toCanvasCoords(canvas, e.clientX, e.clientY, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     gestureTrailRef.current.push({ x, y, time: performance.now() });
 
@@ -398,6 +392,7 @@ export function VectorSlash() {
       comboTimerRef.current = 0;
       spawnTimerRef.current = 0;
       waveRef.current = 1;
+      waveTimerRef.current = 0;
 
       playerRef.current = {
         x: CANVAS_WIDTH / 2,
@@ -440,7 +435,9 @@ export function VectorSlash() {
       keysRef.current[e.key.toLowerCase()] = true;
       if (e.key === ' ' || e.key === 'Shift') {
         e.preventDefault();
-        performDodge();
+        if (isPlayingRef.current && !isPausedRef.current) {
+          performDodge();
+        }
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -545,6 +542,13 @@ export function VectorSlash() {
 
           if (p.invincibleTimer > 0) {
             p.invincibleTimer -= dt;
+          }
+
+          // Ramp difficulty over time
+          waveTimerRef.current += dt;
+          if (waveTimerRef.current > 15) {
+            waveTimerRef.current = 0;
+            waveRef.current += 1;
           }
 
           // Spawn Enemies

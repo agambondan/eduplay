@@ -8,6 +8,7 @@ import { useIsTouchDevice } from '@/lib/hooks/useIsTouchDevice';
 import { useLocale } from '@/lib/i18n';
 import { useSoundStore } from '@/lib/stores/soundStore';
 import { playTone } from '@/lib/utils/audioSynth';
+import { toCanvasCoords } from '@/lib/utils/canvasCoords';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
@@ -171,6 +172,7 @@ export function BastionSiege() {
   const windChangeTimerRef = useRef(0);
   const questionTimerRef = useRef(0);
   const waveRef = useRef(1);
+  const waveTimerRef = useRef(0);
 
   // Procedural Web Audio SFX
   const playSfx = useCallback(
@@ -361,11 +363,7 @@ export function BastionSiege() {
 
     canvas.setPointerCapture(e.pointerId);
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = CANVAS_WIDTH / rect.width;
-    const scaleY = CANVAS_HEIGHT / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    const { x, y } = toCanvasCoords(canvas, e.clientX, e.clientY, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     isAimingRef.current = true;
     aimStartRef.current = { x, y };
@@ -377,11 +375,7 @@ export function BastionSiege() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = CANVAS_WIDTH / rect.width;
-    const scaleY = CANVAS_HEIGHT / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    const { x, y } = toCanvasCoords(canvas, e.clientX, e.clientY, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     aimCurrentRef.current = { x, y };
   }, []);
@@ -417,6 +411,7 @@ export function BastionSiege() {
       fireballAmmoRef.current = 3;
       ammoTypeRef.current = 'boulder';
       waveRef.current = 1;
+      waveTimerRef.current = 0;
       spawnTimerRef.current = 0;
       windChangeTimerRef.current = 0;
       questionTimerRef.current = 0;
@@ -495,6 +490,13 @@ export function BastionSiege() {
             setCurrentQuestion(q);
             isPausedRef.current = true;
             setIsPaused(true);
+          }
+
+          // Ramp difficulty over time
+          waveTimerRef.current += dt;
+          if (waveTimerRef.current > 15) {
+            waveTimerRef.current = 0;
+            waveRef.current += 1;
           }
 
           // Spawn Enemies

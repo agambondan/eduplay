@@ -290,3 +290,26 @@ Sementara `~/.claude/rules/prettier-formatting.md` (aturan global kamu, berlaku 
 2. **Sebelum rilis Bastion Siege ke user:** fix #6-#8 (playSfx bypass settings, isNewHighscore, projectile multi-hit) — user-facing, gampang ketahuan.
 3. **Boleh menyusul (follow-up PR):** #9-#11 (chess dual-writer, AudioContext leak, GameCard selector).
 4. **Kalau ada waktu luang:** ekstrak `useLatestRef` + `synthesizeTone` + `<ToggleSwitch>` (§4) — ini investasi kecil yang mencegah kelas bug yang sama muncul lagi di game berikutnya.
+
+---
+
+## 7. Babak Tambahan: Review `VectorSlash.tsx` & `GridRelayTD.tsx` (15 September 2026)
+
+Game baru lain yang ditambahkan bareng Bastion Siege (14-15 Sept) — belum pernah direview penuh sebelumnya, cuma disentuh sebagian waktu dedup audio (§13). Semua temuan di bawah **sudah diverifikasi manual dan diperbaiki**.
+
+Sekalian dicek wiring end-to-end seluruh 42 game: route frontend ↔ `games-seo.ts` ↔ backend `seedGames()` (`services/api/cmd/main.go`) — **cocok persis 42/42/42**, tidak ada yang bolong.
+
+| #   | Severity  | File                                                     | Masalah                                                                                                                                                                                                      | Status                                 |
+| --- | --------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| 17  | 🔴 Kritis | `GridRelayTD.tsx:722`                                    | Kill-check turret scan seluruh array enemy, bukan cuma target yang baru kena hit → skor/ledakan/sound bisa dobel kalau 2+ turret nembak di frame yang sama                                                   | ✅ Fixed                               |
+| 18  | 🔴 Kritis | `GridRelayTD.tsx:864`                                    | Enemy yang nyampe base di-set `hp=0` tapi baru dibersihkan 1 frame kemudian → turret lain bisa salah klaim itu sebagai kill-nya sendiri                                                                      | ✅ Fixed (root cause sama dengan #17)  |
+| 19  | 🟠 Sedang | `GridRelayTD.tsx:327`                                    | Klik cell yang sudah ada turret selalu di-intercept jadi "select turret", bahkan di mode cable — jadi tidak bisa menyambung kabel langsung dari satu turret ke turret sebelahnya                             | ✅ Fixed                               |
+| 20  | 🟠 Sedang | `VectorSlash.tsx:441`                                    | Handler keydown global buat dodge (Space/Shift) tidak dicek `isPlaying`/`isPaused`, beda dengan semua pointer handler di file yang sama — dodge bisa ke-trigger di menu/pause                                | ✅ Fixed                               |
+| 21  | 🟠 Sedang | `VectorSlash.tsx:552`, `BastionSiege.tsx:502`            | `waveRef` diinisialisasi 1 dan dipakai buat mempercepat spawn enemy, tapi **tidak pernah di-increment** di kedua file — ramp kesulitan mati total, susah main tetap sama dari detik pertama sampai kapan pun | ✅ Fixed (kedua file)                  |
+| 22  | 🔵 Reuse  | `GridRelayTD.tsx`, `VectorSlash.tsx`, `BastionSiege.tsx` | Scaling koordinat pointer→canvas (`getBoundingClientRect`+`scaleX`/`scaleY`) diulang 6× di 3 file                                                                                                            | ✅ Fixed (`lib/utils/canvasCoords.ts`) |
+
+**Catatan #17/#18:** akar masalahnya sama — kill-scoring dilakukan lewat scan generik "enemy mana saja yang HP-nya ≤0" setelah setiap turret nembak, bukan dicek spesifik ke target yang baru kena damage. Fix-nya: `enemiesInRange` sekarang exclude enemy yang sudah mati (`e.hp > 0`), dan scoring/ledakan/sound dipindah jadi fungsi `applyKill(target)` yang dipanggil tepat setelah damage diberikan ke target spesifik itu — bukan scan ulang seluruh array. Ini otomatis juga membereskan #18, karena enemy yang mati akibat nyampe base (bukan akibat ditembak turret) tidak pernah lewat `applyKill` sama sekali.
+
+**Catatan #21:** dipilih ramp +1 wave tiap 15 detik bertahan (angka saya yang tentukan, bukan dari spek manapun — kalau kamu mau kurva kesulitan yang beda, kasih tahu angkanya). Untuk VectorSlash, itu berarti spawn interval mencapai batas tercepatnya (1.0s) di wave 11 (~2:45). Untuk BastionSiege, batas tercepat (1.4s) di wave ~9 (~2:15).
+
+**Catatan #22:** `toCanvasCoords(canvas, clientX, clientY, width, height)` di `apps/web/lib/utils/canvasCoords.ts` — helper generik, dipakai di 3 file × 2 titik = 6 pemanggilan, `getBoundingClientRect` tersisa 0 di ketiga file game canvas.
