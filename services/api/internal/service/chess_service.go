@@ -8,6 +8,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
+	"github.com/notnil/chess"
 )
 
 type ChessService interface {
@@ -176,17 +177,33 @@ func (s *chessService) Move(id, userID, move string) (*ChessMatchResponse, error
 		return nil, errors.New("not your match")
 	}
 
-	if match.IsVsBot {
-		if isPlayer1 && match.PlayerColor != match.CurrentTurn {
-			return nil, errors.New("not your turn")
-		}
-	} else {
+	// In vs-bot matches the frontend computes the bot's reply locally and
+	// submits it through this same endpoint under the human player's
+	// account (there's no separate bot user) — so ownership is already
+	// established above; whose turn it legally is gets enforced by the
+	// chess engine itself via game.MoveStr below. PvP matches have two
+	// independent, untrusted players, so that still needs an explicit gate.
+	if !match.IsVsBot {
 		if isPlayer1 && match.CurrentTurn != "white" {
 			return nil, errors.New("not your turn")
 		}
 		if isPlayer2 && match.CurrentTurn != "black" {
 			return nil, errors.New("not your turn")
 		}
+	}
+
+	fen := match.FEN
+	if fen == "" {
+		fen = startFEN
+	}
+	fenOpt, err := chess.FEN(fen)
+	if err != nil {
+		return nil, errors.New("corrupt game state")
+	}
+	game := chess.NewGame(fenOpt, chess.UseNotation(chess.AlgebraicNotation{}))
+
+	if err := game.MoveStr(move); err != nil {
+		return nil, errors.New("illegal move")
 	}
 
 	var moves []string
@@ -199,16 +216,79 @@ func (s *chessService) Move(id, userID, move string) (*ChessMatchResponse, error
 		nextTurn = "white"
 	}
 
+	newFEN := game.FEN()
 	updates := map[string]interface{}{
 		"current_turn": nextTurn,
 		"moves_json":   string(movesJSON),
+		"fen":          newFEN,
 	}
-	database.DB.Model(&match).Updates(updates)
 
 	match.CurrentTurn = nextTurn
 	match.MovesJSON = string(movesJSON)
+	match.FEN = newFEN
+
+	if outcome := game.Outcome(); outcome != chess.NoOutcome {
+		now := time.Now()
+		match.Status = "finished"
+		match.FinishedAt = &now
+		updates["status"] = "finished"
+		updates["finished_at"] = now
+
+		switch game.Method() {
+		case chess.Checkmate:
+			match.WinReason = "checkmate"
+		case chess.Stalemate:
+			match.WinReason = "stalemate"
+		default:
+			match.WinReason = "draw"
+		}
+		updates["win_reason"] = match.WinReason
+
+		if winnerID := chessOutcomeWinnerID(match, outcome); winnerID != nil {
+			match.WinnerID = winnerID
+			updates["winner_id"] = *winnerID
+		}
+	}
+
+	database.DB.Model(&match).Updates(updates)
+
+	if match.Status == "finished" {
+		s.recordChessResult(match)
+	}
+
 	resp := toChessResponse(match)
 	return &resp, nil
+}
+
+// chessOutcomeWinnerID maps a finished game's white/black outcome to the
+// winning user's ID. In vs-bot matches, PlayerColor says which side the
+// human is playing; if the bot's color won, there's no user to credit and
+// this returns nil.
+func chessOutcomeWinnerID(match model.ChessMatch, outcome chess.Outcome) *uuid.UUID {
+	if outcome != chess.WhiteWon && outcome != chess.BlackWon {
+		return nil
+	}
+	whiteWon := outcome == chess.WhiteWon
+
+	if match.IsVsBot {
+		humanIsWhite := match.PlayerColor == "white"
+		if humanIsWhite == whiteWon {
+			id := match.Player1ID
+			return &id
+		}
+		return nil
+	}
+
+	// Player1 is always white in a PvP match (see Create).
+	if whiteWon {
+		id := match.Player1ID
+		return &id
+	}
+	if match.Player2ID != nil {
+		id := *match.Player2ID
+		return &id
+	}
+	return nil
 }
 
 func (s *chessService) Resign(id, userID string) (*ChessMatchResponse, error) {

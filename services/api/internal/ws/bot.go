@@ -74,14 +74,14 @@ func (b *RuleBasedBot) AnswerQuestion(q QuestionPayload) BotAnswer {
 	}
 
 	if len(q.Options) > 0 {
-		wrongOpts := make([]string, 0, len(q.Options))
-		for _, opt := range q.Options {
-			if opt != q.CorrectAnswer {
-				wrongOpts = append(wrongOpts, opt)
+		wrongIdx := make([]int, 0, len(q.Options))
+		for i := range q.Options {
+			if itoa(i) != q.CorrectAnswer {
+				wrongIdx = append(wrongIdx, i)
 			}
 		}
-		if len(wrongOpts) > 0 {
-			return BotAnswer{Answer: wrongOpts[rand.Intn(len(wrongOpts))], IsCorrect: false, TimeTaken: 0}
+		if len(wrongIdx) > 0 {
+			return BotAnswer{Answer: itoa(wrongIdx[rand.Intn(len(wrongIdx))]), IsCorrect: false, TimeTaken: 0}
 		}
 	}
 

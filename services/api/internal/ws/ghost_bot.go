@@ -69,19 +69,19 @@ func (g *GhostBotPlayer) pickAnswer(q QuestionPayload, wantCorrect bool) string 
 		return "0"
 	}
 
-	wrongOpts := make([]string, 0, len(q.Options)-1)
-	for _, opt := range q.Options {
-		if opt != q.CorrectAnswer {
-			wrongOpts = append(wrongOpts, opt)
-		}
-	}
-
 	if wantCorrect {
 		return q.CorrectAnswer
 	}
 
-	if len(wrongOpts) > 0 {
-		return wrongOpts[rand.Intn(len(wrongOpts))]
+	wrongIdx := make([]int, 0, len(q.Options)-1)
+	for i := range q.Options {
+		if itoa(i) != q.CorrectAnswer {
+			wrongIdx = append(wrongIdx, i)
+		}
+	}
+
+	if len(wrongIdx) > 0 {
+		return itoa(wrongIdx[rand.Intn(len(wrongIdx))])
 	}
 	return "0"
 }

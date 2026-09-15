@@ -1,19 +1,22 @@
 package seeder
 
 import (
+	"encoding/json"
+
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/agambondan/eduplay/services/api/pkg/logger"
 	"go.uber.org/zap"
 )
 
-// SeedGameContent seeds countries, chemical elements, history events, and wordle words.
-// All operations are idempotent via FirstOrCreate.
+// SeedGameContent seeds countries, chemical elements, history events, wordle
+// words, and crossword puzzles. All operations are idempotent via FirstOrCreate.
 func SeedGameContent() {
 	seedCountries()
 	seedChemicalElements()
 	seedHistoryEvents()
 	seedWordleWords()
+	seedCrosswordPuzzles()
 }
 
 func seedCountries() {
@@ -154,4 +157,113 @@ func seedWordleWords() {
 		database.DB.Where(model.WordleWord{Word: w, Language: "id"}).FirstOrCreate(&entry)
 	}
 	logger.Log.Info("seeded wordle words", zap.Int("count", len(words)))
+}
+
+// crosswordClueSeed mirrors the compact clue shape the multiplayer Crossword
+// Duel/Co-op frontend expects verbatim in a puzzle's clues array: n=number,
+// d=direction, c=clue text, a=answer, r/col=starting cell.
+type crosswordClueSeed struct {
+	N   int    `json:"n"`
+	D   string `json:"d"`
+	C   string `json:"c"`
+	A   string `json:"a"`
+	R   int    `json:"r"`
+	Col int    `json:"col"`
+}
+
+// seedCrosswordPuzzles seeds a handful of small, hand-verified Indonesian
+// crossword puzzles for Crossword Duel/Co-op. Without this, the
+// crossword_puzzles table has no rows at all (nothing else in the codebase
+// ever inserts into it), so getRandomCrosswordPuzzle always fell back to an
+// empty grid/clues payload and the multiplayer crossword games had no real
+// content to serve. Grids are square (frontend navigation assumes
+// gridSize x gridSize) and every non-blocked cell's letter is verified
+// against the clue(s) that cover it.
+func seedCrosswordPuzzles() {
+	type puzzleSeed struct {
+		Slug       string
+		Title      string
+		Difficulty string
+		Grid       [][]string
+		Clues      []crosswordClueSeed
+	}
+
+	puzzles := []puzzleSeed{
+		{
+			Slug:       "bunga-batu-nasi-ayam",
+			Title:      "TTS Sehari-hari",
+			Difficulty: "easy",
+			Grid: [][]string{
+				{"B", "U", "N", "G", "A"},
+				{"A", "#", "A", "#", "Y"},
+				{"T", "#", "S", "#", "A"},
+				{"U", "#", "I", "#", "M"},
+				{"#", "#", "#", "#", "#"},
+			},
+			Clues: []crosswordClueSeed{
+				{N: 1, D: "across", C: "Bagian tanaman yang indah, biasanya wangi dan berwarna-warni", A: "BUNGA", R: 0, Col: 0},
+				{N: 1, D: "down", C: "Benda keras dari alam, sering dipakai untuk membangun", A: "BATU", R: 0, Col: 0},
+				{N: 2, D: "down", C: "Makanan pokok orang Indonesia, biasa dimasak dari beras", A: "NASI", R: 0, Col: 2},
+				{N: 3, D: "down", C: "Unggas yang biasa dipelihara untuk telur dan dagingnya", A: "AYAM", R: 0, Col: 4},
+			},
+		},
+		{
+			Slug:       "tidur-tani-nasi",
+			Title:      "TTS Kehidupan Desa",
+			Difficulty: "medium",
+			Grid: [][]string{
+				{"T", "I", "D", "U", "R"},
+				{"A", "#", "#", "#", "#"},
+				{"N", "A", "S", "I", "#"},
+				{"I", "#", "#", "#", "#"},
+				{"#", "#", "#", "#", "#"},
+			},
+			Clues: []crosswordClueSeed{
+				{N: 1, D: "across", C: "Kegiatan istirahat malam hari, mata terpejam", A: "TIDUR", R: 0, Col: 0},
+				{N: 1, D: "down", C: "Orang yang bekerja mengolah sawah atau ladang", A: "TANI", R: 0, Col: 0},
+				{N: 2, D: "across", C: "Makanan pokok orang Indonesia yang terbuat dari beras", A: "NASI", R: 2, Col: 0},
+			},
+		},
+		{
+			Slug:       "gajah-gula-laut",
+			Title:      "TTS Alam",
+			Difficulty: "hard",
+			Grid: [][]string{
+				{"G", "A", "J", "A", "H"},
+				{"U", "#", "#", "#", "#"},
+				{"L", "A", "U", "T", "#"},
+				{"A", "#", "#", "#", "#"},
+				{"#", "#", "#", "#", "#"},
+			},
+			Clues: []crosswordClueSeed{
+				{N: 1, D: "across", C: "Hewan besar berbelalai panjang", A: "GAJAH", R: 0, Col: 0},
+				{N: 1, D: "down", C: "Pemanis yang dibuat dari tebu", A: "GULA", R: 0, Col: 0},
+				{N: 2, D: "across", C: "Kumpulan air asin yang sangat luas", A: "LAUT", R: 2, Col: 0},
+			},
+		},
+	}
+
+	seeded := 0
+	for _, p := range puzzles {
+		gridJSON, err := json.Marshal(p.Grid)
+		if err != nil {
+			continue
+		}
+		cluesJSON, err := json.Marshal(p.Clues)
+		if err != nil {
+			continue
+		}
+
+		var puzzle model.CrosswordPuzzle
+		database.DB.Where(model.CrosswordPuzzle{Slug: p.Slug}).Assign(model.CrosswordPuzzle{
+			Title:      p.Title,
+			GridSize:   len(p.Grid),
+			GridJSON:   gridJSON,
+			CluesJSON:  cluesJSON,
+			Difficulty: p.Difficulty,
+			IsActive:   true,
+		}).FirstOrCreate(&puzzle)
+		seeded++
+	}
+	logger.Log.Info("seeded crossword puzzles", zap.Int("count", seeded))
 }
