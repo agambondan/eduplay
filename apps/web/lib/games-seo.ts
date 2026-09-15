@@ -13,6 +13,11 @@ export const GAME_SEO: Record<string, GameSeo> = {
     name: '2048',
     description: 'Gabungkan angka-angka hingga mencapai 2048!',
   },
+  'bastion-siege': {
+    name: 'Bastion Siege',
+    description:
+      'Pertahanan benteng berbasis fisika balistik parabola dan manipulasi lingkungan hancur!',
+  },
   'battleship-math': {
     name: 'Battleship Math',
     description: 'Tembak kapal lawan dengan menjawab soal matematika di setiap tembakan.',
@@ -29,7 +34,7 @@ export const GAME_SEO: Record<string, GameSeo> = {
     name: 'Capital City Quiz',
     description: 'Tebak ibukota negara-negara di dunia!',
   },
-  'chess': {
+  chess: {
     name: 'Catur Online',
     description: 'Main catur melawan bot atau lawan pemain lain secara real-time.',
   },
@@ -71,7 +76,8 @@ export const GAME_SEO: Record<string, GameSeo> = {
   },
   'grid-relay-td': {
     name: 'Grid Relay TD',
-    description: 'Atur distribusi daya listrik dan bangun jaringan turret untuk menahan serangan musuh geometris!',
+    description:
+      'Atur distribusi daya listrik dan bangun jaringan turret untuk menahan serangan musuh geometris!',
   },
   'math-battle': {
     name: 'Math Battle',
