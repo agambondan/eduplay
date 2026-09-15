@@ -9,6 +9,7 @@ import { enqueueOfflineScore } from '@/lib/utils/offlineQueue';
 
 export function useGame(gameSlug: string, gameName?: string, category?: string) {
   const store = useGameStore();
+  const { score, timeLeft, difficulty, setLevelUp, resetGame, setDifficulty, setPlaying, setPaused } = store;
   const { accessToken } = useAuthStore();
 
   const submitScore = useCallback(
@@ -16,11 +17,11 @@ export function useGame(gameSlug: string, gameName?: string, category?: string) 
       if (!accessToken) {
         return null;
       }
-      const scoreToSubmit = scoreOverride ?? store.score;
+      const scoreToSubmit = scoreOverride ?? score;
       const payload = {
         score: scoreToSubmit,
-        duration: 60 - store.timeLeft,
-        difficulty: store.difficulty,
+        duration: 60 - timeLeft,
+        difficulty,
       };
 
       const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
@@ -41,15 +42,15 @@ export function useGame(gameSlug: string, gameName?: string, category?: string) 
           analytics.gameCompleted(
             gameSlug,
             scoreToSubmit,
-            60 - store.timeLeft,
-            store.difficulty,
+            60 - timeLeft,
+            difficulty,
             result.xp_earned
           );
           if (result.new_highscore) {
             analytics.newHighscore(gameSlug, scoreToSubmit);
           }
           if (result.level_up && result.new_level) {
-            store.setLevelUp({ newLevel: result.new_level });
+            setLevelUp({ newLevel: result.new_level });
           }
         }
         return result;
@@ -63,31 +64,31 @@ export function useGame(gameSlug: string, gameName?: string, category?: string) 
         };
       }
     },
-    [gameSlug, store.score, store.timeLeft, store.difficulty, store.setLevelUp, accessToken]
+    [gameSlug, score, timeLeft, difficulty, setLevelUp, accessToken]
   );
 
   const startGame = useCallback(
-    (difficulty: Difficulty = 'easy') => {
-      store.resetGame();
-      store.setDifficulty(difficulty);
-      store.setPlaying(true);
-      analytics.gameStarted(gameSlug, gameName || '', category || '', difficulty);
+    (targetDifficulty: Difficulty = 'easy') => {
+      resetGame();
+      setDifficulty(targetDifficulty);
+      setPlaying(true);
+      analytics.gameStarted(gameSlug, gameName || '', category || '', targetDifficulty);
     },
-    [store, gameSlug, gameName, category]
+    [resetGame, setDifficulty, setPlaying, gameSlug, gameName, category]
   );
 
   const endGame = useCallback(() => {
-    store.setPlaying(false);
-    store.setPaused(false);
-  }, [store]);
+    setPlaying(false);
+    setPaused(false);
+  }, [setPlaying, setPaused]);
 
   const pauseGame = useCallback(() => {
-    store.setPaused(true);
-  }, [store]);
+    setPaused(true);
+  }, [setPaused]);
 
   const resumeGame = useCallback(() => {
-    store.setPaused(false);
-  }, [store]);
+    setPaused(false);
+  }, [setPaused]);
 
   return {
     ...store,

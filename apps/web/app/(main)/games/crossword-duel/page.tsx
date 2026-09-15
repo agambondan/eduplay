@@ -325,7 +325,7 @@ function DuelScreen({
         handleVirtualKey(letter);
       }
     },
-    [handleVirtualKey]
+    [handleVirtualKey, selected, puzzle, gameOver]
   );
 
   if (!puzzle) {

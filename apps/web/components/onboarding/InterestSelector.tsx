@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Brain, Calculator, Globe2, Languages } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useLocale } from '@/lib/i18n';
 
 const CATEGORIES = [
@@ -45,7 +46,13 @@ export default function InterestSelector({ onNext, onSkip }: Props) {
   };
 
   return (
-    <div className="rounded-2xl bg-white p-8 shadow-2xl dark:bg-slate-800">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.2 }}
+      className="rounded-2xl bg-white p-8 shadow-2xl dark:bg-slate-800"
+    >
       <h2 className="mb-2 text-center text-xl font-bold text-gray-900 dark:text-white">
         {t('onboarding.interest_title')}
       </h2>
@@ -55,10 +62,12 @@ export default function InterestSelector({ onNext, onSkip }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         {CATEGORIES.map(({ key, labelKey, icon: Icon, color }) => (
-          <button
+          <motion.button
             key={key}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => toggle(key)}
-            className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${
+            className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-colors ${
               selected.includes(key)
                 ? 'border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-900/20'
                 : 'border-gray-200 hover:border-gray-300 dark:border-slate-600 dark:hover:border-slate-500'
@@ -70,7 +79,7 @@ export default function InterestSelector({ onNext, onSkip }: Props) {
             <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
               {t(labelKey)}
             </span>
-          </button>
+          </motion.button>
         ))}
       </div>
 
@@ -94,6 +103,6 @@ export default function InterestSelector({ onNext, onSkip }: Props) {
       {selected.length > 0 && (
         <p className="mt-3 text-center text-xs text-gray-400">{t('onboarding.interest_saved')}</p>
       )}
-    </div>
+    </motion.div>
   );
 }

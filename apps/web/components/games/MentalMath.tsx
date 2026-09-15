@@ -9,6 +9,7 @@ import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 import { Timer } from '@/components/ui/Timer';
+import { GameNumpad } from '@/components/games/GameNumpad';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -89,6 +90,7 @@ export default function MentalMath() {
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
   const [count, setCount] = useState(0);
+  const [useNumpad, setUseNumpad] = useState(true);
 
   const nextQuestion = useCallback(() => {
     setEq(generateEquation(diff));
@@ -107,6 +109,24 @@ export default function MentalMath() {
       nextQuestion();
     }
   }, [isPlaying, nextQuestion]);
+
+  const handleNumpadDigit = (d: number) => {
+    setInput((prev) => prev + String(d));
+  };
+
+  const handleNumpadDelete = () => {
+    setInput((prev) => prev.slice(0, -1));
+  };
+
+  const handleNumpadSubmit = () => {
+    if (!eq) return;
+    const parsed = parseInt(input, 10);
+    if (parsed === eq.answer) {
+      addScore(10);
+      setCount((c) => c + 1);
+      nextQuestion();
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -190,19 +210,20 @@ export default function MentalMath() {
       </div>
 
       {eq && !gameOver && (
-        <div className="w-full max-w-md space-y-6 text-center">
-          <p className="font-mono text-5xl font-black text-gray-900 dark:text-white">{eq.text}</p>
-          <div className="flex justify-center">
-            <input
-              type="number"
-              value={input}
-              onChange={handleInputChange}
-              className="w-48 rounded-xl border-2 border-gray-200 px-4 py-3 text-center font-mono text-3xl font-bold focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              placeholder="?"
-              autoFocus
+        <div className="w-full max-w-md space-y-4 text-center">
+          <p className="font-mono text-4xl sm:text-5xl font-black text-gray-900 dark:text-white">
+            {eq.text} = {input || '?'}
+          </p>
+
+          <div className="flex justify-center pt-2">
+            <GameNumpad
+              onDigit={handleNumpadDigit}
+              onDelete={handleNumpadDelete}
+              onSubmit={handleNumpadSubmit}
+              disabled={gameOver}
+              submitLabel="OK"
             />
           </div>
-          <p className="text-xs text-gray-400">Jawab langsung untuk lanjut</p>
         </div>
       )}
 

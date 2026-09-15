@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
@@ -106,6 +106,7 @@ export default function WordSearch() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const handleStart = useCallback(() => {
     const shuffled = [...WORD_LIST].sort(() => Math.random() - 0.5).slice(0, 6);
@@ -143,8 +144,19 @@ export default function WordSearch() {
     }
   };
 
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isSelecting || !game) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cellEl = el?.closest('[data-grid-cell]');
+    if (!cellEl) return;
+    const r = Number(cellEl.getAttribute('data-r'));
+    const c = Number(cellEl.getAttribute('data-c'));
+    if (!Number.isNaN(r) && !Number.isNaN(c)) onPointerEnter(r, c);
+  };
+
   const onPointerUp = useCallback(
-    async (e?: PointerEvent) => {
+    async (e?: PointerEvent | React.TouchEvent) => {
       if (!isSelecting || !game) return;
       setIsSelecting(false);
 
@@ -174,11 +186,12 @@ export default function WordSearch() {
   );
 
   useEffect(() => {
-    window.addEventListener('pointerup', onPointerUp);
-    window.addEventListener('pointercancel', onPointerUp);
+    const handler = (e: PointerEvent) => onPointerUp(e);
+    window.addEventListener('pointerup', handler);
+    window.addEventListener('pointercancel', handler);
     return () => {
-      window.removeEventListener('pointerup', onPointerUp);
-      window.removeEventListener('pointercancel', onPointerUp);
+      window.removeEventListener('pointerup', handler);
+      window.removeEventListener('pointercancel', handler);
     };
   }, [onPointerUp]);
 
@@ -232,8 +245,10 @@ export default function WordSearch() {
       <div className="flex flex-col items-start gap-8 md:flex-row">
         {game && (
           <div
+            ref={gridRef}
             className="grid w-full max-w-md select-none grid-cols-10 gap-1 rounded-xl bg-gray-200 p-2 dark:bg-slate-700"
             style={{ touchAction: 'none' }}
+            onTouchMove={handleTouchMove}
           >
             {game.grid.map((row, r) =>
               row.map((char, c) => {
@@ -244,6 +259,9 @@ export default function WordSearch() {
                 return (
                   <div
                     key={`${r}-${c}`}
+                    data-grid-cell="true"
+                    data-r={r}
+                    data-c={c}
                     onPointerDown={() => onPointerDown(r, c)}
                     onPointerEnter={() => onPointerEnter(r, c)}
                     className={cn(

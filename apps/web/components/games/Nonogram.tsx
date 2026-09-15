@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useLocale } from '@/lib/i18n';
@@ -270,6 +270,17 @@ export default function Nonogram() {
     }
   };
 
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !dragAction) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cellEl = el?.closest('[data-nonogram-cell]');
+    if (!cellEl) return;
+    const r = Number(cellEl.getAttribute('data-r'));
+    const c = Number(cellEl.getAttribute('data-c'));
+    if (!Number.isNaN(r) && !Number.isNaN(c)) onPointerEnter(r, c);
+  };
+
   useEffect(() => {
     const handlePointerEnd = () => {
       setIsDragging(false);
@@ -408,7 +419,7 @@ export default function Nonogram() {
             </div>
 
             {/* Grid with Left Clues */}
-            <div>
+            <div onTouchMove={handleTouchMove}>
               {board.map((row, r) => (
                 <div key={`row-${r}`} className="flex">
                   {/* Left Clues */}
@@ -429,6 +440,9 @@ export default function Nonogram() {
                   {row.map((cellState, c) => (
                     <div
                       key={`cell-${r}-${c}`}
+                      data-nonogram-cell="true"
+                      data-r={r}
+                      data-c={c}
                       onPointerDown={(e) => onPointerDown(r, c, e)}
                       onPointerEnter={() => onPointerEnter(r, c)}
                       className={cn(

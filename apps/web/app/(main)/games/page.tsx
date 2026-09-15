@@ -12,6 +12,7 @@ import {
   FlaskConical,
   Gamepad2,
   Globe,
+  Heart,
   Layers,
   Search,
   Swords,
@@ -20,6 +21,7 @@ import {
 import { LucideIcon } from 'lucide-react';
 import { gamesApi } from '@/lib/api/games';
 import { useLocale } from '@/lib/i18n';
+import { useFavoritesStore } from '@/lib/stores/favoritesStore';
 import { GameCard } from '@/components/ui/GameCard';
 
 interface CategoryConfig {
@@ -104,6 +106,7 @@ function GamesContent() {
   const searchParams = useSearchParams();
   const selectedCategory = searchParams.get('cat');
   const [searchQuery, setSearchQuery] = useState('');
+  const { favorites } = useFavoritesStore();
 
   const {
     data: games,
@@ -125,6 +128,11 @@ function GamesContent() {
       .map(([id, config]) => ({ id, ...config, count: counts[id] || 0 }))
       .filter((c) => c.count > 0);
   }, [games]);
+
+  const favoriteGames = useMemo(() => {
+    if (!games || favorites.length === 0) return [];
+    return games.filter((g) => favorites.includes(g.slug));
+  }, [games, favorites]);
 
   const searchResults = useMemo(() => {
     if (!games || !searchQuery.trim()) return [];
@@ -255,47 +263,70 @@ function GamesContent() {
             </div>
           )}
         </div>
-      ) : isLoading ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-44 animate-pulse rounded-2xl bg-gray-100 dark:bg-slate-800" />
-          ))}
-        </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {categoriesWithCount.map((cat) => {
-            const Icon = cat.icon;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => router.push(`/games?cat=${cat.id}`)}
-                className="group flex flex-col items-start gap-3 rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
-              >
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${cat.gradient} shadow-sm transition-transform duration-200 group-hover:scale-105`}
-                >
-                  <Icon className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="font-bold text-gray-900 dark:text-white">
-                    {t(`category.${cat.id}`)}
-                  </div>
-                  <div className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-slate-400">
-                    {cat.desc}
-                  </div>
-                </div>
-                <div className="flex w-full items-center justify-between">
-                  <span
-                    className={`rounded-full ${cat.lightBg} ${cat.textColor} px-2.5 py-0.5 text-xs font-bold`}
-                  >
-                    {cat.count} game
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-gray-300 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-slate-600" />
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        <>
+          {favoriteGames.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Heart className="h-5 w-5 fill-rose-500 text-rose-500" />
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Favorit Saya ({favoriteGames.length})
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {favoriteGames.map((game) => (
+                  <GameCard key={game.id} game={game} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Kategori</h2>
+            {isLoading ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="h-44 animate-pulse rounded-2xl bg-gray-100 dark:bg-slate-800" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {categoriesWithCount.map((cat) => {
+                  const Icon = cat.icon;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => router.push(`/games?cat=${cat.id}`)}
+                      className="group flex flex-col items-start gap-3 rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+                    >
+                      <div
+                        className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${cat.gradient} shadow-sm transition-transform duration-200 group-hover:scale-105`}
+                      >
+                        <Icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-bold text-gray-900 dark:text-white">
+                          {t(`category.${cat.id}`)}
+                        </div>
+                        <div className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-slate-400">
+                          {cat.desc}
+                        </div>
+                      </div>
+                      <div className="flex w-full items-center justify-between">
+                        <span
+                          className={`rounded-full ${cat.lightBg} ${cat.textColor} px-2.5 py-0.5 text-xs font-bold`}
+                        >
+                          {cat.count} game
+                        </span>
+                        <ChevronRight className="h-4 w-4 text-gray-300 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-slate-600" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </>
       )}
     </div>
   );

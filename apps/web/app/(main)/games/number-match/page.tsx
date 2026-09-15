@@ -80,7 +80,7 @@ export default function NumberMatchPage() {
 
   useEffect(() => {
     init();
-  }, []);
+  }, [init]);
 
   const addRow = () => {
     const active = nums.filter((_, i) => !crossed.has(i));

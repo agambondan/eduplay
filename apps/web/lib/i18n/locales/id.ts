@@ -166,6 +166,13 @@ const id: Record<string, string> = {
   'game.vector_slash.howto.4': 'Tahan klik & gambar GARIS LURUS cepat untuk Dash Thrust (Piercing)',
   'game.vector_slash.controls': 'WASD: Gerak | Spasi/Shift: Dodge | Klik Tahan & Gambar Gestur: Skill',
   'game.vector_slash.touch_controls': 'Geser jari untuk gambar gestur skill. Tap tombol Dodge Roll untuk menghindar.',
+  'game.bastion_siege.title': 'Bastion Siege',
+  'game.bastion_siege.desc': 'Pertahanan benteng berbasis fisika parabola! Hancurkan pilar jembatan dan picu ledakan barel berantai!',
+  'game.bastion_siege.howto.1': 'Tarik katapel ke belakang untuk mengatur sudut elevasi & tenaga tembakan',
+  'game.bastion_siege.howto.2': 'Targetkan pilar penyangga jembatan untuk meruntuhkan jalanan musuh',
+  'game.bastion_siege.howto.3': 'Tembak rantai katrol barel minyak untuk memicu ledakan area berantai',
+  'game.bastion_siege.howto.4': 'Perhatikan arah & kecepatan angin dinamis yang membelokkan lintasan proyektil',
+  'game.bastion_siege.controls': 'Tarik mouse/jari ke belakang untuk membidik dan lepas untuk menembak proyektil.',
 
   'game.start': 'Mulai!',
   'game.correct': 'Benar!',

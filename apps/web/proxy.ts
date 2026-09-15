@@ -17,7 +17,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
   "img-src 'self' data: blob: https://*",
   "font-src 'self' https://fonts.gstatic.com",
-  "connect-src 'self' https://accounts.google.com https://*",
+  "connect-src 'self' https://accounts.google.com https://* http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* wss://*",
   "frame-src 'self' https://pagead2.googlesyndication.com https://www.google.com https://accounts.google.com https://*.safeframe.googlesyndication.com https://googleads.g.doubleclick.net https://cm.g.doubleclick.net https://ep2.adtrafficquality.google",
 ].join('; ');
 

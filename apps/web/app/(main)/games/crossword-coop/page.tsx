@@ -273,7 +273,7 @@ function CoopScreen({
         handleVirtualKey(letter);
       }
     },
-    [handleVirtualKey]
+    [handleVirtualKey, selected, puzzle, gameOver, filledCells]
   );
 
   if (!puzzle) {

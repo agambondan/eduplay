@@ -7,6 +7,93 @@
 
 ---
 
+## [2026-09-14] — React 19 Upgrade, Framer Motion Fixes & Pipeline Green
+
+### Changed
+
+- **React 19 Upgrade** (`apps/web/package.json`): Upgraded `react`/`react-dom` to `^19.0.0`, `@types/react`/`@types/react-dom` to `^19`, `eslint-config-next` to `^16`; ESLint flat config with native Next 16 presets. Lint script now `eslint .` (0 errors, 5 pre-existing warnings).
+- **Framer Motion v11 Compatibility**: Replaced deprecated `motion.h1`/`motion.p` with `motion.div as="h1|p"` pattern in `WelcomeStep.tsx` and `DailyPrompt.tsx` — builds clean on React 19.
+- **CI/CD Pipeline Green**: Backend `go build`/`go test` pass; Frontend `npm test` (47/47 vitest), `npm run lint` (0 errors), `npm run build` (TypeScript + 71 static pages) all pass.
+
+### Fixed
+
+- **motion.h1 / motion.p Deprecation**: Fixed TypeScript build errors on React 19 by converting `motion.h1` → `motion.div as="h1"` in `WelcomeStep.tsx`, and ensuring `DailyPrompt.tsx` uses `motion.div` only.
+- **Playwright E2E Suite Stable**: 91/92 tests pass (1 skip) across auth, games hub, leaderboard, home, battleship-math specs — CSP relaxed for `http://localhost:*` dev API calls, cookie-consent init script added to test harnesses.
+- **Battleship Math Mock Routing**: `page.route('**/*')` with path normalization handles trailing slash variants in test environment.
+
+---
+
+## [2026-09-14] — Unit Test Expansion, Lint Zero-Warning & Full Pipeline Hardening
+
+### Added
+
+- **Frontend Unit Test Suite Expansion** (`apps/web/lib/utils/__tests__/`, `apps/web/lib/stores/__tests__/`, `apps/web/lib/hooks/__tests__/`):
+  - `seededRandom.test.ts`: Validates deterministic daily seeds, pseudo-RNG sequences, and array pickers.
+  - `score.test.ts`: Verifies difficulty multipliers, daily XP calculations, and percentage-to-letter grade conversion.
+  - `safeStorage.test.ts`: Asserts JSON serialization, corrupted string handling, and fallback behavior.
+  - `toastStore.test.ts`: Validates automated timers, state additions, type variations, and auto-dismissal.
+  - `usePrefersReducedMotion.test.ts`: Validates CSS media query listener matching for motion accessibility.
+  - Total frontend unit test suite increased to 47 passing tests across 10 test suites.
+- **Backend Profanity Filter Tests** (`services/api/pkg/profanity/profanity_test.go`): Tests blacklist matching and sanitization logic.
+
+### Fixed
+
+- **Exhaustive-Deps & Stale Closure Elimination** (`apps/web`):
+  - `apps/web/lib/hooks/useGame.ts`: Destructured store methods and stable callback references.
+  - `apps/web/components/games/Onet.tsx`: Fixed timer interval and `finishGame` callback dependency ordering.
+  - `apps/web/app/(main)/games/fraction-visualizer/page.tsx` & `number-match/page.tsx`: Fixed missing `init` hook dependencies.
+  - `apps/web/app/(main)/challenge/page.tsx`: Fixed `acceptMutation` dependency tracking.
+  - `apps/web/app/(main)/admin/blog/page.tsx`: Stabilized `fetchPosts` with `useCallback`.
+  - `apps/web/app/(main)/games/sudoku-race/page.tsx` & `wordle-duel/page.tsx`: Replaced stale closure bindings with stable reference trackers for WebSocket message listeners.
+  - `apps/web/app/(main)/games/trivia-challenge/page.tsx`: Stabilized timeout and progression callbacks.
+
+### Changed
+
+- **PRD & Game Seeder Sync**:
+  - Registered `Vector Slash` in `PRD_EduPlay_v2.md` and `services/api/cmd/main.go` seed list.
+  - Normalized `VectorSlash.tsx` category to `arcade` and `GridRelayTD.tsx` category to `science`.
+
+---
+
+## [2026-09-14] — Mobile Responsive Deep Review & Behavioral Audit
+
+### Added
+
+- **Mobile Game Layout & Responsive Review** (`docs/reviews/2026-09-14-responsive-mobile-games.md`): Comprehensive mobile web UX and layout architecture audit across all 37+ games covering real-time canvas scaling, grid drag selection limitations on touch devices, native vs virtual keyboard traps, multiplayer shell navigation collisions, and prioritized remediation roadmap.
+
+---
+
+## [2026-09-14] — New Mini-Games (Make 24, Color Shift, Stack Tower) & E2E Test Suite Stabilization
+
+### Added
+
+- **Make 24 Game Engine** (`apps/web/components/games/Make24.tsx`, `Make24Dynamic.tsx`, `/games/make-24/`): Arithmetic 24 puzzle game with validated solvable 4-card random generator, Shunting-Yard math expression parser, real-time hint solver, streak multipliers, and 60-second timer.
+- **Color Shift Game Engine** (`apps/web/components/games/ColorShift.tsx`, `ColorShiftDynamic.tsx`, `/games/color-shift/`): Stroop-effect reflex and mental agility game with conflicting visual colors vs text names, dynamic target shift rules, combo score multipliers, and 3-life hard mode.
+- **Stack Tower Game Engine** (`apps/web/components/games/StackTower.tsx`, `StackTowerDynamic.tsx`, `/games/stack-tower/`): Pure HTML5 Canvas 2D precision timing block stacking game with slice mechanics, perfect snap combo streak rewards, dynamic hue shifts, and smooth camera tracking.
+- **SEO & Metadata Registration** (`apps/web/lib/games-seo.ts`, `locales/id.ts`, `locales/en.ts`): SEO metadata, JSON-LD schema, and bilingual translations for all 3 new games.
+- **Backend Game Seeding** (`services/api/cmd/main.go`): Database seeding entries for `make-24`, `color-shift`, and `stack-tower`.
+
+### Fixed
+
+- **Playwright E2E Test Suite** (`apps/web/e2e/home.spec.ts`, `e2e/games.spec.ts`, `e2e/leaderboard.spec.ts`, `e2e/battleship-math.spec.ts`): Fixed overlay blocking from cookie consent and onboarding modal on fresh test runs, corrected Indonesian category name selectors, added E2E coverage for the 3 new games, and achieved 100% test pass rate (91 passed, 1 skipped).
+- **Admin Blog Compilation** (`apps/web/app/(main)/admin/blog/page.tsx`): Fixed missing `useCallback` import in admin blog management page.
+
+---
+
+## [2026-09-14] — Bastion Siege: Parabolic Ballistics & Destructible Physics
+
+### Added
+
+- **Bastion Siege Game Engine** (`apps/web/components/games/BastionSiege.tsx`, `apps/web/components/games/dynamic/BastionSiegeDynamic.tsx`, `apps/web/app/(main)/games/bastion-siege/page.tsx`, `layout.tsx`): 2D/2.5D physics-driven projectile defense game:
+  - **Dynamic Parabola Trajectory Prediction**: Real-time dotted parabolic arc calculation factoring elevation, impulse velocity, gravity ($g = 580\text{px/s}^2$), and dynamic crosswinds.
+  - **Destructible Suspension Bridge & Support Pillars**: Targeting modular stone pillars fractures and collapses connected bridge segments, dropping marching invaders into the chasm.
+  - **Suspended Kinetic Oil Barrels**: Severing pulley chains drops explosive barrels to trigger mass AoE chain reaction detonations.
+  - **Kinematics & Physics Challenges**: In-game physics challenge modals granting bonus fireball ammo and fortress repair.
+- **Web Audio Synthesizer**: Custom procedural sound synthesis for catapult launch whooshes, boulder crunch impacts, bridge beam fractures, and explosive barrel shockwaves.
+- **SEO, Seed & PRD Sync**: Registered `bastion-siege` in `lib/games-seo.ts`, bilingual dictionaries (`id.ts`, `en.ts`), backend database seeder (`cmd/main.go`), and `PRD_EduPlay_v2.md`.
+
+---
+
 ## [2026-09-14] — Vector Slash: Gesture Skill Engine & Telegraphed Boss Battles
 
 ### Added

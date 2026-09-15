@@ -13,6 +13,7 @@ import { safeStorage } from '@/lib/utils/safeStorage';
 import { getDailyItem } from '@/lib/utils/seededRandom';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
+import { GameKeyboard } from '@/components/games/GameKeyboard';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
 
 const FALLBACK_WORD_LIST = [
@@ -481,37 +482,12 @@ export default function Wordle({ isDaily = false }: { isDaily?: boolean }) {
         </div>
       )}
 
-      <div className="mt-2 flex flex-col gap-1.5" role="group" aria-label={t('game.numpad')}>
-        {KEYBOARD_ROWS.map((row, i) => (
-          <div key={i} className="flex justify-center gap-1" role="row">
-            {row.map((key) => {
-              const keyStatus = usedLetters[key];
-              const ariaLabel =
-                key === 'ENTER'
-                  ? t('game.submit_answer')
-                  : key === '⌫'
-                    ? t('game.erase')
-                    : t('game.key_label').replace('{key}', key);
-              return (
-                <button
-                  key={key}
-                  onClick={() => handleKey(key)}
-                  aria-label={ariaLabel}
-                  className={cn(
-                    'touch-target flex items-center justify-center rounded-md px-2.5 py-3 text-sm font-bold transition-colors',
-                    key.length > 1 ? 'px-3 text-xs' : '',
-                    keyStatus
-                      ? statusColor[keyStatus]
-                      : 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600'
-                  )}
-                >
-                  {key}
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div>
+      <GameKeyboard
+        onKeyPress={handleKey}
+        keyStates={usedLetters}
+        disabled={gameOver}
+        className="mt-2"
+      />
     </div>
   );
 }

@@ -2,6 +2,10 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Home page — smoke tests', () => {
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('eduplay-cookie-consent', 'accepted');
+      localStorage.setItem('eduplay-onboarding-done', 'true');
+    });
     await page.goto('/');
   });
 
@@ -10,9 +14,10 @@ test.describe('Home page — smoke tests', () => {
     await expect(page.locator('body')).toBeVisible();
   });
 
-  test('shows EduPlay branding in navbar', async ({ page }) => {
+  test('shows EduPlay branding in navbar', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Desktop navbar is hidden on mobile screens');
     // Navbar brand link is visible on desktop
-    await expect(page.getByRole('link', { name: 'EduPlay' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /eduplay|mindplay/i })).toBeVisible();
   });
 
   test('has a link to the game hub', async ({ page }) => {

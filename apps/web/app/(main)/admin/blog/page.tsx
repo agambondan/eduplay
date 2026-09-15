@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Edit2, Plus, Search, Trash2 } from 'lucide-react';
 import api from '@/lib/api/client';
 
@@ -26,7 +26,7 @@ export default function AdminBlogPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  const fetchPosts = () => {
+  const fetchPosts = useCallback(() => {
     setLoading(true);
     api
       .get(`/admin/blog?page=${page}&limit=20`)
@@ -36,11 +36,11 @@ export default function AdminBlogPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  };
+  }, [page]);
 
   useEffect(() => {
     fetchPosts();
-  }, [page]);
+  }, [fetchPosts]);
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Hapus "${title}"?`)) return;

@@ -1,7 +1,41 @@
 import { expect, test } from '@playwright/test';
 
+const MOCK_LEADERBOARD = {
+  entries: [
+    { rank: 1, user_id: 'u1', username: 'JuaraSatu', score: 9999, xp: 9999, level: 10 },
+    { rank: 2, user_id: 'u2', username: 'PemainDua', score: 8500, xp: 8500, level: 8 },
+  ],
+  user_rank: { rank: 5, user_id: 'u-me', username: 'SayaSendiri', score: 4200, xp: 4200, level: 5 },
+};
+
 test.describe('Leaderboard page', () => {
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('eduplay-cookie-consent', 'accepted');
+      localStorage.setItem('eduplay-onboarding-done', 'true');
+    });
+
+    await page.route('**/api/v1/games', (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            { id: 'g1', slug: 'math-quiz', name: 'Math Quiz', category: 'math', is_active: true },
+          ],
+        }),
+      });
+    });
+
+    await page.route('**/api/v1/leaderboard/**', (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: MOCK_LEADERBOARD }),
+      });
+    });
+
     await page.goto('/leaderboard');
   });
 

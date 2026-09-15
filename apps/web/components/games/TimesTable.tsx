@@ -10,6 +10,7 @@ import { haptics } from '@/lib/utils/haptics';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
+import { GameNumpad } from '@/components/games/GameNumpad';
 
 export default function TimesTable() {
   const { score, isPlaying, addScore, startGame, endGame, submitScore, pauseGame } =
@@ -42,12 +43,21 @@ export default function TimesTable() {
     startGame('easy');
   };
 
-  const handleAnswerSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNumpadDigit = (d: number) => {
+    if (feedback) return;
+    setAnswer((prev) => prev + String(d));
+  };
+
+  const handleNumpadDelete = () => {
+    if (feedback) return;
+    setAnswer((prev) => prev.slice(0, -1));
+  };
+
+  const handleNumpadSubmit = () => {
     if (feedback || !answer) return;
 
     const correctAns = numA * numB;
-    const isCorrect = parseInt(answer) === correctAns;
+    const isCorrect = parseInt(answer, 10) === correctAns;
 
     if (isCorrect) {
       setFeedback('correct');
@@ -147,29 +157,10 @@ export default function TimesTable() {
         </button>
       </div>
 
-      <div className="space-y-6 text-center">
-        <p className="font-mono text-4xl font-bold text-gray-900 dark:text-white">
-          {numA} × {numB} = ?
+      <div className="space-y-4 text-center">
+        <p className="font-mono text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white">
+          {numA} × {numB} = {answer || '?'}
         </p>
-
-        <form onSubmit={handleAnswerSubmit} className="flex gap-2">
-          <input
-            type="number"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            disabled={feedback !== null}
-            placeholder="Jawab..."
-            className="w-32 rounded-xl border border-gray-300 bg-white px-4 py-3 text-center font-mono text-xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-            autoFocus
-          />
-          <button
-            type="submit"
-            disabled={feedback !== null || !answer}
-            className="rounded-xl bg-indigo-600 px-6 font-bold text-white transition-colors hover:bg-indigo-700"
-          >
-            Submit
-          </button>
-        </form>
 
         {feedback && (
           <p
@@ -181,6 +172,16 @@ export default function TimesTable() {
             {feedback === 'correct' ? 'Benar!' : 'Salah!'}
           </p>
         )}
+
+        <div className="flex justify-center pt-2">
+          <GameNumpad
+            onDigit={handleNumpadDigit}
+            onDelete={handleNumpadDelete}
+            onSubmit={handleNumpadSubmit}
+            disabled={feedback !== null || gameOver}
+            submitLabel="Kirim"
+          />
+        </div>
       </div>
 
       {gameOver && result && (

@@ -50,12 +50,13 @@ function ChallengeContent() {
     mutationFn: () => api.post(`/score-challenges/${link}/accept`),
     onSuccess: () => refetch(),
   });
+  const { mutate: acceptChallenge } = acceptMutation;
 
   useEffect(() => {
     if (gameSlug && score && difficulty && link) {
-      acceptMutation.mutate();
+      acceptChallenge();
     }
-  }, [gameSlug, score, difficulty, link]);
+  }, [gameSlug, score, difficulty, link, acceptChallenge]);
 
   const handleSubmitScore = async (userScore: number) => {
     setSubmitting(true);

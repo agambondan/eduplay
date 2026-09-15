@@ -424,6 +424,8 @@ function MatchScreen({
     return () => window.clearInterval(timer);
   }, [match.status, timerTarget]);
 
+  const [activeTab, setActiveTab] = useState<'radar' | 'armada' | 'log'>('radar');
+
   return (
     <GameContainer maxWidth="max-w-6xl">
       <div className="space-y-5 py-6">
@@ -475,8 +477,47 @@ function MatchScreen({
           </div>
         )}
 
+        {/* Mobile Tab Switcher */}
+        <div className="flex rounded-xl bg-gray-100 p-1 lg:hidden dark:bg-slate-800">
+          <button
+            onClick={() => setActiveTab('radar')}
+            className={cn(
+              'flex-1 rounded-lg py-2 text-xs font-bold transition-all',
+              activeTab === 'radar'
+                ? 'bg-emerald-600 text-white shadow'
+                : 'text-gray-600 dark:text-slate-400'
+            )}
+          >
+            🎯 Radar Lawan
+          </button>
+          <button
+            onClick={() => setActiveTab('armada')}
+            className={cn(
+              'flex-1 rounded-lg py-2 text-xs font-bold transition-all',
+              activeTab === 'armada'
+                ? 'bg-emerald-600 text-white shadow'
+                : 'text-gray-600 dark:text-slate-400'
+            )}
+          >
+            🛡️ Armada Kamu
+          </button>
+          <button
+            onClick={() => setActiveTab('log')}
+            className={cn(
+              'flex-1 rounded-lg py-2 text-xs font-bold transition-all',
+              activeTab === 'log'
+                ? 'bg-emerald-600 text-white shadow'
+                : 'text-gray-600 dark:text-slate-400'
+            )}
+          >
+            📜 Log Match
+          </button>
+        </div>
+
         <div className="grid gap-5 lg:grid-cols-[1fr_320px_1fr]">
-          <BattleBoard title="Armada Kamu" board={match.my_board} disabled />
+          <div className={cn(activeTab !== 'armada' && 'hidden lg:block')}>
+            <BattleBoard title="Armada Kamu" board={match.my_board} disabled />
+          </div>
 
           <div className="space-y-4">
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -530,7 +571,12 @@ function MatchScreen({
               )}
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div
+              className={cn(
+                'rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800',
+                activeTab !== 'log' && 'hidden lg:block'
+              )}
+            >
               <div className="text-sm font-bold text-gray-900 dark:text-white">Log Match</div>
               <div className="mt-3 space-y-2">
                 {match.log.map((item, index) => (
@@ -567,13 +613,17 @@ function MatchScreen({
             </div>
           </div>
 
-          <BattleBoard
-            title="Radar Lawan"
-            board={match.target_board}
-            selectedTarget={question?.target}
-            onSelect={onTarget}
-            disabled={!match.my_turn || Boolean(question) || match.status === 'finished' || loading}
-          />
+          <div className={cn(activeTab !== 'radar' && 'hidden lg:block')}>
+            <BattleBoard
+              title="Radar Lawan"
+              board={match.target_board}
+              selectedTarget={question?.target}
+              onSelect={onTarget}
+              disabled={
+                !match.my_turn || Boolean(question) || match.status === 'finished' || loading
+              }
+            />
+          </div>
         </div>
       </div>
     </GameContainer>

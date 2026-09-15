@@ -163,6 +163,13 @@ const en: Record<string, string> = {
   'game.vector_slash.howto.4': 'Hold click & draw a STRAIGHT LINE for Dash Thrust (Piercing)',
   'game.vector_slash.controls': 'WASD: Move | Space/Shift: Dodge | Hold Click & Draw Gesture: Skill',
   'game.vector_slash.touch_controls': 'Drag finger to draw gesture skills. Tap Dodge button to evade.',
+  'game.bastion_siege.title': 'Bastion Siege',
+  'game.bastion_siege.desc': 'Parabolic physics defense! Fracture bridge pillars and trigger chain reaction barrel explosions!',
+  'game.bastion_siege.howto.1': 'Drag the catapult backward to adjust elevation angle & launch impulse',
+  'game.bastion_siege.howto.2': 'Target bridge support pillars to collapse enemy paths into the chasm',
+  'game.bastion_siege.howto.3': 'Shoot pulley chains to drop oil barrels and trigger massive chain explosions',
+  'game.bastion_siege.howto.4': 'Account for dynamic crosswind deflection during projectile flight',
+  'game.bastion_siege.controls': 'Drag backward to aim and release to launch projectile.',
 
   'game.start': 'Start!',
   'game.correct': 'Correct!',

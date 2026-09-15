@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '@/lib/stores/authStore';
 import DailyPrompt from './DailyPrompt';
 import InterestSelector from './InterestSelector';
@@ -63,12 +64,22 @@ export default function OnboardingFlow() {
           ))}
         </div>
 
-        {stepName === 'welcome' && (
-          <WelcomeStep username={user?.username || 'Player'} onNext={next} onSkip={skip} />
-        )}
-        {stepName === 'interests' && <InterestSelector onNext={next} onSkip={skip} />}
-        {stepName === 'daily' && <DailyPrompt onNext={next} onSkip={skip} />}
-        {stepName === 'push' && <PushPrompt onDone={completeOnboarding} onSkip={skip} />}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={stepName}
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+          >
+            {stepName === 'welcome' && (
+              <WelcomeStep username={user?.username || 'Player'} onNext={next} onSkip={skip} />
+            )}
+            {stepName === 'interests' && <InterestSelector onNext={next} onSkip={skip} />}
+            {stepName === 'daily' && <DailyPrompt onNext={next} onSkip={skip} />}
+            {stepName === 'push' && <PushPrompt onDone={completeOnboarding} onSkip={skip} />}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

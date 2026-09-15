@@ -24,7 +24,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div
       className={cn(
-        'flex min-h-screen flex-col bg-gray-50 dark:bg-slate-900',
+        'flex min-h-dvh flex-col bg-gray-50 dark:bg-slate-900',
         !isPlaying && 'pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0'
       )}
     >
