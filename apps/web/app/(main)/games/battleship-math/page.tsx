@@ -20,6 +20,7 @@ import {
 import { battleshipApi } from '@/lib/api/multiplayer';
 import { useAds } from '@/lib/hooks/useAds';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { useGameStore } from '@/lib/stores/gameStore';
 import { cn } from '@/lib/utils/cn';
 import { BannerAd } from '@/components/ads/BannerAd';
 import { InterstitialAd } from '@/components/ads/InterstitialAd';
@@ -424,6 +425,13 @@ function MatchScreen({
     return () => window.clearInterval(timer);
   }, [match.status, timerTarget]);
 
+  useEffect(() => {
+    useGameStore.getState().setPlaying(true);
+    return () => {
+      useGameStore.getState().setPlaying(false);
+    };
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'radar' | 'armada' | 'log'>('radar');
 
   return (
@@ -571,6 +579,33 @@ function MatchScreen({
               )}
             </div>
 
+            {match.status === 'active' && (
+              // Deliberately NOT tab-gated: Reward Reveal / Menyerah are
+              // primary actions, not part of the match log. Burying them
+              // behind the "Log Match" tab meant they were unreachable on
+              // mobile unless a player happened to tap that specific tab.
+              <div className="space-y-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <button
+                  onClick={onReveal}
+                  disabled={match.reveal_used || loading || revealing}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {revealing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Gift className="h-4 w-4" />
+                  )}
+                  {match.reveal_used ? 'Reveal Dipakai' : 'Reward Reveal'}
+                </button>
+                <button
+                  onClick={onResign}
+                  className="min-h-11 w-full rounded-xl border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                >
+                  Menyerah
+                </button>
+              </div>
+            )}
+
             <div
               className={cn(
                 'rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800',
@@ -588,28 +623,6 @@ function MatchScreen({
                   </p>
                 ))}
               </div>
-              {match.status === 'active' && (
-                <div className="mt-4 space-y-2">
-                  <button
-                    onClick={onReveal}
-                    disabled={match.reveal_used || loading || revealing}
-                    className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                  >
-                    {revealing ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Gift className="h-4 w-4" />
-                    )}
-                    {match.reveal_used ? 'Reveal Dipakai' : 'Reward Reveal'}
-                  </button>
-                  <button
-                    onClick={onResign}
-                    className="min-h-11 w-full rounded-xl border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/30"
-                  >
-                    Menyerah
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 
