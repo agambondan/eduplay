@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -16,6 +17,8 @@ import {
   Trophy,
 } from 'lucide-react';
 import { leaderboardApi } from '@/lib/api/leaderboard';
+import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
+import { usePrefersReducedMotion } from '@/lib/hooks/usePrefersReducedMotion';
 import { useLocale } from '@/lib/i18n';
 import { SITE_URL } from '@/lib/site';
 import { useAuthStore } from '@/lib/stores/authStore';
@@ -72,9 +75,24 @@ export function ResultScreen({
   const { t } = useLocale();
   const isGuestStore = useAuthStore((s) => s.isGuest);
   const isGuest = guestMode || isGuestStore;
+  const focusRef = useFocusTrap(true);
+  const reduceMotion = usePrefersReducedMotion();
 
   const [displayScore, setDisplayScore] = useState(0);
   const [displayXp, setDisplayXp] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, []);
 
   const { data: leaderboardData } = useQuery({
     queryKey: ['leaderboard', 'preview', gameSlug],
@@ -84,6 +102,11 @@ export function ResultScreen({
   });
 
   useEffect(() => {
+    if (reduceMotion) {
+      setDisplayScore(score);
+      setDisplayXp(xpEarned);
+      return;
+    }
     const steps = 20;
     const interval = 800 / steps;
     let step = 0;
@@ -94,7 +117,7 @@ export function ResultScreen({
       if (step >= steps) clearInterval(timer);
     }, interval);
     return () => clearInterval(timer);
-  }, [score, xpEarned]);
+  }, [score, xpEarned, reduceMotion]);
 
   const getShareContent = () => {
     const text = shareText || `Aku dapat ${score} poin di ${gameName}! Main yuk di EduPlay 🎮`;
@@ -143,274 +166,289 @@ export function ResultScreen({
     });
   };
 
-  return (
-    <motion.div
-      className="flex flex-col items-center gap-6 py-8 text-center"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('game.result') || gameName}
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-black/60 p-4"
+      style={{
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+      }}
     >
-      {description && (
-        <p aria-live="assertive" className="text-sm text-gray-500 dark:text-slate-400">
-          {description}
-        </p>
-      )}
-
-      {/* Score */}
       <motion.div
-        aria-live="polite"
-        className="flex flex-col items-center"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3 }}
+        ref={focusRef}
+        className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl bg-white p-6 py-8 text-center shadow-2xl dark:bg-slate-900"
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
       >
-        <div className="mb-1 text-sm font-semibold uppercase tracking-widest text-gray-400">
-          {t('game.score')}
-        </div>
-        <div className="font-mono text-6xl font-black text-gray-900 dark:text-white">
-          {displayScore.toLocaleString('id-ID')}
-        </div>
-        {isNewHighscore && (
-          <motion.div
-            className="mt-2 flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.4, type: 'spring', stiffness: 300 }}
-          >
-            <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-            {t('game.new_highscore')}
-            {previousHighscore ? ` (+${score - previousHighscore})` : ''}
-          </motion.div>
+        {description && (
+          <p aria-live="assertive" className="text-sm text-gray-500 dark:text-slate-400">
+            {description}
+          </p>
         )}
-      </motion.div>
 
-      {/* Score Breakdown */}
-      {breakdown.length > 0 && (
+        {/* Score */}
         <motion.div
-          className="grid w-full grid-cols-2 gap-2 rounded-2xl bg-gray-50 p-3 dark:bg-slate-800/60"
-          initial={{ opacity: 0, y: 10 }}
+          aria-live="polite"
+          className="flex flex-col items-center"
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.3 }}
+          transition={{ delay: 0.1, duration: 0.3 }}
         >
-          {breakdown.map((item, i) => (
-            <div
-              key={i}
-              className="shadow-xs flex items-center justify-between rounded-xl bg-white px-3 py-2 dark:bg-slate-800"
-            >
-              <span className="text-xs text-gray-500 dark:text-slate-400">{item.label}</span>
-              <span
-                className={cn(
-                  'font-mono text-xs font-bold',
-                  item.isBonus
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-gray-900 dark:text-white'
-                )}
-              >
-                {typeof item.value === 'number' ? item.value.toLocaleString('id-ID') : item.value}
-              </span>
-            </div>
-          ))}
-        </motion.div>
-      )}
-
-      {/* Leaderboard Top 3 Preview */}
-      {showLeaderboard && leaderboardData?.entries && leaderboardData.entries.length > 0 && (
-        <motion.div
-          className="w-full rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18, duration: 0.3 }}
-        >
-          <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
-            <span className="flex items-center gap-1">
-              <Medal className="h-3.5 w-3.5 text-amber-500" /> {t('leaderboard.top_players')}
-            </span>
-            <Link
-              href={`/leaderboard?game=${gameSlug}`}
-              className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
-            >
-              {t('common.view_all')}
-            </Link>
+          <div className="mb-1 text-sm font-semibold uppercase tracking-widest text-gray-400">
+            {t('game.score')}
           </div>
-          <div className="space-y-1.5">
-            {leaderboardData.entries.slice(0, 3).map((entry, idx) => (
+          <div className="font-mono text-6xl font-black text-gray-900 dark:text-white">
+            {displayScore.toLocaleString('id-ID')}
+          </div>
+          {isNewHighscore && (
+            <motion.div
+              className="mt-2 flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+              initial={reduceMotion ? false : { scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.4, type: 'spring', stiffness: 300 }}
+            >
+              <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+              {t('game.new_highscore')}
+              {previousHighscore ? ` (+${score - previousHighscore})` : ''}
+            </motion.div>
+          )}
+        </motion.div>
+
+        {/* Score Breakdown */}
+        {breakdown.length > 0 && (
+          <motion.div
+            className="grid w-full grid-cols-2 gap-2 rounded-2xl bg-gray-50 p-3 dark:bg-slate-800/60"
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.3 }}
+          >
+            {breakdown.map((item, i) => (
               <div
-                key={entry.rank || idx}
-                className="flex items-center justify-between rounded-lg px-2 py-1 text-xs font-medium hover:bg-gray-50 dark:hover:bg-slate-700/50"
+                key={i}
+                className="shadow-xs flex items-center justify-between rounded-xl bg-white px-3 py-2 dark:bg-slate-800"
               >
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold',
-                      idx === 0
-                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-                        : idx === 1
-                          ? 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                          : 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
-                    )}
-                  >
-                    {idx + 1}
-                  </span>
-                  <span className="max-w-[140px] truncate text-gray-800 dark:text-slate-200">
-                    {entry.username}
-                  </span>
-                </div>
-                <span className="font-mono font-bold text-gray-900 dark:text-white">
-                  {entry.score.toLocaleString('id-ID')}
+                <span className="text-xs text-gray-500 dark:text-slate-400">{item.label}</span>
+                <span
+                  className={cn(
+                    'font-mono text-xs font-bold',
+                    item.isBonus
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-gray-900 dark:text-white'
+                  )}
+                >
+                  {typeof item.value === 'number' ? item.value.toLocaleString('id-ID') : item.value}
                 </span>
               </div>
             ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* XP / Guest CTA */}
-      <motion.div
-        className="w-full"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.3 }}
-      >
-        {isGuest ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-800/30 dark:bg-amber-900/10">
-            <div className="flex items-center gap-2">
-              <LogIn className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                {t('game.guest_prompt')}
-              </span>
-            </div>
-            <Link
-              href={`/register?from=${gameSlug}`}
-              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700"
-            >
-              <LogIn className="h-4 w-4" />
-              {t('auth.register_free')}
-            </Link>
-          </div>
-        ) : xpEarned > 0 ? (
-          <div className="flex items-center justify-center gap-2 rounded-xl bg-indigo-50 px-5 py-3 dark:bg-indigo-900/20">
-            <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            <span className="font-bold text-indigo-700 dark:text-indigo-300">
-              +{displayXp} {t('profile.xp')}
-            </span>
-            {levelUp && newLevel && (
-              <span className="ml-1 rounded-full bg-indigo-600 px-2 py-0.5 text-xs font-bold text-white">
-                {t('profile.level')} {newLevel}!
-              </span>
-            )}
-          </div>
-        ) : null}
-      </motion.div>
-
-      {/* Achievements */}
-      {achievementsUnlocked.length > 0 && (
-        <motion.div
-          className="w-full space-y-2"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
-        >
-          <div className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-            {t('achievement.unlocked')}
-          </div>
-          {achievementsUnlocked.map((ach) => (
-            <div
-              key={ach.name}
-              className="flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-2 dark:border-amber-900/20 dark:bg-amber-900/10"
-            >
-              <Trophy className="h-4 w-4 text-amber-500" />
-              <span className="flex-1 text-left text-sm font-bold text-gray-900 dark:text-white">
-                {ach.name}
-              </span>
-              <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                +{ach.xp_reward} {t('profile.xp')}
-              </span>
-            </div>
-          ))}
-        </motion.div>
-      )}
-
-      {/* Share row */}
-      <motion.div
-        className="w-full"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.32, duration: 0.3 }}
-      >
-        <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">
-          {t('game.share_result')}
-        </div>
-        <div className="flex justify-center gap-3">
-          {/* WhatsApp */}
-          <button
-            onClick={handleWhatsApp}
-            aria-label="Bagikan ke WhatsApp"
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-500 text-white shadow-sm transition-colors hover:bg-green-600"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.528 5.849L0 24l6.335-1.508A11.933 11.933 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.787 9.787 0 0 1-5.034-1.388l-.36-.214-3.762.896.953-3.665-.237-.376A9.794 9.794 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z" />
-            </svg>
-          </button>
-
-          {/* Twitter / X */}
-          <button
-            onClick={handleTwitter}
-            aria-label="Bagikan ke Twitter/X"
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-black text-white shadow-sm transition-colors hover:bg-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.261 5.636 5.903-5.636zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-            </svg>
-          </button>
-
-          {/* Native share / copy */}
-          <button
-            onClick={handleNativeShare}
-            aria-label="Bagikan atau salin"
-            className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
-          >
-            <Share2 className="h-4 w-4" />
-          </button>
-
-          {/* Copy link */}
-          <button
-            onClick={handleCopyLink}
-            aria-label="Salin tautan"
-            aria-live="polite"
-            className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
-          >
-            <Copy className="h-4 w-4" />
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Actions */}
-      <motion.div
-        className="flex w-full gap-3"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.3 }}
-      >
-        {onReplay && (
-          <motion.button
-            onClick={onReplay}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white transition-colors hover:bg-indigo-700"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <RotateCcw className="h-4 w-4" />
-            {t('game.replay')}
-          </motion.button>
+          </motion.div>
         )}
-        <Link
-          href="/games"
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700"
+
+        {/* Leaderboard Top 3 Preview */}
+        {showLeaderboard && leaderboardData?.entries && leaderboardData.entries.length > 0 && (
+          <motion.div
+            className="w-full rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18, duration: 0.3 }}
+          >
+            <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+              <span className="flex items-center gap-1">
+                <Medal className="h-3.5 w-3.5 text-amber-500" /> {t('leaderboard.top_players')}
+              </span>
+              <Link
+                href={`/leaderboard?game=${gameSlug}`}
+                className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+              >
+                {t('common.view_all')}
+              </Link>
+            </div>
+            <div className="space-y-1.5">
+              {leaderboardData.entries.slice(0, 3).map((entry, idx) => (
+                <div
+                  key={entry.rank || idx}
+                  className="flex items-center justify-between rounded-lg px-2 py-1 text-xs font-medium hover:bg-gray-50 dark:hover:bg-slate-700/50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold',
+                        idx === 0
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                          : idx === 1
+                            ? 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                            : 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
+                      )}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span className="max-w-[140px] truncate text-gray-800 dark:text-slate-200">
+                      {entry.username}
+                    </span>
+                  </div>
+                  <span className="font-mono font-bold text-gray-900 dark:text-white">
+                    {entry.score.toLocaleString('id-ID')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* XP / Guest CTA */}
+        <motion.div
+          className="w-full"
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
         >
-          <Home className="h-4 w-4" />
-          {t('game.all_games')}
-        </Link>
+          {isGuest ? (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-800/30 dark:bg-amber-900/10">
+              <div className="flex items-center gap-2">
+                <LogIn className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                  {t('game.guest_prompt')}
+                </span>
+              </div>
+              <Link
+                href={`/register?from=${gameSlug}`}
+                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indigo-700"
+              >
+                <LogIn className="h-4 w-4" />
+                {t('auth.register_free')}
+              </Link>
+            </div>
+          ) : xpEarned > 0 ? (
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-indigo-50 px-5 py-3 dark:bg-indigo-900/20">
+              <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              <span className="font-bold text-indigo-700 dark:text-indigo-300">
+                +{displayXp} {t('profile.xp')}
+              </span>
+              {levelUp && newLevel && (
+                <span className="ml-1 rounded-full bg-indigo-600 px-2 py-0.5 text-xs font-bold text-white">
+                  {t('profile.level')} {newLevel}!
+                </span>
+              )}
+            </div>
+          ) : null}
+        </motion.div>
+
+        {/* Achievements */}
+        {achievementsUnlocked.length > 0 && (
+          <motion.div
+            className="w-full space-y-2"
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.3 }}
+          >
+            <div className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+              {t('achievement.unlocked')}
+            </div>
+            {achievementsUnlocked.map((ach) => (
+              <div
+                key={ach.name}
+                className="flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-2 dark:border-amber-900/20 dark:bg-amber-900/10"
+              >
+                <Trophy className="h-4 w-4 text-amber-500" />
+                <span className="flex-1 text-left text-sm font-bold text-gray-900 dark:text-white">
+                  {ach.name}
+                </span>
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                  +{ach.xp_reward} {t('profile.xp')}
+                </span>
+              </div>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Share row */}
+        <motion.div
+          className="w-full"
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.32, duration: 0.3 }}
+        >
+          <div className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">
+            {t('game.share_result')}
+          </div>
+          <div className="flex justify-center gap-3">
+            {/* WhatsApp */}
+            <button
+              onClick={handleWhatsApp}
+              aria-label="Bagikan ke WhatsApp"
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-500 text-white shadow-sm transition-colors hover:bg-green-600"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.528 5.849L0 24l6.335-1.508A11.933 11.933 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.787 9.787 0 0 1-5.034-1.388l-.36-.214-3.762.896.953-3.665-.237-.376A9.794 9.794 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z" />
+              </svg>
+            </button>
+
+            {/* Twitter / X */}
+            <button
+              onClick={handleTwitter}
+              aria-label="Bagikan ke Twitter/X"
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-black text-white shadow-sm transition-colors hover:bg-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.261 5.636 5.903-5.636zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </button>
+
+            {/* Native share / copy */}
+            <button
+              onClick={handleNativeShare}
+              aria-label="Bagikan atau salin"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
+
+            {/* Copy link */}
+            <button
+              onClick={handleCopyLink}
+              aria-label="Salin tautan"
+              aria-live="polite"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Actions */}
+        <motion.div
+          className="flex w-full gap-3"
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.3 }}
+        >
+          {onReplay && (
+            <motion.button
+              onClick={onReplay}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white transition-colors hover:bg-indigo-700"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <RotateCcw className="h-4 w-4" />
+              {t('game.replay')}
+            </motion.button>
+          )}
+          <Link
+            href="/games"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700"
+          >
+            <Home className="h-4 w-4" />
+            {t('game.all_games')}
+          </Link>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </div>,
+    document.body
   );
 }

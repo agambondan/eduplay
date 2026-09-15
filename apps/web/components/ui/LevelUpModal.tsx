@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Zap } from 'lucide-react';
 import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
 import { useLocale } from '@/lib/i18n';
@@ -13,6 +14,19 @@ interface LevelUpModalProps {
 export function LevelUpModal({ newLevel, onClose }: LevelUpModalProps) {
   const { t } = useLocale();
   const focusRef = useFocusTrap(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);
@@ -27,12 +41,18 @@ export function LevelUpModal({ newLevel, onClose }: LevelUpModalProps) {
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label={`${t('level.up')} ${newLevel}`}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-black/60 p-4"
+      style={{
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+      }}
       onClick={onClose}
     >
       <div
@@ -43,14 +63,14 @@ export function LevelUpModal({ newLevel, onClose }: LevelUpModalProps) {
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-1 text-white/60 hover:text-white"
+          className="touch-target absolute right-2 top-2 flex items-center justify-center rounded-full text-white/60 hover:text-white"
           aria-label={t('common.close')}
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
 
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 shadow-inner">
-          <Zap className="h-10 w-10 fill-yellow-300 text-yellow-300" />
+          <Zap className="h-10 w-10 fill-yellow-300 text-yellow-300" aria-hidden="true" />
         </div>
 
         <div>
@@ -64,7 +84,7 @@ export function LevelUpModal({ newLevel, onClose }: LevelUpModalProps) {
 
         <button
           onClick={onClose}
-          className="rounded-xl bg-white px-6 py-2 font-bold text-indigo-600 transition-all hover:bg-indigo-50"
+          className="touch-target rounded-xl bg-white px-6 py-2 font-bold text-indigo-600 transition-colors hover:bg-indigo-50"
         >
           {t('game.resume')}
         </button>
@@ -76,6 +96,7 @@ export function LevelUpModal({ newLevel, onClose }: LevelUpModalProps) {
                     to   { opacity: 1; transform: scale(1); }
                 }
             `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }

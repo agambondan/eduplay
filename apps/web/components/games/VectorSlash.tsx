@@ -1,20 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Pause,
-  Shield,
-  Zap,
-  Flame,
-  Swords,
-  Sparkles,
-  Move,
-  RotateCcw,
-} from 'lucide-react';
+import { Flame, Move, Pause, RotateCcw, Shield, Sparkles, Swords, Zap } from 'lucide-react';
 import { useGame } from '@/lib/hooks/useGame';
 import { useIsTouchDevice } from '@/lib/hooks/useIsTouchDevice';
 import { useLocale } from '@/lib/i18n';
 import { useSoundStore } from '@/lib/stores/soundStore';
+import { playTone } from '@/lib/utils/audioSynth';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
@@ -74,7 +66,7 @@ interface HazardZone {
 export function VectorSlash() {
   const { t } = useLocale();
   const isTouch = useIsTouchDevice();
-  const { playSound } = useSoundStore();
+  const { playSound, soundEnabled, volume } = useSoundStore();
   const { startGame, endGame, submitScore } = useGame('vector-slash', 'Vector Slash', 'arcade');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -90,6 +82,7 @@ export function VectorSlash() {
 
   // Gameplay Refs
   const isPlayingRef = useRef(false);
+  const gameOverRef = useRef(false);
   const isPausedRef = useRef(false);
   const scoreRef = useRef(0);
   const hpRef = useRef(100);
@@ -126,62 +119,55 @@ export function VectorSlash() {
   const waveRef = useRef(1);
 
   // Web Audio Synth for Custom Slashes
-  const playSfx = useCallback((type: 'slash' | 'whirlwind' | 'thrust' | 'dodge' | 'slam' | 'hit') => {
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      const now = ctx.currentTime;
-      if (type === 'whirlwind') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(180, now);
-        osc.frequency.exponentialRampToValueAtTime(800, now + 0.25);
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-        osc.start(now);
-        osc.stop(now + 0.25);
-      } else if (type === 'thrust') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(900, now);
-        osc.frequency.exponentialRampToValueAtTime(150, now + 0.2);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-        osc.start(now);
-        osc.stop(now + 0.2);
-      } else if (type === 'dodge') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(300, now);
-        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
-        gain.gain.setValueAtTime(0.08, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-        osc.start(now);
-        osc.stop(now + 0.1);
-      } else if (type === 'slam') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(120, now);
-        osc.frequency.exponentialRampToValueAtTime(30, now + 0.35);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-        osc.start(now);
-        osc.stop(now + 0.35);
-      } else if (type === 'hit') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(500, now);
-        osc.frequency.linearRampToValueAtTime(200, now + 0.08);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-        osc.start(now);
-        osc.stop(now + 0.08);
-      }
-    } catch {
-      // Audio context restricted or unavailable
-    }
-  }, []);
+  const playSfx = useCallback(
+    (type: 'slash' | 'whirlwind' | 'thrust' | 'dodge' | 'slam' | 'hit') => {
+      const rampFloor = Math.max(0.0001, 0.001 * volume);
+      playTone(soundEnabled, volume, (ctx, osc, gain, now) => {
+        if (type === 'whirlwind') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, now);
+          osc.frequency.exponentialRampToValueAtTime(800, now + 0.25);
+          gain.gain.setValueAtTime(0.12 * volume, now);
+          gain.gain.exponentialRampToValueAtTime(rampFloor, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } else if (type === 'thrust') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(900, now);
+          osc.frequency.exponentialRampToValueAtTime(150, now + 0.2);
+          gain.gain.setValueAtTime(0.15 * volume, now);
+          gain.gain.exponentialRampToValueAtTime(rampFloor, now + 0.2);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        } else if (type === 'dodge') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+          gain.gain.setValueAtTime(0.08 * volume, now);
+          gain.gain.exponentialRampToValueAtTime(rampFloor, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === 'slam') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(120, now);
+          osc.frequency.exponentialRampToValueAtTime(30, now + 0.35);
+          gain.gain.setValueAtTime(0.2 * volume, now);
+          gain.gain.exponentialRampToValueAtTime(rampFloor, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'hit') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(500, now);
+          osc.frequency.linearRampToValueAtTime(200, now + 0.08);
+          gain.gain.setValueAtTime(0.1 * volume, now);
+          gain.gain.exponentialRampToValueAtTime(rampFloor, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        }
+      });
+    },
+    [soundEnabled, volume]
+  );
 
   const triggerParticles = useCallback((x: number, y: number, color: string, count = 12) => {
     for (let i = 0; i < count; i++) {
@@ -202,6 +188,7 @@ export function VectorSlash() {
 
   const handleGameOver = useCallback(async () => {
     isPlayingRef.current = false;
+    gameOverRef.current = true;
     setIsPlaying(false);
     setGameOver(true);
     playSound('lose');
@@ -212,112 +199,115 @@ export function VectorSlash() {
   }, [submitScore, endGame, playSound]);
 
   // Gesture Recognition Analysis
-  const evaluateGesture = useCallback((points: Point[]) => {
-    if (points.length < 5) return;
+  const evaluateGesture = useCallback(
+    (points: Point[]) => {
+      if (points.length < 5) return;
 
-    const start = points[0];
-    const end = points[points.length - 1];
+      const start = points[0];
+      const end = points[points.length - 1];
 
-    // Total stroke path length
-    let totalLen = 0;
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
+      // Total stroke path length
+      let totalLen = 0;
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
 
-    for (let i = 0; i < points.length; i++) {
-      minX = Math.min(minX, points[i].x);
-      maxX = Math.max(maxX, points[i].x);
-      minY = Math.min(minY, points[i].y);
-      maxY = Math.max(maxY, points[i].y);
-      if (i > 0) {
-        totalLen += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
-      }
-    }
-
-    const distStartEnd = Math.hypot(end.x - start.x, end.y - start.y);
-    const boxW = Math.max(1, maxX - minX);
-    const boxH = Math.max(1, maxY - minY);
-    const aspectRatio = boxW / boxH;
-
-    // 1. Check Circle Gesture (Whirlwind Slash)
-    const isClosedLoop = distStartEnd < 55 || distStartEnd / totalLen < 0.28;
-    const isBigEnough = totalLen > 110 && boxW > 40 && boxH > 40;
-    const isRoughlyCircular = aspectRatio >= 0.45 && aspectRatio <= 2.2;
-
-    if (isClosedLoop && isBigEnough && isRoughlyCircular) {
-      // Execute Whirlwind Slash
-      const p = playerRef.current;
-      p.whirlwindTimer = 0.35;
-      playSfx('whirlwind');
-      setGestureFeedback('🌀 WHIRLWIND SLASH!');
-      setTimeout(() => setGestureFeedback(null), 1200);
-
-      // Hit enemies around player
-      const whirlRadius = 140;
-      let hitCount = 0;
-      for (const e of enemiesRef.current) {
-        const d = Math.hypot(e.x - p.x, e.y - p.y);
-        if (d <= whirlRadius) {
-          e.hp -= 80;
-          hitCount++;
-          // Knockback
-          const angle = Math.atan2(e.y - p.y, e.x - p.x);
-          e.x += Math.cos(angle) * 60;
-          e.y += Math.sin(angle) * 60;
-          triggerParticles(e.x, e.y, '#38bdf8', 16);
+      for (let i = 0; i < points.length; i++) {
+        minX = Math.min(minX, points[i].x);
+        maxX = Math.max(maxX, points[i].x);
+        minY = Math.min(minY, points[i].y);
+        maxY = Math.max(maxY, points[i].y);
+        if (i > 0) {
+          totalLen += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
         }
       }
 
-      if (hitCount > 0) {
-        comboRef.current += hitCount;
-        comboTimerRef.current = 3.0;
-        setCombo(comboRef.current);
-        scoreRef.current += hitCount * 120 * Math.max(1, comboRef.current);
-        setScore(scoreRef.current);
+      const distStartEnd = Math.hypot(end.x - start.x, end.y - start.y);
+      const boxW = Math.max(1, maxX - minX);
+      const boxH = Math.max(1, maxY - minY);
+      const aspectRatio = boxW / boxH;
+
+      // 1. Check Circle Gesture (Whirlwind Slash)
+      const isClosedLoop = distStartEnd < 55 || distStartEnd / totalLen < 0.28;
+      const isBigEnough = totalLen > 110 && boxW > 40 && boxH > 40;
+      const isRoughlyCircular = aspectRatio >= 0.45 && aspectRatio <= 2.2;
+
+      if (isClosedLoop && isBigEnough && isRoughlyCircular) {
+        // Execute Whirlwind Slash
+        const p = playerRef.current;
+        p.whirlwindTimer = 0.35;
+        playSfx('whirlwind');
+        setGestureFeedback('🌀 WHIRLWIND SLASH!');
+        setTimeout(() => setGestureFeedback(null), 1200);
+
+        // Hit enemies around player
+        const whirlRadius = 140;
+        let hitCount = 0;
+        for (const e of enemiesRef.current) {
+          const d = Math.hypot(e.x - p.x, e.y - p.y);
+          if (d <= whirlRadius) {
+            e.hp -= 80;
+            hitCount++;
+            // Knockback
+            const angle = Math.atan2(e.y - p.y, e.x - p.x);
+            e.x += Math.cos(angle) * 60;
+            e.y += Math.sin(angle) * 60;
+            triggerParticles(e.x, e.y, '#38bdf8', 16);
+          }
+        }
+
+        if (hitCount > 0) {
+          comboRef.current += hitCount;
+          comboTimerRef.current = 3.0;
+          setCombo(comboRef.current);
+          scoreRef.current += hitCount * 120 * Math.max(1, comboRef.current);
+          setScore(scoreRef.current);
+        }
+        return;
       }
-      return;
-    }
 
-    // 2. Check Line Gesture (Dash Thrust)
-    const isStraightLine = distStartEnd / totalLen > 0.78 && totalLen > 65;
-    if (isStraightLine) {
-      const p = playerRef.current;
-      const dirX = (end.x - start.x) / distStartEnd;
-      const dirY = (end.y - start.y) / distStartEnd;
+      // 2. Check Line Gesture (Dash Thrust)
+      const isStraightLine = distStartEnd / totalLen > 0.78 && totalLen > 65;
+      if (isStraightLine) {
+        const p = playerRef.current;
+        const dirX = (end.x - start.x) / distStartEnd;
+        const dirY = (end.y - start.y) / distStartEnd;
 
-      p.thrustTimer = 0.22;
-      p.thrustDirX = dirX;
-      p.thrustDirY = dirY;
-      p.invincibleTimer = 0.3;
-      playSfx('thrust');
-      setGestureFeedback('⚡ VECTOR DASH THRUST!');
-      setTimeout(() => setGestureFeedback(null), 1200);
+        p.thrustTimer = 0.22;
+        p.thrustDirX = dirX;
+        p.thrustDirY = dirY;
+        p.invincibleTimer = 0.3;
+        playSfx('thrust');
+        setGestureFeedback('⚡ VECTOR DASH THRUST!');
+        setTimeout(() => setGestureFeedback(null), 1200);
 
-      // Pierce through line trajectory
-      let thrustKills = 0;
-      for (const e of enemiesRef.current) {
-        const toEx = e.x - p.x;
-        const toEy = e.y - p.y;
-        const proj = toEx * dirX + toEy * dirY;
-        const perp = Math.abs(toEx * -dirY + toEy * dirX);
+        // Pierce through line trajectory
+        let thrustKills = 0;
+        for (const e of enemiesRef.current) {
+          const toEx = e.x - p.x;
+          const toEy = e.y - p.y;
+          const proj = toEx * dirX + toEy * dirY;
+          const perp = Math.abs(toEx * -dirY + toEy * dirX);
 
-        if (proj >= 0 && proj <= 240 && perp <= e.size + 20) {
-          e.hp -= 120;
-          thrustKills++;
-          triggerParticles(e.x, e.y, '#c084fc', 20);
+          if (proj >= 0 && proj <= 240 && perp <= e.size + 20) {
+            e.hp -= 120;
+            thrustKills++;
+            triggerParticles(e.x, e.y, '#c084fc', 20);
+          }
+        }
+
+        if (thrustKills > 0) {
+          comboRef.current += thrustKills;
+          comboTimerRef.current = 3.5;
+          setCombo(comboRef.current);
+          scoreRef.current += thrustKills * 150 * Math.max(1, comboRef.current);
+          setScore(scoreRef.current);
         }
       }
-
-      if (thrustKills > 0) {
-        comboRef.current += thrustKills;
-        comboTimerRef.current = 3.5;
-        setCombo(comboRef.current);
-        scoreRef.current += thrustKills * 150 * Math.max(1, comboRef.current);
-        setScore(scoreRef.current);
-      }
-    }
-  }, [playSfx, triggerParticles]);
+    },
+    [playSfx, triggerParticles]
+  );
 
   // Dash Action
   const performDodge = useCallback(() => {
@@ -356,6 +346,8 @@ export function VectorSlash() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    canvas.setPointerCapture(e.pointerId);
+
     const rect = canvas.getBoundingClientRect();
     const scaleX = CANVAS_WIDTH / rect.width;
     const scaleY = CANVAS_HEIGHT / rect.height;
@@ -391,52 +383,56 @@ export function VectorSlash() {
     gestureTrailRef.current = [];
   }, [evaluateGesture]);
 
-  const handleStart = useCallback((difficulty: 'easy' | 'medium' | 'hard' = 'easy') => {
-    enemiesRef.current = [];
-    hazardsRef.current = [];
-    particlesRef.current = [];
-    afterImagesRef.current = [];
-    gestureTrailRef.current = [];
+  const handleStart = useCallback(
+    (difficulty: 'easy' | 'medium' | 'hard' = 'easy') => {
+      enemiesRef.current = [];
+      hazardsRef.current = [];
+      particlesRef.current = [];
+      afterImagesRef.current = [];
+      gestureTrailRef.current = [];
 
-    hpRef.current = 100;
-    staminaRef.current = 100;
-    scoreRef.current = 0;
-    comboRef.current = 0;
-    comboTimerRef.current = 0;
-    spawnTimerRef.current = 0;
-    waveRef.current = 1;
+      hpRef.current = 100;
+      staminaRef.current = 100;
+      scoreRef.current = 0;
+      comboRef.current = 0;
+      comboTimerRef.current = 0;
+      spawnTimerRef.current = 0;
+      waveRef.current = 1;
 
-    playerRef.current = {
-      x: CANVAS_WIDTH / 2,
-      y: CANVAS_HEIGHT / 2,
-      vx: 0,
-      vy: 0,
-      angle: 0,
-      isDashing: false,
-      dashTimer: 0,
-      dashDirX: 0,
-      dashDirY: 0,
-      invincibleTimer: 0,
-      whirlwindTimer: 0,
-      thrustTimer: 0,
-      thrustDirX: 0,
-      thrustDirY: 0,
-    };
+      playerRef.current = {
+        x: CANVAS_WIDTH / 2,
+        y: CANVAS_HEIGHT / 2,
+        vx: 0,
+        vy: 0,
+        angle: 0,
+        isDashing: false,
+        dashTimer: 0,
+        dashDirX: 0,
+        dashDirY: 0,
+        invincibleTimer: 0,
+        whirlwindTimer: 0,
+        thrustTimer: 0,
+        thrustDirX: 0,
+        thrustDirY: 0,
+      };
 
-    setHp(100);
-    setStamina(100);
-    setScore(0);
-    setCombo(0);
-    setGameOver(false);
-    setIsPaused(false);
-    setGestureFeedback(null);
+      setHp(100);
+      setStamina(100);
+      setScore(0);
+      setCombo(0);
+      setGameOver(false);
+      setIsPaused(false);
+      setGestureFeedback(null);
 
-    startGame(difficulty);
-    isPlayingRef.current = true;
-    isPausedRef.current = false;
-    setIsPlaying(true);
-    playSound('win');
-  }, [startGame, playSound]);
+      startGame(difficulty);
+      gameOverRef.current = false;
+      isPlayingRef.current = true;
+      isPausedRef.current = false;
+      setIsPlaying(true);
+      playSound('win');
+    },
+    [startGame, playSound]
+  );
 
   // Keyboard controls listener
   useEffect(() => {
@@ -465,6 +461,8 @@ export function VectorSlash() {
     let lastTime = performance.now();
 
     const loop = (now: number) => {
+      if (gameOverRef.current) return;
+
       const dt = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
 
@@ -557,10 +555,19 @@ export function VectorSlash() {
             const edge = Math.floor(Math.random() * 4);
             let ex = 0;
             let ey = 0;
-            if (edge === 0) { ex = Math.random() * CANVAS_WIDTH; ey = 0; }
-            else if (edge === 1) { ex = CANVAS_WIDTH; ey = Math.random() * CANVAS_HEIGHT; }
-            else if (edge === 2) { ex = Math.random() * CANVAS_WIDTH; ey = CANVAS_HEIGHT; }
-            else { ex = 0; ey = Math.random() * CANVAS_HEIGHT; }
+            if (edge === 0) {
+              ex = Math.random() * CANVAS_WIDTH;
+              ey = 0;
+            } else if (edge === 1) {
+              ex = CANVAS_WIDTH;
+              ey = Math.random() * CANVAS_HEIGHT;
+            } else if (edge === 2) {
+              ex = Math.random() * CANVAS_WIDTH;
+              ey = CANVAS_HEIGHT;
+            } else {
+              ex = 0;
+              ey = Math.random() * CANVAS_HEIGHT;
+            }
 
             enemiesRef.current.push({
               id: `enemy_${Date.now()}_${Math.random()}`,
@@ -804,10 +811,10 @@ export function VectorSlash() {
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-500 ring-1 ring-cyan-500/20">
           <Swords className="h-8 w-8" />
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl dark:text-white">
           {t('game.vector_slash.title')}
         </h1>
-        <p className="max-w-md text-sm text-gray-500 dark:text-slate-400 sm:text-base">
+        <p className="max-w-md text-sm text-gray-500 sm:text-base dark:text-slate-400">
           {t('game.vector_slash.desc')}
         </p>
 
@@ -849,36 +856,38 @@ export function VectorSlash() {
   return (
     <div className="flex flex-col items-center gap-4 py-2">
       {/* Top HUD */}
-      <div className="flex w-full max-w-[640px] items-center justify-between gap-2 px-2">
-        <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex w-full max-w-[640px] flex-wrap items-center justify-between gap-x-2 gap-y-2 px-2">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-1.5 rounded-lg bg-rose-500/10 px-3 py-1 text-xs font-bold text-rose-500">
-            <Shield className="h-4 w-4" />
+            <Shield className="h-4 w-4" aria-hidden="true" />
             <span>HP: {hp}%</span>
           </div>
           <div className="flex items-center gap-1.5 rounded-lg bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-500">
-            <Zap className="h-4 w-4" />
+            <Zap className="h-4 w-4" aria-hidden="true" />
             <span>Stamina: {stamina}%</span>
           </div>
           {combo > 1 && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-extrabold text-amber-500 animate-pulse">
-              <Flame className="h-4 w-4" />
+            <div className="flex animate-pulse items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-extrabold text-amber-500">
+              <Flame className="h-4 w-4" aria-hidden="true" />
               <span>COMBO x{combo}</span>
             </div>
           )}
         </div>
 
-        <ScoreBoard score={score} />
+        <div className="flex items-center gap-2">
+          <ScoreBoard score={score} />
 
-        <button
-          onClick={() => {
-            isPausedRef.current = !isPaused;
-            setIsPaused(!isPaused);
-          }}
-          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800"
-          aria-label={t('game.pause_label')}
-        >
-          <Pause className="h-4 w-4" />
-        </button>
+          <button
+            onClick={() => {
+              isPausedRef.current = !isPaused;
+              setIsPaused(!isPaused);
+            }}
+            className="touch-target flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800"
+            aria-label={t('game.pause_label')}
+          >
+            <Pause className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       {/* Canvas Area */}
@@ -895,7 +904,7 @@ export function VectorSlash() {
 
         {/* Gesture Recognition Popup Banner */}
         {gestureFeedback && (
-          <div className="animate-bounce absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-purple-600/90 px-5 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-xl">
+          <div className="absolute left-1/2 top-4 flex -translate-x-1/2 animate-bounce items-center gap-2 rounded-full bg-purple-600/90 px-5 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-xl">
             <Sparkles className="h-4 w-4 text-amber-300" />
             <span>{gestureFeedback}</span>
           </div>
@@ -910,7 +919,7 @@ export function VectorSlash() {
             disabled={stamina < 25}
             className="flex items-center gap-2 rounded-2xl bg-cyan-600 px-6 py-3 font-extrabold text-white shadow-lg active:scale-95 disabled:opacity-40"
           >
-            <Move className="h-5 w-5" />
+            <Move className="h-5 w-5" aria-hidden="true" />
             <span>DODGE ROLL</span>
           </button>
         </div>

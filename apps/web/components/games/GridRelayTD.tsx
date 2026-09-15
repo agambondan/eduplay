@@ -2,20 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Pause,
-  Zap,
-  Battery,
-  ShieldAlert,
-  Cpu,
-  Radio,
-  Sparkles,
   AlertTriangle,
+  Battery,
+  Cpu,
   Flame,
+  Pause,
+  Radio,
+  ShieldAlert,
+  Sparkles,
+  Zap,
 } from 'lucide-react';
+import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
 import { useGame } from '@/lib/hooks/useGame';
 import { useIsTouchDevice } from '@/lib/hooks/useIsTouchDevice';
 import { useLocale } from '@/lib/i18n';
 import { useSoundStore } from '@/lib/stores/soundStore';
+import { playTone } from '@/lib/utils/audioSynth';
 import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
@@ -133,7 +135,7 @@ const CABLE_COST = 10;
 export function GridRelayTD() {
   const { t } = useLocale();
   const isTouch = useIsTouchDevice();
-  const { playSound } = useSoundStore();
+  const { playSound, soundEnabled, volume } = useSoundStore();
   const { startGame, endGame, submitScore } = useGame('grid-relay-td', 'Grid Relay TD', 'science');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -152,6 +154,9 @@ export function GridRelayTD() {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [result, setResult] = useState<{ xp: number; new_highscore: boolean } | null>(null);
 
+  const quizActive = isPaused && !!currentQuestion;
+  const quizFocusRef = useFocusTrap(quizActive);
+
   // References
   const turretsRef = useRef<Turret[]>([]);
   const cablesRef = useRef<Cable[]>([]);
@@ -163,6 +168,7 @@ export function GridRelayTD() {
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
   const isPlayingRef = useRef(false);
+  const gameOverRef = useRef(false);
   const isPausedRef = useRef(false);
   const spawnTimerRef = useRef(0);
   const questionTimerRef = useRef(0);
@@ -174,54 +180,47 @@ export function GridRelayTD() {
   const genX = 0;
   const genY = 5;
 
-  const playSynthesizedTone = useCallback((type: 'laser' | 'shock' | 'boom' | 'alarm' | 'emp') => {
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      const now = ctx.currentTime;
-      if (type === 'laser') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(800, now);
-        osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
-        gain.gain.setValueAtTime(0.08, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-        osc.start(now);
-        osc.stop(now + 0.12);
-      } else if (type === 'shock') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(450, now);
-        osc.frequency.linearRampToValueAtTime(750, now + 0.08);
-        gain.gain.setValueAtTime(0.09, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-        osc.start(now);
-        osc.stop(now + 0.1);
-      } else if (type === 'boom') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-        osc.start(now);
-        osc.stop(now + 0.3);
-      } else if (type === 'alarm') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.linearRampToValueAtTime(600, now + 0.2);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-        osc.start(now);
-        osc.stop(now + 0.2);
-      }
-    } catch {
-      // AudioContext unavailable or restricted by browser policy
-    }
-  }, []);
+  const playSynthesizedTone = useCallback(
+    (type: 'laser' | 'shock' | 'boom' | 'alarm' | 'emp') => {
+      const rampFloor = Math.max(0.0001, 0.001 * volume);
+      playTone(soundEnabled, volume, (ctx, osc, gain, now) => {
+        if (type === 'laser') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+          gain.gain.setValueAtTime(0.08 * volume, now);
+          gain.gain.exponentialRampToValueAtTime(rampFloor, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } else if (type === 'shock') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(450, now);
+          osc.frequency.linearRampToValueAtTime(750, now + 0.08);
+          gain.gain.setValueAtTime(0.09 * volume, now);
+          gain.gain.exponentialRampToValueAtTime(rampFloor, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === 'boom') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(140, now);
+          osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+          gain.gain.setValueAtTime(0.15 * volume, now);
+          gain.gain.exponentialRampToValueAtTime(rampFloor, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'alarm') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.linearRampToValueAtTime(600, now + 0.2);
+          gain.gain.setValueAtTime(0.1 * volume, now);
+          gain.gain.exponentialRampToValueAtTime(rampFloor, now + 0.2);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        }
+      });
+    },
+    [soundEnabled, volume]
+  );
 
   const getActiveConnections = useCallback(() => {
     const activeNodes = new Set<string>();
@@ -265,6 +264,7 @@ export function GridRelayTD() {
 
   const handleGameOver = useCallback(async () => {
     isPlayingRef.current = false;
+    gameOverRef.current = true;
     setIsPlaying(false);
     setGameOver(true);
     playSound('lose');
@@ -291,7 +291,12 @@ export function GridRelayTD() {
           powerRef.current -= CABLE_COST;
           setPower(powerRef.current);
           cablesRef.current.push({ fromX: x1, fromY: y1, toX: x2, toY: y2 });
-          triggerExplosion(x2 * CELL_SIZE + CELL_SIZE / 2, y2 * CELL_SIZE + CELL_SIZE / 2, '#38bdf8', 6);
+          triggerExplosion(
+            x2 * CELL_SIZE + CELL_SIZE / 2,
+            y2 * CELL_SIZE + CELL_SIZE / 2,
+            '#38bdf8',
+            6
+          );
           playSound('click');
           return true;
         }
@@ -306,6 +311,8 @@ export function GridRelayTD() {
       if (!isPlayingRef.current || isPausedRef.current) return;
       const canvas = canvasRef.current;
       if (!canvas) return;
+
+      canvas.setPointerCapture(e.pointerId);
 
       const rect = canvas.getBoundingClientRect();
       const scaleX = CANVAS_WIDTH / rect.width;
@@ -335,7 +342,8 @@ export function GridRelayTD() {
           powerRef.current -= cost;
           setPower(powerRef.current);
 
-          const range = selectedTurretType === 'tesla' ? 120 : selectedTurretType === 'repeater' ? 80 : 170;
+          const range =
+            selectedTurretType === 'tesla' ? 120 : selectedTurretType === 'repeater' ? 80 : 170;
           const newTurret: Turret = {
             id: `turret_${Date.now()}`,
             type: selectedTurretType,
@@ -351,7 +359,11 @@ export function GridRelayTD() {
           triggerExplosion(
             gx * CELL_SIZE + CELL_SIZE / 2,
             gy * CELL_SIZE + CELL_SIZE / 2,
-            selectedTurretType === 'tesla' ? '#38bdf8' : selectedTurretType === 'repeater' ? '#fbbf24' : '#22c55e',
+            selectedTurretType === 'tesla'
+              ? '#38bdf8'
+              : selectedTurretType === 'repeater'
+                ? '#fbbf24'
+                : '#22c55e',
             10
           );
           playSound('pop');
@@ -479,6 +491,7 @@ export function GridRelayTD() {
       });
 
       startGame(difficulty);
+      gameOverRef.current = false;
       isPlayingRef.current = true;
       isPausedRef.current = false;
       setIsPlaying(true);
@@ -494,6 +507,8 @@ export function GridRelayTD() {
     let prevActiveTurretCount = 1;
 
     const loop = (now: number) => {
+      if (gameOverRef.current) return;
+
       const dt = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
 
@@ -537,7 +552,8 @@ export function GridRelayTD() {
         // --- 2. GAMEPLAY UPDATE ---
         if (isPlayingRef.current && !isPausedRef.current) {
           // Power regen (Repeater nodes increase passive regen)
-          const repeaterBoost = turretsRef.current.filter((t) => t.type === 'repeater').length * 0.8;
+          const repeaterBoost =
+            turretsRef.current.filter((t) => t.type === 'repeater').length * 0.8;
           powerRef.current = Math.min(100, powerRef.current + dt * (4.5 + repeaterBoost));
           setPower(Math.floor(powerRef.current));
 
@@ -566,7 +582,7 @@ export function GridRelayTD() {
               enemiesRef.current.push({
                 id: `boss_${Date.now()}`,
                 x: CANVAS_WIDTH,
-                y: (Math.floor(ROWS / 2)) * CELL_SIZE + CELL_SIZE / 2,
+                y: Math.floor(ROWS / 2) * CELL_SIZE + CELL_SIZE / 2,
                 hp: 350 + currentWave * 50,
                 maxHp: 350 + currentWave * 50,
                 speed: 18,
@@ -578,7 +594,8 @@ export function GridRelayTD() {
               playSynthesizedTone('alarm');
             } else {
               const isDisrupter = Math.random() < 0.3;
-              const spawnY = (Math.floor(Math.random() * (ROWS - 2)) + 1) * CELL_SIZE + CELL_SIZE / 2;
+              const spawnY =
+                (Math.floor(Math.random() * (ROWS - 2)) + 1) * CELL_SIZE + CELL_SIZE / 2;
               enemiesRef.current.push({
                 id: `enemy_${Date.now()}_${Math.random()}`,
                 x: CANVAS_WIDTH,
@@ -738,10 +755,10 @@ export function GridRelayTD() {
               ? t.overchargeTimer > 0
                 ? '#9333ea'
                 : t.type === 'tesla'
-                ? '#0284c7'
-                : t.type === 'repeater'
-                ? '#d97706'
-                : '#15803d'
+                  ? '#0284c7'
+                  : t.type === 'repeater'
+                    ? '#d97706'
+                    : '#15803d'
               : '#334155';
 
             ctx.fillStyle = baseColor;
@@ -757,7 +774,11 @@ export function GridRelayTD() {
             } else {
               // Turret Barrel
               ctx.rotate(t.angle);
-              ctx.fillStyle = isPowered ? (t.overchargeTimer > 0 ? '#c084fc' : '#4ade80') : '#64748b';
+              ctx.fillStyle = isPowered
+                ? t.overchargeTimer > 0
+                  ? '#c084fc'
+                  : '#4ade80'
+                : '#64748b';
               ctx.fillRect(0, -3.5, 17, 7);
             }
             ctx.restore();
@@ -901,10 +922,10 @@ export function GridRelayTD() {
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-500 ring-1 ring-blue-500/20">
           <Zap className="h-8 w-8" />
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl dark:text-white">
           {t('game.grid_relay_td.title')}
         </h1>
-        <p className="max-w-md text-sm text-gray-500 dark:text-slate-400 sm:text-base">
+        <p className="max-w-md text-sm text-gray-500 sm:text-base dark:text-slate-400">
           {t('game.grid_relay_td.desc')}
         </p>
 
@@ -946,38 +967,41 @@ export function GridRelayTD() {
   return (
     <div className="flex flex-col items-center gap-4 py-2">
       {/* Top HUD */}
-      <div className="flex w-full max-w-[640px] items-center justify-between gap-2 px-2">
-        <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex w-full max-w-[640px] flex-wrap items-center justify-between gap-x-2 gap-y-2 px-2">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-1.5 rounded-lg bg-blue-500/10 px-3 py-1 text-xs font-bold text-blue-500">
-            <Zap className="h-4 w-4" />
+            <Zap className="h-4 w-4" aria-hidden="true" />
             <span>{power} / 100W</span>
           </div>
           <div className="flex items-center gap-1.5 rounded-lg bg-rose-500/10 px-3 py-1 text-xs font-bold text-rose-500">
-            <ShieldAlert className="h-4 w-4" />
+            <ShieldAlert className="h-4 w-4" aria-hidden="true" />
             <span>Core: {baseHp}%</span>
           </div>
           <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-500">
-            <Flame className="h-4 w-4" />
+            <Flame className="h-4 w-4" aria-hidden="true" />
             <span>Wave {wave}</span>
           </div>
         </div>
 
-        <ScoreBoard score={score} />
+        <div className="flex items-center gap-2">
+          <ScoreBoard score={score} />
 
-        <button
-          onClick={() => {
-            isPausedRef.current = !isPaused;
-            setIsPaused(!isPaused);
-          }}
-          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800"
-          aria-label={t('game.pause_label')}
-        >
-          <Pause className="h-4 w-4" />
-        </button>
+          <button
+            onClick={() => {
+              isPausedRef.current = !isPaused;
+              setIsPaused(!isPaused);
+            }}
+            disabled={quizActive}
+            className="touch-target flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-slate-800"
+            aria-label={t('game.pause_label')}
+          >
+            <Pause className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       {/* Action Toolbar */}
-      <div className="flex w-full max-w-[640px] items-center justify-between gap-2 px-2">
+      <div className="flex w-full max-w-[640px] flex-wrap items-center justify-between gap-x-2 gap-y-2 px-2">
         <div className="flex flex-wrap gap-1.5 sm:gap-2">
           <button
             onClick={() => {
@@ -985,14 +1009,15 @@ export function GridRelayTD() {
               setSelectedTurretType('pulse');
               setCableStart(null);
             }}
+            disabled={quizActive}
             className={cn(
-              'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all',
+              'touch-target flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-40',
               buildMode === 'turret' && selectedTurretType === 'pulse'
                 ? 'bg-emerald-600 text-white shadow'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300'
             )}
           >
-            <Cpu className="h-3.5 w-3.5" />
+            <Cpu className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Pulse (30W)</span>
           </button>
           <button
@@ -1001,14 +1026,15 @@ export function GridRelayTD() {
               setSelectedTurretType('tesla');
               setCableStart(null);
             }}
+            disabled={quizActive}
             className={cn(
-              'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all',
+              'touch-target flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-40',
               buildMode === 'turret' && selectedTurretType === 'tesla'
                 ? 'bg-cyan-600 text-white shadow'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300'
             )}
           >
-            <Radio className="h-3.5 w-3.5" />
+            <Radio className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Tesla AoE (50W)</span>
           </button>
           <button
@@ -1017,14 +1043,15 @@ export function GridRelayTD() {
               setSelectedTurretType('repeater');
               setCableStart(null);
             }}
+            disabled={quizActive}
             className={cn(
-              'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all',
+              'touch-target flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-40',
               buildMode === 'turret' && selectedTurretType === 'repeater'
                 ? 'bg-amber-600 text-white shadow'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300'
             )}
           >
-            <Sparkles className="h-3.5 w-3.5" />
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Relay (20W)</span>
           </button>
           <button
@@ -1032,14 +1059,15 @@ export function GridRelayTD() {
               setBuildMode('cable');
               setCableStart(null);
             }}
+            disabled={quizActive}
             className={cn(
-              'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all',
+              'touch-target flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-40',
               buildMode === 'cable'
                 ? 'bg-blue-600 text-white shadow'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300'
             )}
           >
-            <Zap className="h-3.5 w-3.5" />
+            <Zap className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Kabel (10W)</span>
           </button>
         </div>
@@ -1047,10 +1075,10 @@ export function GridRelayTD() {
         {selectedTurret && selectedTurret.type !== 'repeater' && (
           <button
             onClick={handleOvercharge}
-            disabled={power < 25}
-            className="flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-purple-500 disabled:opacity-50"
+            disabled={power < 25 || quizActive}
+            className="touch-target flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-purple-500 disabled:opacity-50"
           >
-            <Battery className="h-4 w-4" />
+            <Battery className="h-4 w-4" aria-hidden="true" />
             <span>Overcharge (25W)</span>
           </button>
         )}
@@ -1069,8 +1097,8 @@ export function GridRelayTD() {
 
         {/* Power Severed Emergency Alert Banner */}
         {powerLossAlert && (
-          <div className="animate-pulse absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-rose-600/90 px-4 py-1 text-xs font-black uppercase tracking-wider text-white shadow-lg">
-            <AlertTriangle className="h-4 w-4" />
+          <div className="absolute left-1/2 top-2 flex -translate-x-1/2 animate-pulse items-center gap-1.5 rounded-full bg-rose-600/90 px-4 py-1 text-xs font-black uppercase tracking-wider text-white shadow-lg">
+            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
             <span>{t('game.grid_relay_td.power_severed')}</span>
           </div>
         )}
@@ -1083,13 +1111,21 @@ export function GridRelayTD() {
         )}
 
         {/* Science Quiz Challenge Overlay */}
-        {isPaused && currentQuestion && (
+        {quizActive && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900">
+            <div
+              ref={quizFocusRef}
+              role="dialog"
+              aria-modal="true"
+              className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900"
+            >
               <span className="text-xs font-extrabold uppercase tracking-wider text-blue-500">
                 ⚡ Power Surge Challenge (+40W)
               </span>
-              <h3 className="mt-2 text-base font-bold text-gray-900 dark:text-white">
+              <h3
+                aria-live="polite"
+                className="mt-2 text-base font-bold text-gray-900 dark:text-white"
+              >
                 {currentQuestion.text}
               </h3>
               <div className="mt-4 flex flex-col gap-2">
@@ -1097,7 +1133,7 @@ export function GridRelayTD() {
                   <button
                     key={opt}
                     onClick={() => handleAnswerQuestion(idx)}
-                    className="rounded-lg border border-gray-200 p-2.5 text-left text-xs font-medium text-gray-800 transition-colors hover:bg-blue-500 hover:text-white dark:border-slate-700 dark:text-gray-200 dark:hover:bg-blue-600"
+                    className="touch-target rounded-lg border border-gray-200 p-2.5 text-left text-xs font-medium text-gray-800 transition-colors hover:bg-blue-500 hover:text-white dark:border-slate-700 dark:text-gray-200 dark:hover:bg-blue-600"
                   >
                     {opt}
                   </button>

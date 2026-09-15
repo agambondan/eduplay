@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
+import { CanvasEngine, Entity } from '@/lib/game-engines/CanvasEngine';
 import { useGame } from '@/lib/hooks/useGame';
 import { useIsTouchDevice } from '@/lib/hooks/useIsTouchDevice';
 import { useLocale } from '@/lib/i18n';
@@ -9,10 +10,6 @@ import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import {
-  CanvasEngine,
-  Entity,
-} from '@/lib/game-engines/CanvasEngine';
 
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 const GRADIENT_COLORS: Record<string, [string, string]> = {
@@ -152,11 +149,7 @@ class ProjectileEntity extends Entity {
   }
 
   isOffScreen(): boolean {
-    return (
-      this.position.y <= 0 ||
-      this.position.x <= 0 ||
-      this.position.x >= CANVAS_WIDTH
-    );
+    return this.position.y <= 0 || this.position.x <= 0 || this.position.x >= CANVAS_WIDTH;
   }
 }
 
@@ -368,7 +361,10 @@ class GameControllerEntity extends Entity {
 }
 
 export default function BubbleShooter() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
+  // `isPaused` here is the app-wide pause flag (shared with the global
+  // `PauseOverlay` rendered in the root layout) — toggling it via
+  // pauseGame()/togglePause() is how every other game implements Pause.
+  const { score, isPlaying, isPaused, startGame, endGame, addScore, submitScore, pauseGame } =
     useGame('bubble-shooter');
   const { t } = useLocale();
   const isTouch = useIsTouchDevice();
@@ -378,6 +374,18 @@ export default function BubbleShooter() {
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
   const [targetSum, setTargetSum] = useState(0);
 
+  // Unlike every other (DOM/turn-based) game, this one drives its own
+  // requestAnimationFrame loop via CanvasEngine, so the global pause flag
+  // alone won't stop the simulation — mirror it into the engine explicitly.
+  useEffect(() => {
+    if (!isPlaying) return;
+    if (isPaused) {
+      engineRef.current?.pause();
+    } else {
+      engineRef.current?.resume();
+    }
+  }, [isPaused, isPlaying]);
+
   const handleGameOver = useCallback(() => {
     setGameOver(true);
     engineRef.current?.stop();
@@ -386,6 +394,13 @@ export default function BubbleShooter() {
       setResult({ xp: res?.xp_earned ?? 0, highscore: res?.new_highscore ?? false });
     });
   }, [endGame, submitScore]);
+
+  // Kept fresh via effect so `initEngine` below can stay referentially stable
+  // (handleGameOver's identity changes every score update through submitScore).
+  const handleGameOverRef = useRef(handleGameOver);
+  useEffect(() => {
+    handleGameOverRef.current = handleGameOver;
+  }, [handleGameOver]);
 
   const handleScore = useCallback(
     (delta: number) => {
@@ -398,7 +413,7 @@ export default function BubbleShooter() {
     setTargetSum(sum);
   }, []);
 
-  const handleStart = () => {
+  const initEngine = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -420,7 +435,7 @@ export default function BubbleShooter() {
 
     const controller = new GameControllerEntity(
       cannon,
-      handleGameOver,
+      () => handleGameOverRef.current(),
       handleScore,
       handleNewTarget
     );
@@ -432,14 +447,23 @@ export default function BubbleShooter() {
     engine.entities.add(cannon);
     engine.entities.add(controller);
 
+    engine.start();
+  }, [handleScore, handleNewTarget]);
+
+  // The canvas only mounts once `isPlaying` flips true, so the engine must be
+  // created here (post-render) rather than synchronously inside handleStart.
+  useEffect(() => {
+    if (isPlaying) initEngine();
+  }, [isPlaying, initEngine]);
+
+  const handleStart = () => {
     setGameOver(false);
     setResult(null);
-    engine.start();
     startGame('medium');
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isPlaying || gameOver) return;
+    if (!isPlaying || gameOver || isPaused) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -455,6 +479,7 @@ export default function BubbleShooter() {
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (isPaused) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -503,21 +528,23 @@ export default function BubbleShooter() {
 
   return (
     <div className="flex w-full flex-col items-center gap-4 py-2 sm:py-4">
-      <div className="flex w-full max-w-md items-center justify-between">
+      <div className="flex w-full max-w-md flex-wrap items-center justify-between gap-x-2 gap-y-2">
         <div className="rounded-xl border border-amber-200 bg-amber-100 px-4 py-2 dark:bg-amber-900/40">
           <span className="text-xs font-bold uppercase text-amber-600">
             {t('game.target_sum')}:
           </span>
           <div className="text-2xl font-black text-amber-700 dark:text-amber-300">{targetSum}</div>
         </div>
-        <ScoreBoard score={score} />
-        <button
-          onClick={pauseGame}
-          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
-          aria-label={t('game.pause_label')}
-        >
-          <Pause className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <ScoreBoard score={score} />
+          <button
+            onClick={pauseGame}
+            className="touch-target flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+            aria-label={t('game.pause_label')}
+          >
+            <Pause className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       <div className="relative w-full max-w-[600px] overflow-hidden rounded-2xl border-4 border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">

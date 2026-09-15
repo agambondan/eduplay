@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
+import { CanvasEngine, Entity, InputManager, Vector2 } from '@/lib/game-engines/CanvasEngine';
+import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
 import { useGame } from '@/lib/hooks/useGame';
 import { useIsTouchDevice } from '@/lib/hooks/useIsTouchDevice';
 import { useLocale } from '@/lib/i18n';
@@ -9,12 +11,6 @@ import { cn } from '@/lib/utils/cn';
 import { HowToPlay } from '@/components/ui/HowToPlay';
 import { ResultScreen } from '@/components/ui/ResultScreen';
 import { ScoreBoard } from '@/components/ui/ScoreBoard';
-import {
-  CanvasEngine,
-  Entity,
-  InputManager,
-  Vector2,
-} from '@/lib/game-engines/CanvasEngine';
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 640;
@@ -150,12 +146,7 @@ class PaddleEntity extends Entity {
     ctx.lineTo(this.position.x + this.width, this.position.y + this.height);
     ctx.lineTo(this.position.x, this.position.y + this.height);
     ctx.lineTo(this.position.x, this.position.y + pr);
-    ctx.quadraticCurveTo(
-      this.position.x,
-      this.position.y,
-      this.position.x + pr,
-      this.position.y
-    );
+    ctx.quadraticCurveTo(this.position.x, this.position.y, this.position.x + pr, this.position.y);
     ctx.closePath();
     ctx.fillStyle = paddleGrad;
     ctx.fill();
@@ -237,11 +228,7 @@ class BrickEntity extends Entity {
       ctx.font = 'bold 14px Inter';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(
-        '?',
-        this.position.x + this.width / 2,
-        this.position.y + this.height / 2
-      );
+      ctx.fillText('?', this.position.x + this.width / 2, this.position.y + this.height / 2);
     }
   }
 }
@@ -319,7 +306,10 @@ class GameControllerEntity extends Entity {
 }
 
 export default function BrickBreaker() {
-  const { score, isPlaying, startGame, endGame, addScore, submitScore, pauseGame } =
+  // `isPaused` here is the app-wide pause flag (shared with the global
+  // `PauseOverlay` rendered in the root layout) — toggling it via
+  // pauseGame()/togglePause() is how every other game implements Pause.
+  const { score, isPlaying, isPaused, startGame, endGame, addScore, submitScore, pauseGame } =
     useGame('brick-breaker');
   const { t } = useLocale();
   const isTouch = useIsTouchDevice();
@@ -328,7 +318,21 @@ export default function BrickBreaker() {
   const [gameOver, setGameOver] = useState(false);
   const [result, setResult] = useState<{ xp: number; highscore: boolean } | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
+  // Separate, local pause for the in-canvas math challenge modal.
+  const [quizOpen, setQuizOpen] = useState(false);
+  const quizFocusRef = useFocusTrap(quizOpen);
+
+  // Unlike every other (DOM/turn-based) game, this one drives its own
+  // requestAnimationFrame loop via CanvasEngine, so the global pause flag
+  // alone won't stop the simulation — mirror it into the engine explicitly.
+  useEffect(() => {
+    if (!isPlaying) return;
+    if (isPaused) {
+      engineRef.current?.pause();
+    } else if (!quizOpen) {
+      engineRef.current?.resume();
+    }
+  }, [isPaused, isPlaying, quizOpen]);
 
   const handleGameOver = useCallback(
     (isWin: boolean) => {
@@ -346,7 +350,7 @@ export default function BrickBreaker() {
     (isSpecial: boolean) => {
       addScore(10);
       if (isSpecial) {
-        setIsPaused(true);
+        setQuizOpen(true);
         engineRef.current?.pause();
         setCurrentQuestion(generateMathQuestion());
       }
@@ -354,7 +358,16 @@ export default function BrickBreaker() {
     [addScore]
   );
 
-  const handleStart = () => {
+  // Kept fresh via effect so `initEngine` below can stay referentially stable
+  // (handleGameOver's identity changes every score update through submitScore).
+  const handleGameOverRef = useRef(handleGameOver);
+  const handleHitBrickRef = useRef(handleHitBrick);
+  useEffect(() => {
+    handleGameOverRef.current = handleGameOver;
+    handleHitBrickRef.current = handleHitBrick;
+  }, [handleGameOver, handleHitBrick]);
+
+  const initEngine = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -400,9 +413,9 @@ export default function BrickBreaker() {
     const controller = new GameControllerEntity(
       ball,
       paddle,
-      () => handleGameOver(true),
-      () => handleGameOver(false),
-      handleHitBrick
+      () => handleGameOverRef.current(true),
+      () => handleGameOverRef.current(false),
+      (isSpecial) => handleHitBrickRef.current(isSpecial)
     );
     controller.bricks = bricks;
     controller.zIndex = 3;
@@ -412,11 +425,20 @@ export default function BrickBreaker() {
     engine.entities.add(paddle);
     engine.entities.add(controller);
 
+    engine.start();
+  }, []);
+
+  // The canvas only mounts once `isPlaying` flips true, so the engine must be
+  // created here (post-render) rather than synchronously inside handleStart.
+  useEffect(() => {
+    if (isPlaying) initEngine();
+  }, [isPlaying, initEngine]);
+
+  const handleStart = () => {
     setGameOver(false);
     setResult(null);
     setCurrentQuestion(null);
-    setIsPaused(false);
-    engine.start();
+    setQuizOpen(false);
     startGame('medium');
   };
 
@@ -428,7 +450,7 @@ export default function BrickBreaker() {
       addScore(-10);
     }
     setCurrentQuestion(null);
-    setIsPaused(false);
+    setQuizOpen(false);
     engineRef.current?.resume();
   };
 
@@ -475,10 +497,11 @@ export default function BrickBreaker() {
           <ScoreBoard score={score} />
           <button
             onClick={pauseGame}
-            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800"
+            disabled={quizOpen}
+            className="touch-target flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40 dark:hover:bg-slate-800"
             aria-label={t('game.pause_label')}
           >
-            <Pause className="h-4 w-4" />
+            <Pause className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
@@ -490,13 +513,21 @@ export default function BrickBreaker() {
             className="block h-auto w-full cursor-none touch-none"
           />
 
-          {isPaused && currentQuestion && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
+          {quizOpen && currentQuestion && (
+            <div
+              ref={quizFocusRef}
+              role="dialog"
+              aria-modal="true"
+              className="absolute inset-0 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm"
+            >
               <div className="animate-in zoom-in max-w-xs rounded-3xl bg-white p-8 text-center shadow-2xl duration-300 dark:bg-slate-800">
                 <span className="text-xs font-black uppercase tracking-widest text-amber-500">
                   Tantangan!
                 </span>
-                <h2 className="mb-6 mt-2 text-3xl font-black text-gray-900 dark:text-white">
+                <h2
+                  aria-live="polite"
+                  className="mb-6 mt-2 text-3xl font-black text-gray-900 dark:text-white"
+                >
                   {currentQuestion.text}
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
@@ -504,7 +535,7 @@ export default function BrickBreaker() {
                     <button
                       key={opt}
                       onClick={() => handleAnswer(opt)}
-                      className="rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white transition-all hover:bg-indigo-700 active:scale-95"
+                      className="touch-target rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white transition-colors hover:bg-indigo-700 active:scale-95"
                     >
                       {opt}
                     </button>
