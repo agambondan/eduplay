@@ -32,9 +32,12 @@ test.describe('Battleship Math — backend-backed flow', () => {
 
     await mockAuth(page);
     await page.route('**/api/v1/ads**', (route) => route.fulfill(jsonResponse(null)));
-    await page.route('**/api/v1/battleship**', async (route) => {
+    await page.route('**/*', async (route) => {
       const request = route.request();
       const url = new URL(request.url());
+      if (!url.pathname.includes('/api/v1/battleship')) {
+        return route.continue();
+      }
       const path = url.pathname.replace(/\/$/, '');
       const method = request.method();
       requests.push(`${method} ${path}`);
@@ -44,6 +47,11 @@ test.describe('Battleship Math — backend-backed flow', () => {
       }
 
       if (method === 'POST' && path === API_PREFIX) {
+        expect(await request.postDataJSON()).toMatchObject({
+          difficulty: 'medium',
+          vs_bot: true,
+          bot_difficulty: 'medium',
+        });
         match = createMatch();
         return route.fulfill(jsonResponse(match));
       }
@@ -53,6 +61,7 @@ test.describe('Battleship Math — backend-backed flow', () => {
       }
 
       if (method === 'POST' && path === `${API_PREFIX}/${MATCH_ID}/target`) {
+        expect(await request.postDataJSON()).toEqual({ row: 0, col: 0 });
         match = {
           ...match,
           pending_question: {
@@ -66,6 +75,7 @@ test.describe('Battleship Math — backend-backed flow', () => {
       }
 
       if (method === 'POST' && path === `${API_PREFIX}/${MATCH_ID}/shot`) {
+        expect(await request.postDataJSON()).toEqual({ answer: 42 });
         const targetBoard = makeBoard();
         targetBoard[0][0] = { ship: true, hit: true, miss: false };
         match = {
@@ -137,6 +147,8 @@ test.describe('Battleship Math — backend-backed flow', () => {
 
 async function mockAuth(page: Page) {
   await page.addInitScript(() => {
+    localStorage.setItem('eduplay-cookie-consent', 'accepted');
+    localStorage.setItem('eduplay-onboarding-done', 'true');
     const now = new Date().toISOString();
     window.localStorage.setItem(
       'auth-storage',

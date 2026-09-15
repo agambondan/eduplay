@@ -280,7 +280,7 @@ function RelayScreen({
           {question.options.map((opt, i) => (
             <button
               key={i}
-              onClick={() => handleAnswer(opt)}
+              onClick={() => handleAnswer(String(i))}
               disabled={!isMyTurn || gameOver}
               className="rounded-xl border-2 border-gray-200 px-6 py-4 text-lg font-bold transition-all
                 hover:border-orange-400 hover:bg-orange-50 disabled:opacity-40

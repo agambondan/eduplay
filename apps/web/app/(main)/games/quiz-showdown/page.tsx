@@ -57,6 +57,10 @@ export default function QuizShowdownPage() {
   const user = useAuthStore((s) => s.user);
   const wsRef = useRef<WebSocket | null>(null);
   const questionStartedAt = useRef(0);
+  const shouldReconnect = useRef(true);
+  const finishedRef = useRef(false);
+  const roomCodeRef = useRef(roomCode);
+  roomCodeRef.current = roomCode;
 
   const syncRealtimePlayers = useCallback((players?: RealtimePlayer[]) => {
     if (!players?.length) return;
@@ -113,6 +117,9 @@ export default function QuizShowdownPage() {
       ws.onclose = () => {
         setConnected(false);
         wsRef.current = null;
+        if (shouldReconnect.current && !finishedRef.current && roomCodeRef.current) {
+          setTimeout(() => connectGame(roomCodeRef.current), 2000);
+        }
       };
       ws.onmessage = (event) => {
         try {
@@ -164,7 +171,14 @@ export default function QuizShowdownPage() {
           if (msg.type === 'opponent_progress') {
             setScores((prev) => ({ ...prev, [msg.payload.player_id]: msg.payload.current_score }));
           }
+          if (msg.type === 'player_disconnected' || msg.type === 'player_forfeited') {
+            setError('Salah satu pemain terputus dari room.');
+          }
+          if (msg.type === 'player_reconnected') {
+            setError('');
+          }
           if (msg.type === 'game_over') {
+            finishedRef.current = true;
             setGameResult(msg.payload);
             setScreen('result');
           }
@@ -211,6 +225,10 @@ export default function QuizShowdownPage() {
   const leaveMutation = useMutation({
     mutationFn: () => roomsApi.leave(roomCode),
     onSuccess: () => {
+      shouldReconnect.current = false;
+      finishedRef.current = true;
+      wsRef.current?.close();
+      wsRef.current = null;
       setRoomCode('');
       setRoomInfo(null);
       setError('');
@@ -247,7 +265,10 @@ export default function QuizShowdownPage() {
   }, [refreshLobby, screen]);
 
   useEffect(() => {
-    return () => wsRef.current?.close();
+    return () => {
+      shouldReconnect.current = false;
+      wsRef.current?.close();
+    };
   }, []);
 
   const copyCode = () => {
@@ -256,24 +277,27 @@ export default function QuizShowdownPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleAnswer = useCallback((answer: string) => {
-    if (!currentQ || lastResult) return;
-    const elapsedMs = Math.max(
-      200,
-      questionStartedAt.current ? Date.now() - questionStartedAt.current : 200
-    );
-    wsRef.current?.send(
-      JSON.stringify({
-        type: 'submit_answer',
-        payload: {
-          room_id: `quiz_showdown:${roomCode}`,
-          question_id: currentQ.id,
-          answer,
-          time_taken_ms: elapsedMs,
-        },
-      })
-    );
-  }, [currentQ, lastResult, roomCode]);
+  const handleAnswer = useCallback(
+    (answer: string) => {
+      if (!currentQ || lastResult) return;
+      const elapsedMs = Math.max(
+        200,
+        questionStartedAt.current ? Date.now() - questionStartedAt.current : 200
+      );
+      wsRef.current?.send(
+        JSON.stringify({
+          type: 'submit_answer',
+          payload: {
+            room_id: `quiz_showdown:${roomCode}`,
+            question_id: currentQ.id,
+            answer,
+            time_taken_ms: elapsedMs,
+          },
+        })
+      );
+    },
+    [currentQ, lastResult, roomCode]
+  );
 
   if (screen === 'menu') {
     return (
@@ -468,10 +492,10 @@ export default function QuizShowdownPage() {
                 </h3>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {currentQ.options.map((opt) => (
+                {currentQ.options.map((opt, i) => (
                   <button
-                    key={opt}
-                    onClick={() => handleAnswer(opt)}
+                    key={i}
+                    onClick={() => handleAnswer(String(i))}
                     disabled={!!lastResult}
                     className="rounded-xl border-2 border-gray-200 bg-white p-4 text-center text-lg font-bold transition-all hover:border-pink-500 active:scale-95 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800"
                   >

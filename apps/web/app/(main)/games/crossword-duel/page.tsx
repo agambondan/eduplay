@@ -7,6 +7,8 @@ import { useMutation } from '@tanstack/react-query';
 import { ArrowLeft, Home, Loader2, Medal, RotateCcw, Trophy, Zap } from 'lucide-react';
 import { multiplayerApi } from '@/lib/api/multiplayer';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { useGameStore } from '@/lib/stores/gameStore';
+import { GameKeyboard } from '@/components/games/GameKeyboard';
 import { GameContainer } from '@/components/ui/GameContainer';
 
 type Screen = 'menu' | 'playing' | 'result';
@@ -51,6 +53,13 @@ export default function CrosswordDuelPage() {
     setScreen('result');
   }, []);
 
+  useEffect(() => {
+    useGameStore.getState().setPlaying(screen === 'playing');
+    return () => {
+      useGameStore.getState().setPlaying(false);
+    };
+  }, [screen]);
+
   return (
     <>
       <button
@@ -88,7 +97,7 @@ export default function CrosswordDuelPage() {
 
 function MenuScreen({ onStart }: { onStart: (result: QuickMatchBotResult) => void }) {
   const botMutation = useMutation({
-    mutationFn: () => multiplayerApi.quickMatchBot('crossword', 'medium'),
+    mutationFn: () => multiplayerApi.quickMatchBot('crossword-duel', 'medium'),
     onSuccess: (result) => onStart(result),
   });
 
@@ -187,13 +196,12 @@ function DuelScreen({
     [selected, puzzle, gameOver]
   );
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+  const handleVirtualKey = useCallback(
+    (key: string) => {
       if (!selected || !puzzle || gameOver) return;
       const [r, c] = selected;
 
-      if (e.key === 'Tab' || e.key === 'Enter') {
-        e.preventDefault();
+      if (key === 'ENTER') {
         const isAcross = direction === 'across';
         let nr = r,
           nc = c;
@@ -216,7 +224,7 @@ function DuelScreen({
         return;
       }
 
-      if (e.key === 'Backspace') {
+      if (key === 'BACKSPACE') {
         const cell = puzzle.grid[r][c];
         if (cell === '#') return;
         wsRef.current?.send(
@@ -255,7 +263,7 @@ function DuelScreen({
         return;
       }
 
-      const letter = e.key.toUpperCase();
+      const letter = key.toUpperCase();
       if (!/^[A-Z]$/.test(letter)) return;
       if (puzzle.grid[r][c] === '#') return;
 
@@ -292,6 +300,32 @@ function DuelScreen({
       }
     },
     [selected, puzzle, gameOver, direction, roomID]
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!selected || !puzzle || gameOver) return;
+      const [r, c] = selected;
+
+      if (e.key === 'Tab' || e.key === 'Enter') {
+        e.preventDefault();
+        handleVirtualKey('ENTER');
+        return;
+      }
+
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleVirtualKey('BACKSPACE');
+        return;
+      }
+
+      const letter = e.key.toUpperCase();
+      if (/^[A-Z]$/.test(letter)) {
+        e.preventDefault();
+        handleVirtualKey(letter);
+      }
+    },
+    [handleVirtualKey]
   );
 
   if (!puzzle) {
@@ -377,6 +411,12 @@ function DuelScreen({
               ))}
           </div>
         </div>
+
+        <GameKeyboard
+          onKeyPress={handleVirtualKey}
+          disabled={gameOver}
+          className="mx-auto mt-4 max-w-md"
+        />
       </div>
     </GameContainer>
   );

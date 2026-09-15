@@ -416,24 +416,27 @@ function SearchingScreen({
     showInterstitial();
   }, [gameResult, showInterstitial, tournamentParams]);
 
-  const handleAnswer = useCallback((answer: string) => {
-    if (!currentQ || gameState !== 'playing' || lastResult || tournamentParams?.spectator) return;
-    const elapsedMs = Math.max(
-      200,
-      questionStartedAt.current ? Date.now() - questionStartedAt.current : 200
-    );
-    wsRef.current?.send(
-      JSON.stringify({
-        type: 'submit_answer',
-        payload: {
-          room_id: matchInfo.room_id,
-          question_id: currentQ.id,
-          answer,
-          time_taken_ms: elapsedMs,
-        },
-      })
-    );
-  }, [currentQ, gameState, lastResult, matchInfo.room_id, tournamentParams?.spectator]);
+  const handleAnswer = useCallback(
+    (answer: string) => {
+      if (!currentQ || gameState !== 'playing' || lastResult || tournamentParams?.spectator) return;
+      const elapsedMs = Math.max(
+        200,
+        questionStartedAt.current ? Date.now() - questionStartedAt.current : 200
+      );
+      wsRef.current?.send(
+        JSON.stringify({
+          type: 'submit_answer',
+          payload: {
+            room_id: matchInfo.room_id,
+            question_id: currentQ.id,
+            answer,
+            time_taken_ms: elapsedMs,
+          },
+        })
+      );
+    },
+    [currentQ, gameState, lastResult, matchInfo.room_id, tournamentParams?.spectator]
+  );
 
   if (gameResult) {
     const myResult = gameResult.results?.find((r) => r.player_id === userId);
@@ -590,7 +593,7 @@ function SearchingScreen({
                   {currentQ.options.map((opt, i) => (
                     <button
                       key={i}
-                      onClick={() => handleAnswer(opt)}
+                      onClick={() => handleAnswer(String(i))}
                       disabled={!!lastResult || tournamentParams?.spectator}
                       className="rounded-xl border-2 border-gray-200 bg-white p-4 text-center text-lg font-bold transition-all hover:border-indigo-500 active:scale-95 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800"
                     >

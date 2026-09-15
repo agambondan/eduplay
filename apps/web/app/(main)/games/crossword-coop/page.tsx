@@ -7,6 +7,8 @@ import { useMutation } from '@tanstack/react-query';
 import { ArrowLeft, Home, Loader2, Medal, RotateCcw, Trophy, Users, Zap } from 'lucide-react';
 import { multiplayerApi } from '@/lib/api/multiplayer';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { useGameStore } from '@/lib/stores/gameStore';
+import { GameKeyboard } from '@/components/games/GameKeyboard';
 import { GameContainer } from '@/components/ui/GameContainer';
 
 type Screen = 'menu' | 'playing' | 'result';
@@ -42,6 +44,13 @@ export default function CrosswordCoopPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.accessToken);
+
+  useEffect(() => {
+    useGameStore.getState().setPlaying(screen === 'playing');
+    return () => {
+      useGameStore.getState().setPlaying(false);
+    };
+  }, [screen]);
 
   return (
     <>
@@ -131,6 +140,7 @@ function CoopScreen({
   const [direction, setDirection] = useState<'across' | 'down'>('across');
   const [gameOver, setGameOver] = useState(false);
   const [players, setPlayers] = useState<string[]>([]);
+  const [message, setMessage] = useState('');
   const resultRef = useRef<GameOverInfo | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -158,6 +168,10 @@ function CoopScreen({
             ...prev,
             [msg.payload.player_id]: msg.payload.player_count || 0,
           }));
+          setMessage('');
+        }
+        if (msg.type === 'crossword_error') {
+          setMessage(msg.payload.message || 'Huruf salah');
         }
         if (msg.type === 'room_state') {
           if (msg.payload.players) {
@@ -196,15 +210,14 @@ function CoopScreen({
     [selected, puzzle, gameOver, filledCells]
   );
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+  const handleVirtualKey = useCallback(
+    (key: string) => {
       if (!selected || !puzzle || gameOver) return;
       const [r, c] = selected;
-      const key = `${r}-${c}`;
-      if (filledCells.has(key)) return;
+      const cellKey = `${r}-${c}`;
+      if (filledCells.has(cellKey)) return;
 
-      if (e.key === 'Tab' || e.key === 'Enter') {
-        e.preventDefault();
+      if (key === 'ENTER') {
         const isAcross = direction === 'across';
         let nr = r,
           nc = c;
@@ -226,7 +239,7 @@ function CoopScreen({
         return;
       }
 
-      const letter = e.key.toUpperCase();
+      const letter = key.toUpperCase();
       if (!/^[A-Z]$/.test(letter)) return;
       if (puzzle.grid[r][c] === '#') return;
 
@@ -239,6 +252,28 @@ function CoopScreen({
       setSelected(null);
     },
     [selected, puzzle, gameOver, direction, filledCells, roomID]
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!selected || !puzzle || gameOver) return;
+      const [r, c] = selected;
+      const cellKey = `${r}-${c}`;
+      if (filledCells.has(cellKey)) return;
+
+      if (e.key === 'Tab' || e.key === 'Enter') {
+        e.preventDefault();
+        handleVirtualKey('ENTER');
+        return;
+      }
+
+      const letter = e.key.toUpperCase();
+      if (/^[A-Z]$/.test(letter)) {
+        e.preventDefault();
+        handleVirtualKey(letter);
+      }
+    },
+    [handleVirtualKey]
   );
 
   if (!puzzle) {
@@ -272,6 +307,12 @@ function CoopScreen({
             <span className="text-xs text-gray-500">{progressPct}%</span>
           </div>
         </div>
+
+        {message && (
+          <div className="rounded-lg bg-red-50 p-2 text-center text-xs font-semibold text-red-600 dark:bg-red-950 dark:text-red-300">
+            {message}
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2 text-xs">
           {players.map((name, i) => (
@@ -349,6 +390,12 @@ function CoopScreen({
               ))}
           </div>
         </div>
+
+        <GameKeyboard
+          onKeyPress={handleVirtualKey}
+          disabled={gameOver}
+          className="mx-auto mt-4 max-w-md"
+        />
       </div>
     </GameContainer>
   );
