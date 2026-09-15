@@ -145,7 +145,7 @@ export default function FractionVisualizerPage() {
 
   useEffect(() => {
     init();
-  }, []);
+  }, [init]);
 
   const handleAnswer = (opt: string) => {
     if (answered) return;
@@ -196,10 +196,7 @@ export default function FractionVisualizerPage() {
             {['easy', 'medium', 'hard'].map((d) => (
               <button
                 key={d}
-                onClick={() => {
-                  setDifficulty(d);
-                  init();
-                }}
+                onClick={() => setDifficulty(d)}
                 className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all ${
                   difficulty === d
                     ? 'bg-indigo-600 text-white'

@@ -2,11 +2,14 @@
 
 import type { QuickMatchBotResult } from '@/types/multiplayer';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowLeft, Home, Loader2, Medal, RotateCcw, Share2, Trophy, Zap } from 'lucide-react';
 import { multiplayerApi } from '@/lib/api/multiplayer';
+import { useLatestRef } from '@/lib/hooks/useLatestRef';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { useGameStore } from '@/lib/stores/gameStore';
+import { GameKeyboard } from '@/components/games/GameKeyboard';
 import { GameContainer } from '@/components/ui/GameContainer';
 
 type Screen = 'menu' | 'playing' | 'result';
@@ -34,6 +37,13 @@ export default function WordleDuelPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.accessToken);
+
+  useEffect(() => {
+    useGameStore.getState().setPlaying(screen === 'playing');
+    return () => {
+      useGameStore.getState().setPlaying(false);
+    };
+  }, [screen]);
 
   return (
     <>
@@ -132,9 +142,22 @@ function DuelScreen({
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState('');
   const resultRef = useRef<GameOverInfo | null>(null);
+  const onResultRef = useLatestRef(onResult);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shouldReconnect = useRef(true);
+  const gameOverRef = useRef(false);
 
-  useEffect(() => {
+  const gridRef = useLatestRef(grid);
+  const colorsRef = useLatestRef(colors);
+  const currentRowRef = useLatestRef(currentRow);
+  const currentColRef = useLatestRef(currentCol);
+
+  const connect = useCallback(() => {
+    if (reconnectTimer.current) {
+      clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = null;
+    }
     const wsUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1')
       .replace(/\/api\/v1\/?$/, '')
       .replace('http', 'ws');
@@ -145,15 +168,22 @@ function DuelScreen({
       ws.send(JSON.stringify({ type: 'join_room', payload: { room_id: roomID, token } }));
     };
 
+    ws.onclose = () => {
+      if (shouldReconnect.current && !gameOverRef.current) {
+        reconnectTimer.current = setTimeout(() => connect(), 2000);
+      }
+    };
+
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === 'wordle_result') {
-          const newGrid = [...grid];
-          const newColors = [...colors];
+          const curRow = currentRowRef.current;
+          const newGrid = [...gridRef.current];
+          const newColors = [...colorsRef.current];
           for (let i = 0; i < COLS; i++) {
-            newGrid[currentRow][i] = msg.payload.word[i] || '';
-            newColors[currentRow][i] =
+            newGrid[curRow][i] = msg.payload.word[i] || '';
+            newColors[curRow][i] =
               msg.payload.result[i] === 'G'
                 ? 'bg-green-500'
                 : msg.payload.result[i] === 'Y'
@@ -163,10 +193,9 @@ function DuelScreen({
           setGrid(newGrid);
           setColors(newColors);
           if (msg.payload.correct) {
-            setGameOver(true);
             setMessage('Kamu menebak dengan benar!');
           } else {
-            setCurrentRow(currentRow + 1);
+            setCurrentRow(curRow + 1);
             setCurrentCol(0);
           }
         }
@@ -174,40 +203,62 @@ function DuelScreen({
           setOpponentAttempts(msg.payload.attempts);
         }
         if (msg.type === 'game_over') {
+          gameOverRef.current = true;
           setGameOver(true);
           resultRef.current = msg.payload as GameOverInfo;
           setTimeout(() => {
-            if (resultRef.current) onResult(resultRef.current);
+            if (resultRef.current) onResultRef.current(resultRef.current);
           }, 1500);
         }
       } catch {}
     };
-    return () => ws.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, roomID]);
 
-  const handleKey = (key: string) => {
-    if (gameOver || currentRow >= ROWS) return;
-    if (key === 'ENTER') {
-      if (currentCol !== COLS) return;
-      wsRef.current?.send(
-        JSON.stringify({
-          type: 'submit_wordle_guess',
-          payload: { room_id: roomID, word: grid[currentRow].join('') },
-        })
-      );
-    } else if (key === 'BACK') {
-      if (currentCol <= 0) return;
-      const newGrid = [...grid];
-      newGrid[currentRow][currentCol - 1] = '';
-      setGrid(newGrid);
-      setCurrentCol(currentCol - 1);
-    } else if (/^[a-zA-Z]$/.test(key) && currentCol < COLS) {
-      const newGrid = [...grid];
-      newGrid[currentRow][currentCol] = key.toLowerCase();
-      setGrid(newGrid);
-      setCurrentCol(currentCol + 1);
-    }
-  };
+  useEffect(() => {
+    shouldReconnect.current = true;
+    connect();
+    return () => {
+      shouldReconnect.current = false;
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      wsRef.current?.close();
+    };
+  }, [connect]);
+
+  const handleResign = useCallback(() => {
+    wsRef.current?.send(JSON.stringify({ type: 'leave_room', payload: { room_id: roomID } }));
+  }, [roomID]);
+
+  const handleKey = useCallback(
+    (key: string) => {
+      if (gameOver || currentRowRef.current >= ROWS) return;
+      const curRow = currentRowRef.current;
+      const curCol = currentColRef.current;
+
+      if (key === 'ENTER') {
+        if (curCol !== COLS) return;
+        wsRef.current?.send(
+          JSON.stringify({
+            type: 'submit_wordle_guess',
+            payload: { room_id: roomID, word: gridRef.current[curRow].join('') },
+          })
+        );
+      } else if (key === 'BACKSPACE') {
+        if (curCol <= 0) return;
+        const newGrid = [...gridRef.current];
+        newGrid[curRow][curCol - 1] = '';
+        setGrid(newGrid);
+        setCurrentCol(curCol - 1);
+      } else if (/^[a-zA-Z]$/.test(key) && curCol < COLS) {
+        const newGrid = [...gridRef.current];
+        newGrid[curRow][curCol] = key.toLowerCase();
+        setGrid(newGrid);
+        setCurrentCol(curCol + 1);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [gameOver, roomID]
+  );
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -217,7 +268,7 @@ function DuelScreen({
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [currentRow, currentCol, grid, gameOver]);
+  }, [handleKey]);
 
   const allKeys = 'QWERTYUIOPASDFGHJKLZXCVBNM'.split('');
 
@@ -234,6 +285,17 @@ function DuelScreen({
             <p className="text-xs text-gray-400">Percobaan: {opponentAttempts}/6</p>
           </div>
         </div>
+
+        {!gameOver && (
+          <div className="flex justify-end">
+            <button
+              onClick={handleResign}
+              className="text-xs font-semibold text-gray-400 underline-offset-2 hover:text-red-500 hover:underline"
+            >
+              Menyerah
+            </button>
+          </div>
+        )}
 
         {message && (
           <div className="rounded-xl bg-green-50 p-3 text-center text-sm font-semibold text-green-700 dark:bg-green-900 dark:text-green-300">
@@ -259,29 +321,11 @@ function DuelScreen({
           ))}
         </div>
 
-        <div className="mx-auto flex max-w-md flex-wrap justify-center gap-1">
-          {allKeys.map((k) => (
-            <button
-              key={k}
-              onClick={() => handleKey(k)}
-              className="flex h-10 w-9 items-center justify-center rounded-md bg-gray-200 text-sm font-bold hover:bg-gray-300 dark:bg-slate-700 dark:text-white"
-            >
-              {k}
-            </button>
-          ))}
-          <button
-            onClick={() => handleKey('BACK')}
-            className="flex h-10 items-center justify-center rounded-md bg-gray-200 px-3 text-xs font-bold hover:bg-gray-300 dark:bg-slate-700 dark:text-white"
-          >
-            DEL
-          </button>
-          <button
-            onClick={() => handleKey('ENTER')}
-            className="flex h-10 items-center justify-center rounded-md bg-emerald-500 px-4 text-xs font-bold text-white hover:bg-emerald-600"
-          >
-            ENTER
-          </button>
-        </div>
+        <GameKeyboard
+          onKeyPress={handleKey}
+          disabled={gameOver}
+          className="mx-auto mt-4 max-w-md"
+        />
       </div>
     </GameContainer>
   );

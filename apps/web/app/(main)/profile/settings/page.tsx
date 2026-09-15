@@ -2,11 +2,27 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Bell, Check, Globe, Loader2, Monitor, Moon, Shield, Sun, Trash2, Zap } from 'lucide-react';
+import {
+  Bell,
+  Check,
+  Globe,
+  Loader2,
+  Monitor,
+  Moon,
+  Shield,
+  Sun,
+  Trash2,
+  Vibrate,
+  Volume2,
+  VolumeX,
+  Zap,
+} from 'lucide-react';
 import api from '@/lib/api/client';
 import { useLocale } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { useSoundStore } from '@/lib/stores/soundStore';
 import { useThemeStore } from '@/lib/stores/themeStore';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -15,6 +31,8 @@ export default function SettingsPage() {
   const logout = useAuthStore((s) => s.logout);
   const { theme, setTheme } = useThemeStore();
   const { t, locale, setLocale } = useLocale();
+  const { soundEnabled, toggleSound, volume, setVolume, hapticsEnabled, toggleHaptics, playSound } =
+    useSoundStore();
 
   const [username, setUsername] = useState(user?.username || '');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -58,7 +76,6 @@ export default function SettingsPage() {
         setPushEnabled(false);
       }
     } catch {
-      // ignore
     } finally {
       setPushLoading(false);
     }
@@ -88,7 +105,6 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-xl space-y-6">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('settings.title')}</h1>
 
-      {/* Profile */}
       <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <Shield className="h-5 w-5" /> {t('profile.title')}
@@ -102,19 +118,34 @@ export default function SettingsPage() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              maxLength={30}
               className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+              maxLength={30}
             />
           </div>
-          <div className="flex items-center justify-between">
-            {profileMsg && (
-              <span
-                className={`flex items-center gap-1 text-sm ${profileMsg.includes('berhasil') ? 'text-emerald-600' : 'text-red-500'}`}
-              >
-                {profileMsg.includes('berhasil') && <Check className="h-4 w-4" />}
-                {profileMsg}
-              </span>
-            )}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+              Email
+            </label>
+            <input
+              type="email"
+              value={user.email}
+              disabled
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-400 dark:border-slate-600 dark:bg-slate-700/50"
+            />
+          </div>
+
+          {profileMsg && (
+            <p
+              className={`text-sm font-medium ${
+                profileMsg.includes('berhasil') ? 'text-emerald-600' : 'text-red-500'
+              }`}
+            >
+              {profileMsg}
+            </p>
+          )}
+
+          <div className="flex justify-end pt-1">
             <button
               onClick={saveProfile}
               disabled={savingProfile || !username.trim() || username === user.username}
@@ -127,7 +158,68 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* Theme */}
+      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+          <Volume2 className="h-5 w-5 text-indigo-500" /> Audio &amp; Respon Sentuhan
+        </h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium text-gray-900 dark:text-white">Efek Suara (SFX)</div>
+              <div className="text-sm text-gray-500 dark:text-slate-400">
+                Suara interaksi game, benar, salah &amp; kemenangan
+              </div>
+            </div>
+            <ToggleSwitch
+              checked={soundEnabled}
+              onClick={() => {
+                toggleSound();
+                if (!soundEnabled) playSound('click');
+              }}
+            />
+          </div>
+
+          <div className="border-t border-gray-100 pt-4 dark:border-slate-700">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Volume Master ({Math.round(volume * 100)}%)
+              </span>
+              {volume === 0 || !soundEnabled ? (
+                <VolumeX className="h-4 w-4 text-gray-400" />
+              ) : (
+                <Volume2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              )}
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={volume}
+              disabled={!soundEnabled}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                setVolume(v);
+                playSound('pop');
+              }}
+              className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-indigo-600 disabled:opacity-50 dark:bg-slate-700"
+            />
+          </div>
+
+          <div className="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-slate-700">
+            <div>
+              <div className="font-medium text-gray-900 dark:text-white">
+                Getaran Haptik (Mobile)
+              </div>
+              <div className="text-sm text-gray-500 dark:text-slate-400">
+                Getaran halus saat interaksi tombol dan gameplay
+              </div>
+            </div>
+            <ToggleSwitch checked={hapticsEnabled} onClick={toggleHaptics} />
+          </div>
+        </div>
+      </section>
+
       <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <Moon className="h-5 w-5" /> {t('settings.theme')}
@@ -150,7 +242,6 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* Notifications */}
       <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <Bell className="h-5 w-5" /> {t('settings.notifications')}
@@ -159,34 +250,28 @@ export default function SettingsPage() {
           <div>
             <div className="font-medium text-gray-900 dark:text-white">Push Notification</div>
             <div className="text-sm text-gray-500 dark:text-slate-400">
-              Reminder Daily Challenge & streak
+              Reminder Daily Challenge &amp; streak
             </div>
           </div>
-          <button
+          <ToggleSwitch
+            checked={pushEnabled}
             onClick={togglePush}
+            loading={pushLoading}
             disabled={pushLoading}
-            className={`relative h-6 w-11 rounded-full transition-colors ${pushEnabled ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-slate-600'}`}
-            role="switch"
-            aria-checked={pushEnabled}
-          >
-            {pushLoading ? (
-              <Loader2 className="absolute inset-0 m-auto h-4 w-4 animate-spin text-gray-500" />
-            ) : (
-              <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${pushEnabled ? 'left-5' : 'left-0.5'}`}
-              />
-            )}
-          </button>
+          />
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-slate-700">
           <div>
             <div className="font-medium text-gray-900 dark:text-white">Email Mingguan</div>
             <div className="text-sm text-gray-500 dark:text-slate-400">
-              Rekap mingguan: game, XP, streak & achievement
+              Rekap mingguan: game, XP, streak &amp; achievement
             </div>
           </div>
-          <button
+          <ToggleSwitch
+            checked={weeklyEmail}
+            loading={emailLoading}
+            disabled={emailLoading}
             onClick={async () => {
               setEmailLoading(true);
               try {
@@ -196,23 +281,10 @@ export default function SettingsPage() {
               } catch {}
               setEmailLoading(false);
             }}
-            disabled={emailLoading}
-            className={`relative h-6 w-11 rounded-full transition-colors ${weeklyEmail ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-slate-600'}`}
-            role="switch"
-            aria-checked={weeklyEmail}
-          >
-            {emailLoading ? (
-              <Loader2 className="absolute inset-0 m-auto h-4 w-4 animate-spin text-gray-500" />
-            ) : (
-              <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${weeklyEmail ? 'left-5' : 'left-0.5'}`}
-              />
-            )}
-          </button>
+          />
         </div>
       </section>
 
-      {/* Subscription */}
       <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <Zap className="h-5 w-5 text-amber-500" /> Premium
@@ -223,7 +295,6 @@ export default function SettingsPage() {
         <SubscribeSection />
       </section>
 
-      {/* Language */}
       <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
           <Globe className="h-5 w-5" /> {t('settings.language')}
@@ -234,20 +305,27 @@ export default function SettingsPage() {
         <div className="flex gap-3">
           <button
             onClick={() => setLocale('id')}
-            className={`flex-1 rounded-xl border-2 px-4 py-3 text-center font-bold transition-all ${locale === 'id' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300' : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-400'}`}
+            className={`flex-1 rounded-xl border-2 px-4 py-3 text-center font-bold transition-all ${
+              locale === 'id'
+                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300'
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-400'
+            }`}
           >
             🇮🇩 Indonesia
           </button>
           <button
             onClick={() => setLocale('en')}
-            className={`flex-1 rounded-xl border-2 px-4 py-3 text-center font-bold transition-all ${locale === 'en' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300' : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-400'}`}
+            className={`flex-1 rounded-xl border-2 px-4 py-3 text-center font-bold transition-all ${
+              locale === 'en'
+                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300'
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-600 dark:text-slate-400'
+            }`}
           >
             🇬🇧 English
           </button>
         </div>
       </section>
 
-      {/* Danger Zone */}
       <section className="rounded-2xl border border-red-100 bg-white p-6 shadow-sm dark:border-red-900/20 dark:bg-slate-800">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-red-600 dark:text-red-400">
           <Trash2 className="h-5 w-5" /> Zona Bahaya

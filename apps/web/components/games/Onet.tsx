@@ -27,6 +27,7 @@ import {
   shuffleBoard,
 } from '@/lib/game-engines/onetEngine';
 import { useGame } from '@/lib/hooks/useGame';
+import { useLatestRef } from '@/lib/hooks/useLatestRef';
 import { useLocale } from '@/lib/i18n';
 import { cn } from '@/lib/utils/cn';
 import { GameContainer } from '@/components/ui/GameContainer';
@@ -98,23 +99,6 @@ export default function OnetGame() {
     [startGame]
   );
 
-  useEffect(() => {
-    if (!isPlaying || gameOver || paused || timer <= 0) return;
-    timerRef.current = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          finishGame(scoreRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isPlaying, gameOver, paused, timer]);
-
   const finishGame = useCallback(
     (finalScore: number) => {
       setGameOver(true);
@@ -123,6 +107,25 @@ export default function OnetGame() {
     },
     [endGame, submitScore]
   );
+  const finishGameRef = useLatestRef(finishGame);
+
+  useEffect(() => {
+    if (!isPlaying || gameOver || paused || timer <= 0) return;
+    timerRef.current = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          finishGameRef.current(scoreRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, gameOver, paused, timer]);
 
   useEffect(() => {
     if (!isPlaying || gameOver || paused) return;

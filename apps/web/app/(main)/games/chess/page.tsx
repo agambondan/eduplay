@@ -3,11 +3,12 @@
 import type { ChessMatch } from '@/types/multiplayer';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Chess, type Square } from 'chess.js';
 import { ArrowLeft, Bot, Globe, Home, Loader2, RotateCcw, User, Zap } from 'lucide-react';
 import { chessApi, multiplayerApi } from '@/lib/api/multiplayer';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { useGameStore } from '@/lib/stores/gameStore';
 import { GameContainer } from '@/components/ui/GameContainer';
 
 type Screen = 'menu' | 'playing' | 'result';
@@ -156,6 +157,16 @@ function findBestMove(chess: Chess, difficulty: Difficulty): string | null {
   return bestMove;
 }
 
+// The color a given viewer is playing in a match. For vs-bot matches the
+// server records this directly (player_color); for PvP matches that field
+// only ever describes player1 (always white per Create), so the viewer's
+// own color has to be derived by comparing against player1_id — otherwise
+// a black player's own client would think it's white.
+function chessViewerColor(m: ChessMatch, userId?: string): 'white' | 'black' {
+  if (m.is_vs_bot) return m.player_color;
+  return m.player1_id === userId ? 'white' : 'black';
+}
+
 export default function ChessPage() {
   const [screen, setScreen] = useState<Screen>('menu');
   const [matchId, setMatchId] = useState<string | null>(null);
@@ -172,10 +183,38 @@ export default function ChessPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.accessToken);
+  const [challengeUsername, setChallengeUsername] = useState('');
+
+  const myColor: 'white' | 'black' = match ? chessViewerColor(match, user?.id) : 'white';
+
+  const matchesQuery = useQuery({
+    queryKey: ['chess-matches'],
+    queryFn: chessApi.list,
+    enabled: screen === 'menu',
+    refetchInterval: screen === 'menu' ? 5000 : false,
+  });
+
+  const openMatch = useCallback(
+    (m: ChessMatch) => {
+      setMatch(m);
+      setMatchId(m.id);
+      initChessFromMatch(m);
+      setGameMode('bot');
+      if (m.is_vs_bot) {
+        setOpponentName(m.bot_name || 'Bot');
+      } else {
+        const isMeWhite = m.player1_id === user?.id;
+        setOpponentName(isMeWhite ? 'Lawan' : 'Penantang');
+      }
+      setScreen(m.status === 'finished' ? 'result' : 'playing');
+    },
+    [user?.id]
+  );
 
   const createMutation = useMutation({
     mutationFn: (data: {
       vs_bot: boolean;
+      opponent_username?: string;
       bot_difficulty?: Difficulty;
       player_color?: 'white' | 'black';
     }) => chessApi.create(data),
@@ -184,10 +223,18 @@ export default function ChessPage() {
       setMatchId(data.id);
       initChessFromMatch(data);
       setGameMode('bot');
-      setOpponentName(data.bot_name || 'Bot');
+      setOpponentName(data.is_vs_bot ? data.bot_name || 'Bot' : `@${challengeUsername}`);
       setScreen('playing');
     },
+    onError: (err: Error) => setError(err.message),
   });
+
+  useEffect(() => {
+    useGameStore.getState().setPlaying(screen === 'playing');
+    return () => {
+      useGameStore.getState().setPlaying(false);
+    };
+  }, [screen]);
 
   const quickMatchMutation = useMutation({
     mutationFn: () => multiplayerApi.quickMatch('chess', 'medium'),
@@ -339,12 +386,7 @@ export default function ChessPage() {
       }
 
       const isBotGame = match.is_vs_bot;
-      const isPlayerWhite = match.player_color === 'white';
-      const myTurn = isBotGame
-        ? isPlayerWhite
-          ? chessInstance.turn() === 'w'
-          : chessInstance.turn() === 'b'
-        : true;
+      const myTurn = chessInstance.turn() === (myColor === 'white' ? 'w' : 'b');
       if (!myTurn) return;
 
       if (!selectedSquare) {
@@ -414,7 +456,7 @@ export default function ChessPage() {
         setSelectedSquare(null);
       }
     },
-    [selectedSquare, chessInstance, isAiThinking, match, matchId, gameMode]
+    [selectedSquare, chessInstance, isAiThinking, match, matchId, gameMode, myColor]
   );
 
   const getSquareColor = (r: number, c: number) =>
@@ -489,8 +531,8 @@ export default function ChessPage() {
     return (
       <p className="text-sm text-gray-500">
         Giliran: {chessInstance.turn() === 'w' ? 'Putih' : 'Hitam'}
-        {match?.is_vs_bot && (
-          <span className="ml-2">(Kamu: {match.player_color === 'white' ? 'Putih' : 'Hitam'})</span>
+        {match && gameMode !== 'ws' && (
+          <span className="ml-2">(Kamu: {myColor === 'white' ? 'Putih' : 'Hitam'})</span>
         )}
       </p>
     );
@@ -572,7 +614,88 @@ export default function ChessPage() {
                 <User className="h-4 w-4" /> Main Hitam vs Bot
               </button>
               {createMutation.isPending && <Loader2 className="mx-auto h-5 w-5 animate-spin" />}
+
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200 dark:border-slate-700" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-white px-3 text-xs text-gray-400 dark:bg-slate-900">
+                    atau
+                  </span>
+                </div>
+              </div>
+              <p className="text-sm font-semibold text-gray-600 dark:text-slate-300">
+                Tantang Teman
+              </p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!challengeUsername.trim()) return;
+                  createMutation.mutate({
+                    vs_bot: false,
+                    opponent_username: challengeUsername.trim(),
+                  });
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  value={challengeUsername}
+                  onChange={(e) => setChallengeUsername(e.target.value)}
+                  placeholder="Username teman"
+                  className="flex-1 rounded-xl border-2 border-gray-200 px-4 py-2 text-sm outline-none focus:border-stone-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                />
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending || !challengeUsername.trim()}
+                  className="rounded-xl bg-stone-700 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-stone-800 disabled:opacity-50"
+                >
+                  Tantang
+                </button>
+              </form>
             </div>
+
+            {matchesQuery.data && matchesQuery.data.length > 0 && (
+              <div className="space-y-2 pt-4 text-left">
+                <p className="text-sm font-semibold text-gray-600 dark:text-slate-300">
+                  Pertandinganmu
+                </p>
+                {matchesQuery.data.map((m) => {
+                  const isMeWhite = m.player1_id === user?.id;
+                  const label = m.is_vs_bot
+                    ? `vs ${m.bot_name || 'Bot'}`
+                    : isMeWhite
+                      ? 'Menunggu lawan'
+                      : 'Tantangan masuk';
+                  const isMyTurn =
+                    m.status === 'active' && m.current_turn === chessViewerColor(m, user?.id);
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => openMatch(m)}
+                      className="flex w-full items-center justify-between rounded-xl border border-gray-200 px-4 py-3 text-sm transition-all hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                    >
+                      <span className="font-medium text-gray-700 dark:text-slate-300">{label}</span>
+                      <span
+                        className={`text-xs font-semibold ${
+                          m.status === 'finished'
+                            ? 'text-gray-400'
+                            : isMyTurn
+                              ? 'text-emerald-600'
+                              : 'text-gray-400'
+                        }`}
+                      >
+                        {m.status === 'finished'
+                          ? 'Selesai'
+                          : isMyTurn
+                            ? 'Giliranmu'
+                            : 'Menunggu lawan'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </GameContainer>
       </>

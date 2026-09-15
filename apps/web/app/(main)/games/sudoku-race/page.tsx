@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowLeft, Clock, Flag, Home, Loader2, Medal, RotateCcw, Trophy, Zap } from 'lucide-react';
 import { multiplayerApi } from '@/lib/api/multiplayer';
+import { useLatestRef } from '@/lib/hooks/useLatestRef';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { GameContainer } from '@/components/ui/GameContainer';
 
@@ -119,9 +120,17 @@ function RaceScreen({
   const [message, setMessage] = useState('');
   const [timeLeft, setTimeLeft] = useState(600);
   const resultRef = useRef<GameOverInfo | null>(null);
+  const onResultRef = useLatestRef(onResult);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shouldReconnect = useRef(true);
+  const gameOverRef = useRef(false);
 
-  useEffect(() => {
+  const connect = useCallback(() => {
+    if (reconnectTimer.current) {
+      clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = null;
+    }
     const wsUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1')
       .replace(/\/api\/v1\/?$/, '')
       .replace('http', 'ws');
@@ -130,6 +139,12 @@ function RaceScreen({
 
     ws.onopen = () =>
       ws.send(JSON.stringify({ type: 'join_room', payload: { room_id: roomID, token } }));
+
+    ws.onclose = () => {
+      if (shouldReconnect.current && !gameOverRef.current) {
+        reconnectTimer.current = setTimeout(() => connect(), 2000);
+      }
+    };
 
     ws.onmessage = (event) => {
       try {
@@ -167,16 +182,27 @@ function RaceScreen({
           setOpponentProgress(msg.payload.progress);
         }
         if (msg.type === 'game_over') {
+          gameOverRef.current = true;
           setGameOver(true);
           resultRef.current = msg.payload as GameOverInfo;
           setTimeout(() => {
-            if (resultRef.current) onResult(resultRef.current);
+            if (resultRef.current) onResultRef.current(resultRef.current);
           }, 1500);
         }
       } catch {}
     };
-    return () => ws.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, roomID]);
+
+  useEffect(() => {
+    shouldReconnect.current = true;
+    connect();
+    return () => {
+      shouldReconnect.current = false;
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      wsRef.current?.close();
+    };
+  }, [connect]);
 
   useEffect(() => {
     if (!puzzle || gameOver) return;
@@ -195,6 +221,7 @@ function RaceScreen({
 
   const handleResign = useCallback(() => {
     wsRef.current?.send(JSON.stringify({ type: 'leave_room', payload: { room_id: roomID } }));
+    gameOverRef.current = true;
     setGameOver(true);
   }, [roomID]);
 

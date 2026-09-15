@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -19,6 +19,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { challengesApi } from '@/lib/api/multiplayer';
+import { useLatestRef } from '@/lib/hooks/useLatestRef';
 import { GameContainer } from '@/components/ui/GameContainer';
 
 type Screen = 'menu' | 'create' | 'list' | 'play' | 'result';
@@ -378,32 +379,9 @@ function PlayScreen({
   const [submitting, setSubmitting] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const questions = detail.questions || [];
+  const questions = useMemo(() => detail.questions || [], [detail.questions]);
   const totalQ = questions.length;
   const isLast = currentQ >= totalQ;
-
-  useEffect(() => {
-    if (isLast) return;
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          handleTimeout();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [currentQ]);
-
-  const handleTimeout = () => {
-    const q = questions[currentQ] as any;
-    recordAnswer(q, '', QUESTION_TIME, false, 0);
-    goNext();
-  };
 
   const recordAnswer = useCallback(
     (q: any, answer: string, timeTaken: number, correct: boolean, points: number) => {
@@ -421,15 +399,41 @@ function PlayScreen({
     [currentQ]
   );
 
-  const goNext = () => {
+  const goNext = useCallback(() => {
     setSelected(null);
     if (currentQ < totalQ - 1) {
-      setCurrentQ(currentQ + 1);
+      setCurrentQ((q) => q + 1);
       setTimeLeft(QUESTION_TIME);
     } else {
-      setCurrentQ(currentQ + 1);
+      setCurrentQ((q) => q + 1);
     }
-  };
+  }, [currentQ, totalQ]);
+
+  const handleTimeout = useCallback(() => {
+    const q = questions[currentQ] as any;
+    recordAnswer(q, '', QUESTION_TIME, false, 0);
+    goNext();
+  }, [questions, currentQ, recordAnswer, goNext]);
+
+  const handleTimeoutRef = useLatestRef(handleTimeout);
+
+  useEffect(() => {
+    if (isLast) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          handleTimeoutRef.current();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQ, isLast]);
 
   const handleAnswer = (opt: string) => {
     if (selected || isLast) return;
