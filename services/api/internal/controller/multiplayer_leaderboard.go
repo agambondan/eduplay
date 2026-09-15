@@ -26,7 +26,7 @@ func (h *MultiplayerLeaderboardController) GetLeaderboard(c *fiber.Ctx) error {
 func (h *MultiplayerLeaderboardController) GetGlobal(c *fiber.Ctx) error {
 	result, err := h.svc.GetGlobalLeaderboard()
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, result)
 }
@@ -60,7 +60,7 @@ func (h *RematchController) CreateRematch(c *fiber.Ctx) error {
 	if code == "" {
 		return response.Error(c, fiber.StatusBadRequest, "Kode room diperlukan")
 	}
-	newCode, err := h.svc.CreateRematch(code)
+	newCode, err := h.svc.CreateRematch(userID, code)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())
 	}

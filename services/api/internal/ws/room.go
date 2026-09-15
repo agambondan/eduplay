@@ -162,9 +162,27 @@ func (rm *RoomManager) StartReconnectTimer(roomID, userID string, timeout time.D
 			room.State = "finished"
 			room.FinishedAt = nowPtr()
 			room.mu.Unlock()
+
 			room.BroadcastExcept(userID, "player_forfeited", map[string]string{
 				"player_id": userID,
 			})
+
+			// player_forfeited alone never resolves the remaining player's
+			// screen — every game page only transitions to its result screen
+			// on game_over, so without this the opponent would wait forever.
+			results := room.calculateResults()
+			winnerID := room.getWinnerID(results)
+			room.Broadcast("game_over", GameOverPayload{
+				Results:  results,
+				WinnerID: winnerID,
+				XPEarned: 50,
+			})
+			if winnerID != "" {
+				room.persistFinishedMatch(results, winnerID)
+				if !strings.HasPrefix(winnerID, "bot_") {
+					hub.checkAchievements(winnerID)
+				}
+			}
 			return
 		}
 
@@ -274,28 +292,42 @@ func (r *GameRoom) CurrentStatePayload() map[string]interface{} {
 	return payload
 }
 
-func (r *GameRoom) Broadcast(msgType string, payload interface{}) {
+type recipientEntry struct {
+	userID string
+	client *Client
+}
+
+// snapshotRecipients copies out the current set of connected players/spectators
+// under a read lock, so callers can send messages without holding r.mu (sending
+// can block on network I/O, and some callers already hold r.mu.Lock()).
+func (r *GameRoom) snapshotRecipients() []recipientEntry {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	entries := make([]recipientEntry, 0, len(r.Players)+len(r.Spectators))
 	for _, p := range r.Players {
 		if p.Client != nil {
-			p.Client.SendMessage(msgType, payload)
+			entries = append(entries, recipientEntry{userID: p.ID, client: p.Client})
 		}
 	}
-	for _, client := range r.Spectators {
+	for spectatorID, client := range r.Spectators {
 		if client != nil {
-			client.SendMessage(msgType, payload)
+			entries = append(entries, recipientEntry{userID: spectatorID, client: client})
 		}
+	}
+	return entries
+}
+
+func (r *GameRoom) Broadcast(msgType string, payload interface{}) {
+	for _, entry := range r.snapshotRecipients() {
+		entry.client.SendMessage(msgType, payload)
 	}
 }
 
 func (r *GameRoom) BroadcastExcept(userID string, msgType string, payload interface{}) {
-	for _, p := range r.Players {
-		if p.ID != userID && p.Client != nil {
-			p.Client.SendMessage(msgType, payload)
-		}
-	}
-	for spectatorID, client := range r.Spectators {
-		if spectatorID != userID && client != nil {
-			client.SendMessage(msgType, payload)
+	for _, entry := range r.snapshotRecipients() {
+		if entry.userID != userID {
+			entry.client.SendMessage(msgType, payload)
 		}
 	}
 }
@@ -468,34 +500,49 @@ func (r *GameRoom) runBotPlayer(bot *RuleBasedBot) {
 
 func (r *GameRoom) SubmitAnswer(userID, questionID, answer string, timeTaken int) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 
 	if r.State != "playing" {
+		r.mu.Unlock()
 		return
 	}
 
 	player, ok := r.Players[userID]
 	if !ok {
+		r.mu.Unlock()
 		return
 	}
 
 	if timeTaken < 200 {
+		r.mu.Unlock()
 		return
 	}
 
 	if r.CurrentQ < 0 || r.CurrentQ >= len(r.Questions) || r.Questions[r.CurrentQ].ID != questionID {
+		r.mu.Unlock()
 		return
+	}
+
+	// math_relay assigns each question to exactly one player at a time
+	// (rotating every questions_per questions); without this check any
+	// player in the room could answer a question that wasn't theirs.
+	if r.GameType == "math_relay" {
+		if expected, ok := r.currentRelayPlayerLocked(); ok && expected != userID {
+			r.mu.Unlock()
+			return
+		}
 	}
 
 	if player.AnsweredQuestions == nil {
 		player.AnsweredQuestions = make(map[string]bool)
 	}
 	if player.AnsweredQuestions[questionID] {
+		r.mu.Unlock()
 		return
 	}
 
 	q := r.findQuestion(questionID)
 	if q == nil {
+		r.mu.Unlock()
 		return
 	}
 	player.AnsweredQuestions[questionID] = true
@@ -535,18 +582,42 @@ func (r *GameRoom) SubmitAnswer(userID, questionID, answer string, timeTaken int
 		}
 	}
 
+	newScore := player.Score
+	questionsAnswered := player.Correct + player.Wrong
+	r.mu.Unlock()
+
 	r.Broadcast("answer_result", AnswerResultPayload{
 		PlayerID:   userID,
 		IsCorrect:  isCorrect,
 		ScoreDelta: scoreDelta,
-		NewScore:   player.Score,
+		NewScore:   newScore,
 	})
 
 	r.Broadcast("opponent_progress", OpponentProgressPayload{
 		PlayerID:          userID,
-		QuestionsAnswered: player.Correct + player.Wrong,
-		CurrentScore:      player.Score,
+		QuestionsAnswered: questionsAnswered,
+		CurrentScore:      newScore,
 	})
+}
+
+// currentRelayPlayerLocked returns the userID whose turn it is for the
+// current question in a math_relay match. Caller must hold r.mu. Mirrors
+// the same players[i/questionsPer] computation Hub.startMathRelay uses to
+// decide who a question belongs to.
+func (r *GameRoom) currentRelayPlayerLocked() (string, bool) {
+	players, ok := r.GameData["players"].([]string)
+	if !ok || len(players) == 0 {
+		return "", false
+	}
+	questionsPer, ok := r.GameData["questions_per"].(int)
+	if !ok || questionsPer <= 0 {
+		questionsPer = 5
+	}
+	idx := r.CurrentQ / questionsPer
+	if idx >= len(players) {
+		idx = len(players) - 1
+	}
+	return players[idx], true
 }
 
 func (r *GameRoom) findQuestion(id string) *QuestionPayload {

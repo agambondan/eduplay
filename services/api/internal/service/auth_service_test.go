@@ -109,7 +109,7 @@ func TestAuthService_Logout(t *testing.T) {
 	setupTestDB()
 	svc := NewAuthService(getTestConfig(), repository.NewUserRepository(), nil, &mockAchievement{})
 
-	err := svc.Logout("test-jti-123", 1000)
+	err := svc.Logout("test-jti-123", 1000, "")
 	require.NoError(t, err)
 
 	val, err := database.RDB.Get(context.Background(), "jwt:blacklist:test-jti-123").Result()

@@ -75,7 +75,7 @@ func (h *AdminController) ToggleGame(c *fiber.Ctx) error {
 
 func (h *AdminController) ResetLeaderboard(c *fiber.Ctx) error {
 	if err := h.svc.ResetLeaderboard(); err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, fiber.Map{"message": "Leaderboard reset"})
 }
@@ -102,7 +102,7 @@ func (h *AdminController) SetOnetConfig(c *fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request")
 	}
 	if err := h.svc.SetOnetConfig(cfg); err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, fiber.Map{"message": "Onet config updated"})
 }
@@ -110,7 +110,7 @@ func (h *AdminController) SetOnetConfig(c *fiber.Ctx) error {
 func (h *AdminController) GetFeatureFlags(c *fiber.Ctx) error {
 	flags, err := h.svc.ListFeatureFlags()
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, flags)
 }
@@ -124,7 +124,7 @@ func (h *AdminController) SetFeatureFlag(c *fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request")
 	}
 	if err := h.svc.SetFeatureFlag(key, req.Value); err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, fiber.Map{"message": "Feature flag updated"})
 }
@@ -132,7 +132,7 @@ func (h *AdminController) SetFeatureFlag(c *fiber.Ctx) error {
 func (h *AdminController) ListSupportTickets(c *fiber.Ctx) error {
 	tickets, err := h.svc.ListSupportTickets(c.Query("status"))
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, tickets)
 }
@@ -145,7 +145,7 @@ func (h *AdminController) UpdateTicketStatus(c *fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request")
 	}
 	if err := h.svc.UpdateTicketStatus(c.Params("id"), req.Status); err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, fiber.Map{"message": "Ticket updated"})
 }
@@ -153,7 +153,7 @@ func (h *AdminController) UpdateTicketStatus(c *fiber.Ctx) error {
 func (h *AdminController) GetAnalytics(c *fiber.Ctx) error {
 	stats, err := h.svc.GetAnalytics()
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, stats)
 }
@@ -161,14 +161,14 @@ func (h *AdminController) GetAnalytics(c *fiber.Ctx) error {
 func (h *AdminController) ListTournaments(c *fiber.Ctx) error {
 	list, err := h.svc.ListTournaments()
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, list)
 }
 
 func (h *AdminController) CancelTournament(c *fiber.Ctx) error {
 	if err := h.svc.CancelTournament(c.Params("id")); err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, fiber.Map{"message": "Tournament cancelled"})
 }

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"path/filepath"
 	"strings"
 
@@ -132,7 +133,10 @@ func (h *UserController) UploadAvatar(c *fiber.Ctx) error {
 
 	url, err := h.svc.UploadAvatar(userId, file, fileHeader)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		if errors.Is(err, service.ErrInvalidAvatarType) {
+			return response.Error(c, fiber.StatusBadRequest, err.Error())
+		}
+		return response.Error(c, fiber.StatusInternalServerError, "Failed to upload avatar")
 	}
 
 	return response.Success(c, fiber.Map{"avatar_url": url})

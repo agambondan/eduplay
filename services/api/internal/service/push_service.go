@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -82,9 +83,18 @@ func (s *PushService) sendPush(sub model.PushSubscription, title, body, url stri
 		},
 	}
 
-	payload := `{"title":"` + title + `","body":"` + body + `","icon":"/icons/icon-192x192.png","data":{"url":"` + url + `"}}`
+	payload, err := json.Marshal(map[string]interface{}{
+		"title": title,
+		"body":  body,
+		"icon":  "/icons/icon-192x192.png",
+		"data":  map[string]string{"url": url},
+	})
+	if err != nil {
+		logger.Log.Warn("failed to build push payload", zap.Error(err))
+		return
+	}
 
-	_, err := webpush.SendNotification([]byte(payload), &subscriber, &webpush.Options{
+	_, err = webpush.SendNotification(payload, &subscriber, &webpush.Options{
 		Subscriber:      "admin@eduplay.id",
 		VAPIDPublicKey:  s.cfg.VAPID.PublicKey,
 		VAPIDPrivateKey: s.cfg.VAPID.PrivateKey,

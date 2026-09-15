@@ -12,6 +12,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
 type RoomService interface {
@@ -148,58 +149,62 @@ func (s *roomService) GetRoom(roomCode string) (*RoomDetailResponse, error) {
 }
 
 func (s *roomService) JoinRoom(roomCode, userID string) (*RoomResponse, error) {
-	room, err := s.getRoomData(roomCode)
+	uid, err := uuid.Parse(userID)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("ID pengguna tidak valid")
 	}
-
-	if room.Status != "waiting" {
-		return nil, errors.New("Room sudah dimulai")
-	}
-
-	for _, m := range room.Members {
-		if m.ID == userID {
-			return s.toResponse(room), nil
-		}
-	}
-
-	if len(room.Members) >= room.Settings.MaxPlayers {
-		return nil, errors.New("Room sudah penuh")
-	}
-
-	uid, _ := uuid.Parse(userID)
 	var u model.User
 	if err := database.DB.First(&u, "id = ?", uid).Error; err != nil {
 		return nil, errors.New("Pengguna tidak ditemukan")
 	}
 
-	room.Members = append(room.Members, RoomMember{
-		ID:       userID,
-		Username: u.Username,
-		Level:    u.Level,
-		IsHost:   false,
+	room, err := s.mutateRoom(roomCode, func(room *RoomData) error {
+		if room.Status != "waiting" {
+			return errors.New("Room sudah dimulai")
+		}
+		for _, m := range room.Members {
+			if m.ID == userID {
+				return nil
+			}
+		}
+		if len(room.Members) >= room.Settings.MaxPlayers {
+			return errors.New("Room sudah penuh")
+		}
+		room.Members = append(room.Members, RoomMember{
+			ID:       userID,
+			Username: u.Username,
+			Level:    u.Level,
+			IsHost:   false,
+		})
+		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	data, _ := json.Marshal(room)
-	database.RDB.Set(context.Background(), "room:"+roomCode, data, 10*time.Minute)
 	database.RDB.SAdd(context.Background(), "room:"+roomCode+":members", userID)
 
 	return s.toResponse(room), nil
 }
 
 func (s *roomService) LeaveRoom(roomCode, userID string) error {
-	room, err := s.getRoomData(roomCode)
+	room, err := s.mutateRoom(roomCode, func(room *RoomData) error {
+		newMembers := make([]RoomMember, 0, len(room.Members))
+		for _, m := range room.Members {
+			if m.ID != userID {
+				newMembers = append(newMembers, m)
+			}
+		}
+		room.Members = newMembers
+		if len(room.Members) > 0 && room.HostID == userID {
+			room.Members[0].IsHost = true
+			room.HostID = room.Members[0].ID
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}
-
-	var newMembers []RoomMember
-	for _, m := range room.Members {
-		if m.ID != userID {
-			newMembers = append(newMembers, m)
-		}
-	}
-	room.Members = newMembers
 
 	if len(room.Members) == 0 {
 		database.RDB.Del(context.Background(), "room:"+roomCode)
@@ -207,77 +212,55 @@ func (s *roomService) LeaveRoom(roomCode, userID string) error {
 		return nil
 	}
 
-	if room.HostID == userID && len(room.Members) > 0 {
-		room.Members[0].IsHost = true
-		room.HostID = room.Members[0].ID
-	}
-
-	data, _ := json.Marshal(room)
-	database.RDB.Set(context.Background(), "room:"+roomCode, data, 10*time.Minute)
 	database.RDB.SRem(context.Background(), "room:"+roomCode+":members", userID)
-
 	return nil
 }
 
 func (s *roomService) StartRoom(roomCode, userID string) error {
-	room, err := s.getRoomData(roomCode)
-	if err != nil {
-		return err
-	}
-
-	if room.HostID != userID {
-		return errors.New("Hanya host yang bisa memulai game")
-	}
-
-	if room.Status != "waiting" {
-		return errors.New("Room sudah dimulai")
-	}
-
-	if len(room.Members) < 2 && !room.Settings.AllowBots {
-		return errors.New("Minimal 2 player untuk memulai")
-	}
-
-	if room.Settings.AllowBots {
-		for len(room.Members) < room.Settings.MaxPlayers {
-			n := len(room.Members)
-			room.Members = append(room.Members, RoomMember{
-				ID:       "bot_room_" + room.RoomCode + "_" + strconv.Itoa(n+1),
-				Username: botRoomName(n),
-				Level:    1,
-				IsHost:   false,
-			})
+	_, err := s.mutateRoom(roomCode, func(room *RoomData) error {
+		if room.HostID != userID {
+			return errors.New("Hanya host yang bisa memulai game")
 		}
-	}
-
-	room.Status = "playing"
-	data, _ := json.Marshal(room)
-	database.RDB.Set(context.Background(), "room:"+roomCode, data, 10*time.Minute)
-
-	return nil
+		if room.Status != "waiting" {
+			return errors.New("Room sudah dimulai")
+		}
+		if len(room.Members) < 2 && !room.Settings.AllowBots {
+			return errors.New("Minimal 2 player untuk memulai")
+		}
+		if room.Settings.AllowBots {
+			for len(room.Members) < room.Settings.MaxPlayers {
+				n := len(room.Members)
+				room.Members = append(room.Members, RoomMember{
+					ID:       "bot_room_" + room.RoomCode + "_" + strconv.Itoa(n+1),
+					Username: botRoomName(n),
+					Level:    1,
+					IsHost:   false,
+				})
+			}
+		}
+		room.Status = "playing"
+		return nil
+	})
+	return err
 }
 
 func (s *roomService) UpdateSettings(roomCode, userID string, settings RoomSettingsInput) (*RoomResponse, error) {
-	room, err := s.getRoomData(roomCode)
+	room, err := s.mutateRoom(roomCode, func(room *RoomData) error {
+		if room.HostID != userID {
+			return errors.New("Hanya host yang bisa mengubah pengaturan")
+		}
+		if room.Status != "waiting" {
+			return errors.New("Room sudah dimulai")
+		}
+		room.Settings = normalizeRoomSettings(settings)
+		if len(room.Members) > room.Settings.MaxPlayers {
+			return errors.New("Max player lebih kecil dari jumlah player saat ini")
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	if room.HostID != userID {
-		return nil, errors.New("Hanya host yang bisa mengubah pengaturan")
-	}
-
-	if room.Status != "waiting" {
-		return nil, errors.New("Room sudah dimulai")
-	}
-
-	room.Settings = normalizeRoomSettings(settings)
-	if len(room.Members) > room.Settings.MaxPlayers {
-		return nil, errors.New("Max player lebih kecil dari jumlah player saat ini")
-	}
-
-	data, _ := json.Marshal(room)
-	database.RDB.Set(context.Background(), "room:"+roomCode, data, 10*time.Minute)
-
 	return s.toResponse(room), nil
 }
 
@@ -312,6 +295,61 @@ func (s *roomService) getRoomData(roomCode string) (*RoomData, error) {
 
 	return &room, nil
 }
+
+// mutateRoom loads the room under a Redis WATCH and writes back whatever
+// mutate leaves in *RoomData, but only if nobody else changed the key in
+// between — otherwise it retries. Without this, two concurrent requests
+// (e.g. two joins racing the MaxPlayers check, or a join racing a leave)
+// each read the same snapshot and the second write silently clobbers the
+// first instead of being rejected or merged.
+func (s *roomService) mutateRoom(roomCode string, mutate func(room *RoomData) error) (*RoomData, error) {
+	ctx := context.Background()
+	key := "room:" + roomCode
+
+	for attempt := 0; attempt < 5; attempt++ {
+		var result *RoomData
+		err := database.RDB.Watch(ctx, func(tx *redis.Tx) error {
+			raw, err := tx.Get(ctx, key).Result()
+			if err != nil {
+				return errRoomNotFound
+			}
+			var room RoomData
+			if err := json.Unmarshal([]byte(raw), &room); err != nil {
+				return errors.New("Data room rusak")
+			}
+			if err := mutate(&room); err != nil {
+				return err
+			}
+			data, err := json.Marshal(room)
+			if err != nil {
+				return err
+			}
+			_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+				pipe.Set(ctx, key, data, 10*time.Minute)
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+			result = &room
+			return nil
+		}, key)
+
+		if err == nil {
+			return result, nil
+		}
+		if errors.Is(err, redis.TxFailedErr) {
+			continue
+		}
+		if errors.Is(err, errRoomNotFound) {
+			return nil, errors.New("Room tidak ditemukan atau sudah kadaluarsa")
+		}
+		return nil, err
+	}
+	return nil, errors.New("Room sedang sibuk, coba lagi")
+}
+
+var errRoomNotFound = errors.New("room not found")
 
 func (s *roomService) toResponse(room *RoomData) *RoomResponse {
 	return &RoomResponse{

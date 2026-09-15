@@ -83,6 +83,15 @@ type TournamentMatch struct {
 	EndsAt         *time.Time `json:"ends_at"`
 	FinishedAt     *time.Time `json:"finished_at"`
 	CreatedAt      time.Time  `json:"created_at"`
+
+	// Pending* hold one participant's self-report until the other
+	// participant reports a matching result — a lone participant can't just
+	// declare themselves the winner. Cleared once the match is finalized or
+	// once a mismatched second report is rejected.
+	PendingReporterID   *uuid.UUID `gorm:"type:uuid" json:"-"`
+	PendingWinnerID     *uuid.UUID `gorm:"type:uuid" json:"-"`
+	PendingPlayer1Score int        `json:"-"`
+	PendingPlayer2Score int        `json:"-"`
 }
 
 func (m *TournamentMatch) BeforeCreate(tx *gorm.DB) error {

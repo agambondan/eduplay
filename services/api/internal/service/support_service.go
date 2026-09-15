@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"html"
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
@@ -15,12 +16,17 @@ type SupportService interface {
 }
 
 type supportService struct {
-	emailCl *email.ResendClient
-	log     *zap.Logger
+	emailCl  *email.ResendClient
+	notifyTo string
+	log      *zap.Logger
 }
 
-func NewSupportService(emailCl *email.ResendClient) SupportService {
-	return &supportService{emailCl: emailCl, log: zap.L()}
+// NewSupportService always notifies the fixed internal support inbox
+// (notifyTo), never the submitter-supplied email address — otherwise this
+// unauthenticated endpoint becomes an open relay that can send arbitrary
+// HTML to any address the caller chooses.
+func NewSupportService(emailCl *email.ResendClient, notifyTo string) SupportService {
+	return &supportService{emailCl: emailCl, notifyTo: notifyTo, log: zap.L()}
 }
 
 func (s *supportService) CreateTicket(userID string, name, emailAddr, category, message string) (*model.SupportTicket, error) {
@@ -43,14 +49,15 @@ func (s *supportService) CreateTicket(userID string, name, emailAddr, category, 
 		return nil, fmt.Errorf("failed to save support ticket: %w", err)
 	}
 
-	if s.emailCl != nil {
+	if s.emailCl != nil && s.notifyTo != "" {
 		subject := fmt.Sprintf("[EduPlay Support] %s - %s", category, name)
-		html := fmt.Sprintf(
+		body := fmt.Sprintf(
 			"<h2>Support Ticket #%s</h2><p><strong>Name:</strong> %s</p><p><strong>Email:</strong> %s</p><p><strong>Category:</strong> %s</p><p><strong>Message:</strong></p><p>%s</p>",
-			ticket.ID.String(), name, emailAddr, category, message,
+			ticket.ID.String(), html.EscapeString(name), html.EscapeString(emailAddr),
+			html.EscapeString(category), html.EscapeString(message),
 		)
 		go func() {
-			if err := s.emailCl.Send(emailAddr, subject, html); err != nil {
+			if err := s.emailCl.Send(s.notifyTo, subject, body); err != nil {
 				s.log.Warn("failed to send support notification email", zap.Error(err))
 			}
 		}()

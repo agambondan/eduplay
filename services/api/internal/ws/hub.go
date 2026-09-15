@@ -135,7 +135,9 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			if oldClient, ok := h.Clients[client.UserID]; ok && oldClient.RoomID != "" {
 				client.RoomID = oldClient.RoomID
+				oldClient.mu.Lock()
 				oldClient.Conn = nil
+				oldClient.mu.Unlock()
 				h.Rooms.CancelReconnectTimer(oldClient.RoomID, client.UserID)
 				h.Clients[client.UserID] = client
 				h.mu.Unlock()
@@ -157,12 +159,20 @@ func (h *Hub) Run() {
 
 		case client := <-h.Unregister:
 			h.mu.Lock()
-			if current, ok := h.Clients[client.UserID]; ok && current == client {
+			// current != client means a newer connection already replaced
+			// this one (the client reconnected before this stale socket's
+			// read loop finally errored out) — the room already knows about
+			// the new connection, so skip the disconnect side effects below
+			// entirely, otherwise they'd wrongly evict an actively-connected
+			// player and force-forfeit them 30s later.
+			current, ok := h.Clients[client.UserID]
+			isCurrent := ok && current == client
+			if isCurrent {
 				delete(h.Clients, client.UserID)
 			}
 			h.mu.Unlock()
 
-			if client.RoomID != "" {
+			if isCurrent && client.RoomID != "" {
 				log.Printf("ws client disconnected, reconnect window: %s (room: %s)", client.UserID, client.RoomID)
 				if room, ok := h.Rooms.Get(client.RoomID); ok {
 					room.BroadcastExcept(client.UserID, "player_disconnected", map[string]string{
@@ -309,9 +319,57 @@ func (h *Hub) handleMessage(client *Client, msg WSMessage) {
 		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
 			return
 		}
-		h.Rooms.LeaveRoom(payload.RoomID, client.UserID)
-		client.RoomID = ""
+		h.handleLeaveRoom(client, payload.RoomID)
 	}
+}
+
+// handleLeaveRoom handles a player intentionally leaving/resigning from a
+// room (e.g. clicking a Resign button). If the match is still in progress
+// and another player remains, this forfeits the leaving player and
+// broadcasts a proper game_over so the remaining player's screen resolves
+// instead of waiting forever — previously this just silently removed the
+// player from the room with no forfeit and no notification at all.
+func (h *Hub) handleLeaveRoom(client *Client, roomID string) {
+	if room, ok := h.Rooms.Get(roomID); ok {
+		room.mu.Lock()
+		player, exists := room.Players[client.UserID]
+		otherPlayers := 0
+		for id := range room.Players {
+			if id != client.UserID {
+				otherPlayers++
+			}
+		}
+		shouldForfeit := exists && room.State == "playing" && otherPlayers > 0
+		if shouldForfeit {
+			player.Forfeited = true
+			room.State = "finished"
+			room.FinishedAt = nowPtr()
+		}
+		room.mu.Unlock()
+
+		if shouldForfeit {
+			room.BroadcastExcept(client.UserID, "player_forfeited", map[string]string{
+				"player_id": client.UserID,
+			})
+
+			results := room.calculateResults()
+			winnerID := room.getWinnerID(results)
+			room.Broadcast("game_over", GameOverPayload{
+				Results:  results,
+				WinnerID: winnerID,
+				XPEarned: 50,
+			})
+			if winnerID != "" {
+				room.persistFinishedMatch(results, winnerID)
+				if !strings.HasPrefix(winnerID, "bot_") {
+					h.checkAchievements(winnerID)
+				}
+			}
+		}
+	}
+
+	h.Rooms.LeaveRoom(roomID, client.UserID)
+	client.RoomID = ""
 }
 
 func (h *Hub) handleJoinRoom(client *Client, roomID string) {
@@ -626,24 +684,16 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 		}
 
 		if room.State == "waiting" && room.IsFull() {
-			diff := room.Settings.Difficulty
-			if diff == "" {
-				diff = "medium"
-			}
-			puzzle := getRandomCrosswordPuzzle(diff)
-			room.mu.Lock()
-			room.GameData = map[string]interface{}{
-				"puzzle":        puzzle,
-				"filled_cells":  map[string]string{},
-				"player_filled": map[string]int{},
-				"coop":          isCoop,
-			}
-			room.State = "playing"
-			room.mu.Unlock()
-
-			room.Broadcast("game_starting", map[string]int{"countdown": 3})
-			time.Sleep(2 * time.Second)
-			room.Broadcast("crossword_start", puzzle)
+			go h.startCrosswordGame(room, isCoop)
+		} else if room.State == "waiting" && isCoop {
+			// Crossword Co-op needs up to 4 players, but every join lands in a
+			// freshly generated room (no room-code sharing exists for this game
+			// yet), so it can never actually reach 4 real players on its own.
+			// Top off with bots after a short grace period instead of waiting
+			// forever.
+			h.scheduleBotFillStart(room, 3*time.Second, func(r *GameRoom) {
+				h.startCrosswordGame(r, isCoop)
+			})
 		}
 	} else if strings.HasPrefix(roomID, "math_relay:") {
 		room, ok := h.Rooms.Get(roomID)
@@ -692,6 +742,13 @@ func (h *Hub) handleJoinRoom(client *Client, roomID string) {
 
 		if room.State == "waiting" && room.IsFull() {
 			go h.startMathRelay(room)
+		} else if room.State == "waiting" {
+			// Math Relay needs up to 4 players, but every join lands in a
+			// freshly generated room (no room-code sharing exists for this
+			// game yet), so it can never actually reach 4 real players on its
+			// own. Top off with bots after a short grace period instead of
+			// waiting forever.
+			h.scheduleBotFillStart(room, 3*time.Second, h.startMathRelay)
 		}
 	} else if strings.HasPrefix(roomID, "quiz_showdown:") {
 		roomData, hasRoomData := loadRoomDataFromCode(roomID, "quiz_showdown")
@@ -990,6 +1047,60 @@ func (h *Hub) handleWordleGuess(client *Client, roomID, word string) {
 	result := evaluateWordleGuess(word, target)
 	isCorrect := word == target
 	guessNum := len(playerGuesses)
+
+	// Track the order in which players finish (win or exhaust all 6
+	// guesses) so a tie on attempt count can be broken by who finished
+	// first, and so we know when EVERY player is done — not just whether
+	// someone happened to guess correctly.
+	finishOrder, _ := room.GameData["finish_order"].([]string)
+	if isCorrect || guessNum >= 6 {
+		alreadyFinished := false
+		for _, id := range finishOrder {
+			if id == client.UserID {
+				alreadyFinished = true
+				break
+			}
+		}
+		if !alreadyFinished {
+			finishOrder = append(finishOrder, client.UserID)
+			room.GameData["finish_order"] = finishOrder
+		}
+	}
+
+	playerIDs := make([]string, 0, len(room.Players))
+	for id := range room.Players {
+		playerIDs = append(playerIDs, id)
+	}
+
+	// A player is "done" once they've either guessed the word or run out of
+	// attempts — not just when their *last* guess happens to equal the
+	// target. The previous version only ever checked the latter, so a match
+	// where one or both players exhausted all 6 guesses without solving it
+	// would never send game_over and the match would hang forever.
+	allDone := true
+	for _, id := range playerIDs {
+		g := guesses[id]
+		last := ""
+		if len(g) > 0 {
+			last = g[len(g)-1]
+		}
+		if last != target && len(g) < 6 {
+			allDone = false
+			break
+		}
+	}
+
+	var gameOverPayload *GameOverPayload
+	if allDone {
+		room.State = "finished"
+		room.FinishedAt = nowPtr()
+
+		payload := buildWordleGameOver(playerIDs, guesses, target, finishOrder)
+		for i := range payload.Results {
+			payload.Results[i].Username = room.getPlayerName(payload.Results[i].PlayerID)
+		}
+		gameOverPayload = &payload
+	}
 	room.mu.Unlock()
 
 	client.SendMessage("wordle_result", map[string]interface{}{
@@ -1004,31 +1115,63 @@ func (h *Hub) handleWordleGuess(client *Client, roomID, word string) {
 		"attempts":  guessNum,
 	})
 
-	if isCorrect {
-		room.mu.Lock()
-		gData, _ := room.GameData["guesses"].(map[string][]string)
-		room.mu.Unlock()
-
-		allDone := true
-		for _, p := range room.GetPlayers() {
-			pg := gData[p.ID]
-			lastGuess := ""
-			if len(pg) > 0 {
-				lastGuess = pg[len(pg)-1]
+	if gameOverPayload != nil {
+		room.Broadcast("game_over", *gameOverPayload)
+		if gameOverPayload.WinnerID != "" {
+			room.persistFinishedMatch(gameOverPayload.Results, gameOverPayload.WinnerID)
+			if !strings.HasPrefix(gameOverPayload.WinnerID, "bot_") {
+				h.checkAchievements(gameOverPayload.WinnerID)
 			}
-			if lastGuess != target {
-				allDone = false
-				break
-			}
-		}
-		if allDone {
-			room.Broadcast("game_over", GameOverPayload{
-				WinnerID: client.UserID,
-				XPEarned: 50,
-				Results:  []PlayerResult{},
-			})
 		}
 	}
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// buildWordleGameOver computes the winner and per-player results once every
+// player is done (won or exhausted 6 guesses): fewer attempts wins; a tie on
+// attempts is broken by finishOrder (who finished first); if nobody guessed
+// correctly there's no winner (draw). Score is the number of attempts used,
+// which the frontend displays directly as "Percobaanmu"/"Percobaan lawan".
+func buildWordleGameOver(playerIDs []string, guesses map[string][]string, target string, finishOrder []string) GameOverPayload {
+	finishRank := make(map[string]int, len(finishOrder))
+	for i, id := range finishOrder {
+		finishRank[id] = i
+	}
+
+	results := make([]PlayerResult, 0, len(playerIDs))
+	winnerID := ""
+	bestAttempts := 0
+	for _, id := range playerIDs {
+		g := guesses[id]
+		won := len(g) > 0 && g[len(g)-1] == target
+		results = append(results, PlayerResult{
+			PlayerID: id,
+			Score:    len(g),
+			Correct:  boolToInt(won),
+		})
+		if !won {
+			continue
+		}
+		attempts := len(g)
+		switch {
+		case winnerID == "":
+			winnerID, bestAttempts = id, attempts
+		case attempts < bestAttempts:
+			winnerID, bestAttempts = id, attempts
+		case attempts == bestAttempts && finishRank[id] < finishRank[winnerID]:
+			winnerID = id
+		}
+	}
+	for i := range results {
+		results[i].IsWinner = results[i].PlayerID == winnerID
+	}
+	return GameOverPayload{Results: results, WinnerID: winnerID, XPEarned: 50}
 }
 
 func (h *Hub) startSudokuRace(room *GameRoom) {
@@ -1080,6 +1223,10 @@ func (h *Hub) handleSudokuCell(client *Client, roomID string, row, col, value in
 		return
 	}
 
+	if row < 0 || row > 8 || col < 0 || col > 8 {
+		return
+	}
+
 	room.mu.Lock()
 	puzzle, ok := room.GameData["puzzle"].([9][9]int)
 	if !ok {
@@ -1095,7 +1242,11 @@ func (h *Hub) handleSudokuCell(client *Client, roomID string, row, col, value in
 	solution, _ := room.GameData["solution"].([9][9]int)
 	if solution[row][col] != value {
 		room.mu.Unlock()
-		client.SendMessage("sudoku_error", map[string]string{"message": "Nilai salah"})
+		client.SendMessage("sudoku_error", map[string]interface{}{
+			"message": "Nilai salah",
+			"row":     row,
+			"col":     col,
+		})
 		return
 	}
 
@@ -1209,6 +1360,80 @@ func (h *Hub) tryAddGhostOrBot(room *GameRoom, userID string) {
 	}
 }
 
+// scheduleBotFillStart waits a short grace period for more real players to
+// join a room, then tops it off with bots up to MaxPlayers and starts the
+// game via startFn. This is needed for games with MaxPlayers > 2 (Math
+// Relay, Crossword Co-op): those rooms are always created fresh per
+// quick-match request (there is no room-code/invite flow for them yet), so
+// a single bot-add is never enough to reach IsFull() and the room would
+// otherwise wait for real players forever.
+func (h *Hub) scheduleBotFillStart(room *GameRoom, delay time.Duration, startFn func(*GameRoom)) {
+	room.mu.Lock()
+	if room.GameData == nil {
+		room.GameData = map[string]interface{}{}
+	}
+	if room.State != "waiting" || room.GameData["bot_fill_scheduled"] == true {
+		room.mu.Unlock()
+		return
+	}
+	room.GameData["bot_fill_scheduled"] = true
+	room.mu.Unlock()
+
+	go func() {
+		time.Sleep(delay)
+
+		room.mu.RLock()
+		stillWaiting := room.State == "waiting"
+		room.mu.RUnlock()
+		if !stillWaiting {
+			return
+		}
+
+		for _, bot := range room.FillBotsUntilFull() {
+			room.Broadcast("bot_joined", BotInfo{
+				ID:         bot.UserID,
+				Username:   bot.DisplayName,
+				Difficulty: bot.Difficulty,
+			})
+		}
+
+		startFn(room)
+	}()
+}
+
+// startCrosswordGame builds a puzzle and starts a Crossword Duel/Co-op match.
+// It guards against being triggered twice (once from the immediate
+// IsFull() check, once from a delayed scheduleBotFillStart) by claiming the
+// "playing" state atomically before doing any work.
+func (h *Hub) startCrosswordGame(room *GameRoom, isCoop bool) {
+	room.mu.Lock()
+	if room.State != "waiting" {
+		room.mu.Unlock()
+		return
+	}
+	room.State = "playing"
+	diff := room.Settings.Difficulty
+	room.mu.Unlock()
+
+	if diff == "" {
+		diff = "medium"
+	}
+	puzzle := getRandomCrosswordPuzzle(diff)
+
+	room.mu.Lock()
+	room.GameData = map[string]interface{}{
+		"puzzle":        puzzle,
+		"filled_cells":  map[string]string{},
+		"player_filled": map[string]int{},
+		"coop":          isCoop,
+	}
+	room.mu.Unlock()
+
+	room.Broadcast("game_starting", map[string]int{"countdown": 3})
+	time.Sleep(2 * time.Second)
+	room.Broadcast("crossword_start", puzzle)
+}
+
 func (h *Hub) startChessGame(room *GameRoom) {
 	room.mu.Lock()
 	players := make([]string, 0, len(room.Players))
@@ -1307,13 +1532,12 @@ func (h *Hub) handleChessMove(client *Client, roomID, move string) {
 	}
 	room.GameData["moves"] = movesRaw
 	room.GameData["current_turn"] = nextTurn
+	room.mu.Unlock()
 
 	room.BroadcastExcept(client.UserID, "chess_move", map[string]interface{}{
 		"player_id": client.UserID,
 		"move":      move,
 	})
-
-	room.mu.Unlock()
 
 	client.SendMessage("chess_move_ok", map[string]interface{}{
 		"move": move,
@@ -1349,12 +1573,40 @@ func (h *Hub) handleCrosswordCell(client *Client, roomID string, row, col int, l
 		return
 	}
 
+	// The puzzle's grid cells hold the actual solution letters (the client
+	// already relies on this to render right/wrong locally), so the server
+	// can and must check submissions against it directly instead of trusting
+	// whatever letter the client sends. Previously any letter — including an
+	// empty one from Backspace — was accepted and counted toward completion,
+	// so a puzzle could be marked "done" without actually being solved.
+	correctLetter, gridOK := crosswordCellLetter(room.GameData["puzzle"], row, col)
+	if !gridOK || correctLetter == "" || correctLetter == "#" {
+		room.mu.Unlock()
+		return
+	}
+
 	filledCells, _ := room.GameData["filled_cells"].(map[string]string)
 	if filledCells == nil {
 		filledCells = map[string]string{}
 	}
-
 	key := fmt.Sprintf("%d-%d", row, col)
+	if filledCells[key] != "" {
+		// Already solved by someone — nothing left to do here.
+		room.mu.Unlock()
+		return
+	}
+
+	letter = strings.ToUpper(strings.TrimSpace(letter))
+	if letter == "" || letter != strings.ToUpper(correctLetter) {
+		room.mu.Unlock()
+		client.SendMessage("crossword_error", map[string]interface{}{
+			"message": "Huruf salah",
+			"row":     row,
+			"col":     col,
+		})
+		return
+	}
+
 	filledCells[key] = letter
 	room.GameData["filled_cells"] = filledCells
 
@@ -1365,21 +1617,7 @@ func (h *Hub) handleCrosswordCell(client *Client, roomID string, row, col int, l
 	playerFilled[client.UserID] = playerFilled[client.UserID] + 1
 	room.GameData["player_filled"] = playerFilled
 
-	totalCells := 0
-	if puzzleRaw, ok := room.GameData["puzzle"].(map[string]interface{}); ok {
-		if gridRaw, ok := puzzleRaw["grid"].([]interface{}); ok {
-			for _, rowRaw := range gridRaw {
-				if r, ok := rowRaw.([]interface{}); ok {
-					for _, c := range r {
-						if cell, ok := c.(string); ok && cell != "#" {
-							totalCells++
-						}
-					}
-				}
-			}
-		}
-	}
-
+	totalCells := crosswordTotalFillableCells(room.GameData["puzzle"])
 	currentFilled := len(filledCells)
 	isCoop, _ := room.GameData["coop"].(bool)
 	room.mu.Unlock()
@@ -1565,6 +1803,53 @@ func (h *Hub) startMathRelay(room *GameRoom) {
 	}
 }
 
+// crosswordCellLetter returns the solution letter stored in the puzzle's
+// grid at (row, col), and whether that lookup was actually valid (in
+// bounds, right shape). The grid holds real letters for fillable cells and
+// "#" for blocked ones — the same data the client already uses to render
+// right/wrong locally — so this is also what the server validates
+// submissions against.
+func crosswordCellLetter(puzzle interface{}, row, col int) (string, bool) {
+	puzzleRaw, ok := puzzle.(map[string]interface{})
+	if !ok {
+		return "", false
+	}
+	gridRaw, ok := puzzleRaw["grid"].([]interface{})
+	if !ok || row < 0 || row >= len(gridRaw) {
+		return "", false
+	}
+	rowRaw, ok := gridRaw[row].([]interface{})
+	if !ok || col < 0 || col >= len(rowRaw) {
+		return "", false
+	}
+	cell, ok := rowRaw[col].(string)
+	return cell, ok
+}
+
+func crosswordTotalFillableCells(puzzle interface{}) int {
+	puzzleRaw, ok := puzzle.(map[string]interface{})
+	if !ok {
+		return 0
+	}
+	gridRaw, ok := puzzleRaw["grid"].([]interface{})
+	if !ok {
+		return 0
+	}
+	total := 0
+	for _, rowRaw := range gridRaw {
+		r, ok := rowRaw.([]interface{})
+		if !ok {
+			continue
+		}
+		for _, c := range r {
+			if cell, ok := c.(string); ok && cell != "#" {
+				total++
+			}
+		}
+	}
+	return total
+}
+
 func getRandomCrosswordPuzzle(difficulty string) map[string]interface{} {
 	type crosswordRow struct {
 		ID        string
@@ -1581,10 +1866,11 @@ func getRandomCrosswordPuzzle(difficulty string) map[string]interface{} {
 	}
 	if err := q.Find(&puzzles).Error; err != nil || len(puzzles) == 0 {
 		return map[string]interface{}{
-			"id":    "default",
-			"title": "TTS",
-			"grid":  [][]interface{}{},
-			"clues": []interface{}{},
+			"id":       "default",
+			"title":    "TTS",
+			"grid":     [][]interface{}{},
+			"gridSize": 0,
+			"clues":    []interface{}{},
 		}
 	}
 

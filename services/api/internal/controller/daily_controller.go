@@ -32,8 +32,8 @@ func (h *DailyController) GetDailyChallenge(c *fiber.Ctx) error {
 }
 
 type SubmitChallengeRequest struct {
-	ChallengeID string `json:"challenge_id" validate:"required,uuid"`
-	Score       int    `json:"score" validate:"required,min=0"`
+	ChallengeID string               `json:"challenge_id" validate:"required,uuid"`
+	Answers     []service.UserAnswer `json:"answers" validate:"required"`
 }
 
 func (h *DailyController) SubmitDailyChallenge(c *fiber.Ctx) error {
@@ -51,7 +51,7 @@ func (h *DailyController) SubmitDailyChallenge(c *fiber.Ctx) error {
 		return response.ValidationError(c, err.Error())
 	}
 
-	res, err := h.svc.SubmitChallenge(userID, req.ChallengeID, req.Score)
+	res, err := h.svc.SubmitChallenge(userID, req.ChallengeID, req.Answers)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, err.Error())
 	}
@@ -67,7 +67,7 @@ func (h *DailyController) GetHistory(c *fiber.Ctx) error {
 
 	history, err := h.svc.GetHistory(userID)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 
 	return response.Success(c, history)

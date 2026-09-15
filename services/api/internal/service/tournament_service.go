@@ -469,6 +469,48 @@ func (s *tournamentService) ReportMatch(id, matchID, userID string, input Report
 		return nil, errors.New("tidak punya akses report match")
 	}
 
+	// The tournament host is a trusted adjudicator and can finalize a match
+	// unilaterally. An actual participant's report is only ever "self"
+	// authoritative — it must be confirmed by the other participant with a
+	// matching result before the match is finalized, so one side can't just
+	// declare themselves the winner.
+	isHost := requesterUUID == tournament.HostID
+	if !isHost {
+		if match.PendingReporterID == nil {
+			match.PendingReporterID = &requesterUUID
+			match.PendingWinnerID = &winnerUUID
+			match.PendingPlayer1Score = input.Player1Score
+			match.PendingPlayer2Score = input.Player2Score
+			if err := database.DB.Model(&model.TournamentMatch{}).
+				Where("id = ? AND status = ?", match.ID, "active").
+				Updates(map[string]interface{}{
+					"pending_reporter_id":   match.PendingReporterID,
+					"pending_winner_id":     match.PendingWinnerID,
+					"pending_player1_score": match.PendingPlayer1Score,
+					"pending_player2_score": match.PendingPlayer2Score,
+				}).Error; err != nil {
+				return nil, err
+			}
+			return s.buildResponse(*tournament)
+		}
+
+		if *match.PendingReporterID == requesterUUID {
+			return nil, errors.New("Kamu sudah melaporkan hasil, menunggu konfirmasi lawan")
+		}
+
+		matches := *match.PendingWinnerID == winnerUUID &&
+			match.PendingPlayer1Score == input.Player1Score &&
+			match.PendingPlayer2Score == input.Player2Score
+		if !matches {
+			// Deliberately leave the original pending report untouched: a
+			// mismatching second report is just rejected, it can never
+			// overwrite or erase what the first participant already
+			// reported, and it can only succeed by confirming that exact
+			// result rather than substituting its own.
+			return nil, errors.New("Hasil yang kamu laporkan tidak cocok dengan laporan lawan — silakan lapor ulang dengan hasil yang sesuai")
+		}
+	}
+
 	now := time.Now()
 	err = database.DB.Transaction(func(tx *gorm.DB) error {
 		match.WinnerPlayerID = &winnerUUID
@@ -479,11 +521,15 @@ func (s *tournamentService) ReportMatch(id, matchID, userID string, input Report
 		finishGuard := tx.Model(&model.TournamentMatch{}).
 			Where("id = ? AND status = ?", match.ID, "active").
 			Updates(map[string]interface{}{
-				"winner_player_id": match.WinnerPlayerID,
-				"player1_score":    match.Player1Score,
-				"player2_score":    match.Player2Score,
-				"status":           match.Status,
-				"finished_at":      match.FinishedAt,
+				"winner_player_id":      match.WinnerPlayerID,
+				"player1_score":         match.Player1Score,
+				"player2_score":         match.Player2Score,
+				"status":                match.Status,
+				"finished_at":           match.FinishedAt,
+				"pending_reporter_id":   nil,
+				"pending_winner_id":     nil,
+				"pending_player1_score": 0,
+				"pending_player2_score": 0,
 			})
 		if finishGuard.Error != nil {
 			return finishGuard.Error

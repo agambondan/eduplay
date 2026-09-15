@@ -173,7 +173,7 @@ func (s *multiplayerLeaderboardService) GetUserStats(userID string) (*Multiplaye
 }
 
 type RematchService interface {
-	CreateRematch(roomCode string) (string, error)
+	CreateRematch(userID, roomCode string) (string, error)
 }
 
 type rematchService struct {
@@ -184,7 +184,10 @@ func NewRematchService(roomSvc RoomService) RematchService {
 	return &rematchService{roomSvc: roomSvc}
 }
 
-func (s *rematchService) CreateRematch(oldRoomCode string) (string, error) {
+// CreateRematch requires the caller to have actually been a member of the
+// old room — otherwise anyone who knows/guesses a room code could spin up a
+// rematch (and become its host) for a room that isn't theirs.
+func (s *rematchService) CreateRematch(userID, oldRoomCode string) (string, error) {
 	data, err := database.RDB.Get(context.Background(), "room:"+oldRoomCode).Result()
 	if err != nil {
 		return "", errors.New("Room tidak ditemukan")
@@ -193,6 +196,17 @@ func (s *rematchService) CreateRematch(oldRoomCode string) (string, error) {
 	var oldRoom RoomData
 	if err := json.Unmarshal([]byte(data), &oldRoom); err != nil {
 		return "", errors.New("Data room rusak")
+	}
+
+	wasMember := false
+	for _, m := range oldRoom.Members {
+		if m.ID == userID {
+			wasMember = true
+			break
+		}
+	}
+	if !wasMember {
+		return "", errors.New("Kamu bukan anggota room ini")
 	}
 
 	settings := RoomSettingsInput{
@@ -204,7 +218,7 @@ func (s *rematchService) CreateRematch(oldRoomCode string) (string, error) {
 		AllowBots:  oldRoom.Settings.AllowBots,
 	}
 
-	result, err := s.roomSvc.CreateRoom(oldRoom.HostID, oldRoom.GameSlug, settings)
+	result, err := s.roomSvc.CreateRoom(userID, oldRoom.GameSlug, settings)
 	if err != nil {
 		return "", err
 	}

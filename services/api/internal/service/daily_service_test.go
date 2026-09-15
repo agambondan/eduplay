@@ -7,6 +7,7 @@ import (
 	"github.com/agambondan/eduplay/services/api/internal/model"
 	"github.com/agambondan/eduplay/services/api/internal/repository"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -39,14 +40,15 @@ func TestDailyService_GetTodayChallenge(t *testing.T) {
 	testGame := model.Game{Slug: "dgtc-game", Name: "DGTC", Category: "math"}
 	require.NoError(t, database.DB.Create(&testGame).Error)
 
+	dailyID := uuid.New()
 	nowStr := time.Now().Format("2006-01-02")
 	require.NoError(t, database.DB.Exec(
-		"INSERT INTO daily_challenges (game_id, questions_json, challenge_date, created_at) VALUES (?, ?, ?, datetime('now'))",
-		testGame.ID, `[{"question":"1+1","options":["1","2"],"answer":"2"}]`, nowStr,
+		"INSERT INTO daily_challenges (id, game_id, questions_json, challenge_date, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
+		dailyID, testGame.ID, `[{"question":"1+1","options":["1","2"],"answer":"2"}]`, nowStr,
 	).Error)
 
 	var daily model.DailyChallenge
-	database.DB.Where("game_id = ?", testGame.ID).First(&daily)
+	database.DB.Where("id = ?", dailyID).First(&daily)
 
 	svc := NewDailyService(repository.NewGameRepository(), &mockAchievement{})
 
@@ -65,22 +67,22 @@ func TestDailyService_SubmitChallenge(t *testing.T) {
 	testGame := model.Game{Slug: "dsc-game", Name: "DSC", Category: "math"}
 	require.NoError(t, database.DB.Create(&testGame).Error)
 
-	nowStr := time.Now().Format("2006-01-02")
-	require.NoError(t, database.DB.Exec(
-		"INSERT INTO daily_challenges (game_id, questions_json, challenge_date, created_at) VALUES (?, ?, ?, datetime('now'))",
-		testGame.ID, `[{"question":"2+2","options":["3","4"],"answer":"4"}]`, nowStr,
-	).Error)
-	var daily model.DailyChallenge
-	database.DB.Where("game_id = ?", testGame.ID).First(&daily)
+	daily := model.DailyChallenge{
+		GameID:        testGame.ID,
+		QuestionsJSON: `[{"question":"2+2","options":["3","4"],"answer":"4"}]`,
+		ChallengeDate: time.Now(),
+	}
+	require.NoError(t, database.DB.Create(&daily).Error)
 
 	svc := NewDailyService(repository.NewGameRepository(), &mockAchievement{})
 
-	resp, err := svc.SubmitChallenge(testUser.ID.String(), daily.ID.String(), 50)
+	answers := []UserAnswer{{QuestionID: "1", Answer: "4"}}
+	resp, err := svc.SubmitChallenge(testUser.ID.String(), daily.ID.String(), answers)
 	require.NoError(t, err)
-	assert.Equal(t, 10, resp.XPEarned)
+	assert.Equal(t, 20, resp.XPEarned)
 	assert.True(t, resp.StreakUpdated)
 
-	_, err = svc.SubmitChallenge(testUser.ID.String(), daily.ID.String(), 50)
+	_, err = svc.SubmitChallenge(testUser.ID.String(), daily.ID.String(), answers)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "already submitted")
 }
@@ -92,23 +94,23 @@ func TestDailyService_SubmitChallenge_UpdatesXPAndStreak(t *testing.T) {
 	testGame := model.Game{Slug: "dsx-game", Name: "DSX", Category: "math"}
 	require.NoError(t, database.DB.Create(&testGame).Error)
 
-	nowStr := time.Now().Format("2006-01-02")
-	require.NoError(t, database.DB.Exec(
-		"INSERT INTO daily_challenges (game_id, questions_json, challenge_date, created_at) VALUES (?, ?, ?, datetime('now'))",
-		testGame.ID, `[{"question":"3+3","options":["5","6"],"answer":"6"}]`, nowStr,
-	).Error)
-	var daily model.DailyChallenge
-	database.DB.Where("game_id = ?", testGame.ID).First(&daily)
+	daily := model.DailyChallenge{
+		GameID:        testGame.ID,
+		QuestionsJSON: `[{"question":"3+3","options":["5","6"],"answer":"6"}]`,
+		ChallengeDate: time.Now(),
+	}
+	require.NoError(t, database.DB.Create(&daily).Error)
 
 	svc := NewDailyService(repository.NewGameRepository(), &mockAchievement{})
 
-	resp, err := svc.SubmitChallenge(testUser.ID.String(), daily.ID.String(), 50)
+	answers := []UserAnswer{{QuestionID: "1", Answer: "6"}}
+	resp, err := svc.SubmitChallenge(testUser.ID.String(), daily.ID.String(), answers)
 	require.NoError(t, err)
-	assert.Equal(t, 10, resp.XPEarned)
+	assert.Equal(t, 20, resp.XPEarned)
 	assert.True(t, resp.StreakUpdated)
 
 	var u model.User
 	database.DB.Where("id = ?", testUser.ID).First(&u)
-	assert.Equal(t, 10, u.XP)
+	assert.Equal(t, 20, u.XP)
 	assert.GreaterOrEqual(t, u.Streak, 1)
 }

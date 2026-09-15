@@ -44,7 +44,7 @@ func (h *WSController) QuickMatch(c *fiber.Ctx) error {
 
 	result, err := h.matchmaking.JoinQueue(userID, req.GameSlug, req.Difficulty, req.Theme)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 
 	return response.Success(c, result)

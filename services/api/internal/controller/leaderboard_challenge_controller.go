@@ -102,7 +102,7 @@ func (h *ScoreChallengeController) List(c *fiber.Ctx) error {
 	}
 	result, err := h.svc.List(userID)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, result)
 }

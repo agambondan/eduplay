@@ -72,3 +72,31 @@ func TestGameService_SubmitScore(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "score exceeds maximum allowed")
 }
+
+func TestGameService_UpsertHighscoreNeverDecreases(t *testing.T) {
+	setupGameTestDB()
+
+	testUser := &model.User{Username: "player2", Email: "p2@test.com", Password: "pwd"}
+	database.DB.Create(testUser)
+	testGame := &model.Game{Slug: "math-quiz", Name: "Math Quiz", Category: "math"}
+	database.DB.Create(testGame)
+
+	repo := repository.NewGameRepository()
+	svc := NewGameService(repo, &mockAchievement{}, &mockLeaderboard{})
+
+	_, err := svc.SubmitScore(testUser.ID.String(), "math-quiz", SubmitScoreRequest{
+		Score: 500, Duration: 45, Difficulty: "medium",
+	})
+	require.NoError(t, err)
+	database.RDB.Del(context.Background(), "ratelimit:submit_score:"+testUser.ID.String()+":math-quiz")
+
+	resp, err := svc.SubmitScore(testUser.ID.String(), "math-quiz", SubmitScoreRequest{
+		Score: 100, Duration: 45, Difficulty: "medium",
+	})
+	require.NoError(t, err)
+	assert.False(t, resp.NewHighscore)
+
+	hs, err := repo.GetHighscore(testUser.ID, testGame.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 500, hs.Highscore)
+}

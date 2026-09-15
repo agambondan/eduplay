@@ -48,7 +48,7 @@ func (h *ChallengeController) List(c *fiber.Ctx) error {
 	filter := c.Query("type", "all")
 	result, err := h.svc.ListChallenges(userID, filter)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, result)
 }

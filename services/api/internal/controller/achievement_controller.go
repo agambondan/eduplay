@@ -24,7 +24,7 @@ func NewAchievementController(svc service.AchievementService) *AchievementContro
 func (h *AchievementController) GetAll(c *fiber.Ctx) error {
 	achs, err := h.svc.GetAchievements()
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, achs)
 }
@@ -36,7 +36,7 @@ func (h *AchievementController) GetUserAchievements(c *fiber.Ctx) error {
 	}
 	uas, err := h.svc.GetUserAchievements(userID)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, uas)
 }

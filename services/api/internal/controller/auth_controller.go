@@ -190,7 +190,7 @@ func (h *AuthController) Logout(c *fiber.Ctx) error {
 
 	expiry := time.Until(time.Unix(int64(exp), 0))
 	if expiry > 0 {
-		if err := h.svc.Logout(jti, expiry); err != nil {
+		if err := h.svc.Logout(jti, expiry, c.Cookies("refresh_token")); err != nil {
 			return response.Error(c, fiber.StatusInternalServerError, "Failed to logout")
 		}
 	}

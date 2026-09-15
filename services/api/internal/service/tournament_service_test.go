@@ -344,3 +344,81 @@ func TestTournamentServiceReportMatchAdvancesAndRewards(t *testing.T) {
 	require.NoError(t, database.DB.Model(&model.UserAchievement{}).Count(&unlocked).Error)
 	assert.Equal(t, int64(2), unlocked)
 }
+
+func TestTournamentServiceReportMatchRequiresBothParticipantsToAgree(t *testing.T) {
+	setupTournamentTestDB(t)
+	seedTournamentAchievements(t)
+
+	host := createTournamentUser(t, "host2", 0)
+	p2 := createTournamentUser(t, "p2b", 100)
+	p3 := createTournamentUser(t, "p3b", 200)
+	p4 := createTournamentUser(t, "p4b", 300)
+
+	svc := NewTournamentService()
+	tournament, err := svc.Create(host.ID.String(), CreateTournamentInput{Name: "Two Phase Test", MaxPlayers: 4})
+	require.NoError(t, err)
+	for _, user := range []model.User{p2, p3, p4} {
+		_, err = svc.Join(tournament.ID, user.ID.String())
+		require.NoError(t, err)
+	}
+
+	started, err := svc.Start(tournament.ID, host.ID.String())
+	require.NoError(t, err)
+	require.Len(t, started.Matches, 2)
+
+	// The host is a trusted adjudicator and reports unilaterally (bypasses
+	// the two-phase check), so pick the match that does NOT include the
+	// host as a participant to actually exercise participant self-reports.
+	var match TournamentMatchResponse
+	for _, m := range started.Matches {
+		if m.Player1.UserID != host.ID.String() && m.Player2.UserID != host.ID.String() {
+			match = m
+		}
+	}
+	require.NotEmpty(t, match.ID)
+	reporter := match.Player1.UserID
+	opponent := match.Player2.UserID
+
+	// A lone self-report from one participant must not finalize the match.
+	afterFirstReport, err := svc.ReportMatch(tournament.ID, match.ID, reporter, ReportTournamentMatchInput{
+		WinnerPlayerID: match.Player1.ID,
+		Player1Score:   100,
+		Player2Score:   50,
+	})
+	require.NoError(t, err)
+	for _, m := range afterFirstReport.Matches {
+		if m.ID == match.ID {
+			assert.Equal(t, "active", m.Status)
+		}
+	}
+
+	// Reporting again before the opponent confirms is rejected.
+	_, err = svc.ReportMatch(tournament.ID, match.ID, reporter, ReportTournamentMatchInput{
+		WinnerPlayerID: match.Player1.ID,
+		Player1Score:   100,
+		Player2Score:   50,
+	})
+	assert.Error(t, err)
+
+	// A mismatched report from the opponent (declaring themselves winner)
+	// is rejected rather than silently trusted.
+	_, err = svc.ReportMatch(tournament.ID, match.ID, opponent, ReportTournamentMatchInput{
+		WinnerPlayerID: match.Player2.ID,
+		Player1Score:   0,
+		Player2Score:   999,
+	})
+	assert.Error(t, err)
+
+	// A matching confirmation from the opponent finalizes the match.
+	finished, err := svc.ReportMatch(tournament.ID, match.ID, opponent, ReportTournamentMatchInput{
+		WinnerPlayerID: match.Player1.ID,
+		Player1Score:   100,
+		Player2Score:   50,
+	})
+	require.NoError(t, err)
+	for _, m := range finished.Matches {
+		if m.ID == match.ID {
+			assert.Equal(t, "finished", m.Status)
+		}
+	}
+}

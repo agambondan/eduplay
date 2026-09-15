@@ -29,7 +29,7 @@ func (h *BattleshipController) List(c *fiber.Ctx) error {
 	}
 	items, err := h.svc.List(userID)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, items)
 }

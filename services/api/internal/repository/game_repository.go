@@ -42,20 +42,21 @@ func (r *gameRepository) GetHighscore(userID, gameID uuid.UUID) (*model.UserHigh
 	return &hs, err
 }
 
+// UpsertHighscore is a single atomic upsert (INSERT ... ON CONFLICT DO
+// UPDATE with GREATEST) rather than a read-then-write, so two concurrent
+// submissions from the same user can't race each other into a lost update.
 func (r *gameRepository) UpsertHighscore(userID, gameID uuid.UUID, score int) error {
-	var existing model.UserHighscore
-	err := database.DB.Where("user_id = ? AND game_id = ?", userID, gameID).First(&existing).Error
-	if err != nil {
-		hs := model.UserHighscore{
-			UserID:    userID,
-			GameID:    gameID,
-			Highscore: score,
-		}
-		return database.DB.Create(&hs).Error
-	}
-	if score > existing.Highscore {
-		existing.Highscore = score
-		return database.DB.Save(&existing).Error
-	}
-	return nil
+	// CASE/WHEN instead of GREATEST()/MAX(a,b): the former isn't valid
+	// standard SQL scalar syntax in SQLite and the latter isn't valid in
+	// Postgres (MAX there is aggregate-only), so this is the one form both
+	// the Postgres production DB and the SQLite test DB accept.
+	return database.DB.Exec(
+		`INSERT INTO user_highscores (user_id, game_id, highscore, updated_at)
+		 VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+		 ON CONFLICT (user_id, game_id) DO UPDATE SET
+		   highscore = CASE WHEN EXCLUDED.highscore > user_highscores.highscore
+		                     THEN EXCLUDED.highscore ELSE user_highscores.highscore END,
+		   updated_at = CURRENT_TIMESTAMP`,
+		userID, gameID, score,
+	).Error
 }

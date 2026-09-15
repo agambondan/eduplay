@@ -41,18 +41,54 @@ func maskValue(v string) string {
 	return v[:2] + "****" + v[len(v)-2:]
 }
 
-func redactJSON(data []byte) []byte {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return data
+// redactValue walks arbitrarily nested JSON (objects and arrays) and masks
+// any object key that matches sensitiveFields, at any depth — a shallow,
+// top-level-only redaction misses fields nested under a wrapper like the
+// {"data": {...}} envelope every response body uses.
+func redactValue(v interface{}) interface{} {
+	switch val := v.(type) {
+	case map[string]interface{}:
+		for k, sub := range val {
+			if sensitiveFields[strings.ToLower(k)] {
+				val[k] = "****"
+				continue
+			}
+			val[k] = redactValue(sub)
+		}
+		return val
+	case []interface{}:
+		for i, sub := range val {
+			val[i] = redactValue(sub)
+		}
+		return val
+	default:
+		return v
 	}
-	for k := range raw {
+}
+
+// redactJSON only redacts when the body actually parses as JSON. A body
+// that fails to parse (form-urlencoded, multipart, or malformed JSON) is
+// replaced with a placeholder rather than logged raw, since a client can
+// otherwise dodge redaction entirely by sending the same fields as a
+// different content type (e.g. a login password via form-urlencoded).
+func redactJSON(data []byte) []byte {
+	var raw interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return []byte(`"[unparsable body omitted]"`)
+	}
+	redacted, _ := json.Marshal(redactValue(raw))
+	return redacted
+}
+
+// redactQuery masks sensitive query parameters (e.g. a token passed as
+// ?token=... on email verification links) before logging.
+func redactQuery(q map[string]string) map[string]string {
+	for k, v := range q {
 		if sensitiveFields[strings.ToLower(k)] {
-			raw[k] = "****"
+			q[k] = maskValue(v)
 		}
 	}
-	redacted, _ := json.Marshal(raw)
-	return redacted
+	return q
 }
 
 func redactHeaders(c *fiber.Ctx) []zapcore.Field {
@@ -89,7 +125,7 @@ func RequestLogger() fiber.Handler {
 		if q := c.Request().URI().QueryArgs(); q.Len() > 0 {
 			qMap := make(map[string]string)
 			q.VisitAll(func(k, v []byte) { qMap[string(k)] = string(v) })
-			fields = append(fields, zap.Any("query", qMap))
+			fields = append(fields, zap.Any("query", redactQuery(qMap)))
 		}
 
 		if p := c.AllParams(); len(p) > 0 {

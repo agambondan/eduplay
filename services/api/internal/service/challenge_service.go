@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
@@ -247,6 +248,9 @@ func (s *challengeService) GetChallenge(userID, challengeID string) (*AsyncChall
 	if showQuestions {
 		var questions []map[string]interface{}
 		json.Unmarshal(challenge.QuestionsJSON, &questions)
+		for _, q := range questions {
+			delete(q, "answer")
+		}
 		resp.Questions = questions
 	}
 
@@ -258,7 +262,10 @@ func (s *challengeService) GetChallenge(userID, challengeID string) (*AsyncChall
 	return resp, nil
 }
 
-func (s *challengeService) SubmitChallenge(userID, challengeID string, answers []UserAnswer, score int) (*ChallengeResult, error) {
+// SubmitChallenge grades the submission itself from the challenge's stored
+// correct answers — the client-supplied score parameter is intentionally
+// ignored so a player can't just report an arbitrary win.
+func (s *challengeService) SubmitChallenge(userID, challengeID string, answers []UserAnswer, _ int) (*ChallengeResult, error) {
 	uid, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, errors.New("ID pengguna tidak valid")
@@ -273,6 +280,8 @@ func (s *challengeService) SubmitChallenge(userID, challengeID string, answers [
 	if err := database.DB.First(&challenge, "id = ?", cid).Error; err != nil {
 		return nil, errors.New("Challenge tidak ditemukan")
 	}
+
+	score := s.scoreAnswers(challenge.QuestionsJSON, answers)
 
 	if time.Now().After(challenge.ExpiresAt) {
 		challenge.Status = "expired"
@@ -315,6 +324,26 @@ func (s *challengeService) SubmitChallenge(userID, challengeID string, answers [
 
 	database.DB.Save(&challenge)
 	return &ChallengeResult{Result: "pending", XPEarned: 0}, nil
+}
+
+// scoreAnswers counts how many submitted answers match the challenge's
+// stored correct answers, matched positionally against the questions that
+// were generated for this challenge.
+func (s *challengeService) scoreAnswers(questionsJSON []byte, answers []UserAnswer) int {
+	var questions []Question
+	if err := json.Unmarshal(questionsJSON, &questions); err != nil {
+		return 0
+	}
+	correct := 0
+	for i, q := range questions {
+		if i >= len(answers) {
+			break
+		}
+		if strings.EqualFold(strings.TrimSpace(answers[i].Answer), strings.TrimSpace(q.Answer)) {
+			correct++
+		}
+	}
+	return correct
 }
 
 func (s *challengeService) getFrontendURL() string {

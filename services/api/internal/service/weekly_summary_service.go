@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"html"
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
@@ -172,7 +173,7 @@ func (s *WeeklySummaryService) buildEmail(stats *weeklyStats) string {
 </table>
 </td></tr></table>
 </body>
-</html>`, stats.Username, stats.Level, stats.Streak,
+</html>`, html.EscapeString(stats.Username), stats.Level, stats.Streak,
 		stats.GamesPlayed, stats.XPEarned, stats.TotalSessions,
 		topGameSection, achievementSection)
 }

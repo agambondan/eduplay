@@ -77,9 +77,14 @@ func (s *friendService) SendRequest(userID, friendUsername string) error {
 			return errors.New("Permintaan pertemanan sudah dikirim")
 		}
 		if existing.Status == "declined" {
-			existing.Status = "pending"
-			existing.ID = uuid.Nil
-			return database.DB.Create(&existing).Error
+			// Update the existing row in place — creating a new one would
+			// violate the unique (user_id, friend_id) index since the old
+			// declined row is still there, permanently blocking re-requests.
+			return database.DB.Model(&existing).Updates(map[string]interface{}{
+				"user_id":   uid,
+				"friend_id": friend.ID,
+				"status":    "pending",
+			}).Error
 		}
 	}
 

@@ -12,7 +12,9 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/config"
@@ -107,8 +109,22 @@ func main() {
 	seedData()
 
 	app := fiber.New(fiber.Config{
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			status := fiber.StatusInternalServerError
+			if fe, ok := err.(*fiber.Error); ok {
+				status = fe.Code
+			}
+			if status >= 500 {
+				logger.Log.Error("unhandled request error", zap.Error(err), zap.String("path", c.Path()))
+				return c.Status(status).JSON(fiber.Map{
+					"success": false,
+					"message": "Internal server error",
+				})
+			}
+			return c.Status(status).JSON(fiber.Map{
 				"success": false,
 				"message": err.Error(),
 			})
@@ -159,7 +175,7 @@ func main() {
 	dailySvc := service.NewDailyService(gameRepo, achSvc)
 	aiSvc := service.NewAIService(cfg)
 	pushSvc := service.NewPushService(cfg)
-	supportSvc := service.NewSupportService(emailCl)
+	supportSvc := service.NewSupportService(emailCl, cfg.Resend.SupportTo)
 	subSvc := service.NewSubscriptionService(cfg)
 	friendSvc := service.NewFriendService()
 	challengeSvc := service.NewChallengeService(aiSvc, pushSvc)
@@ -309,7 +325,16 @@ func main() {
 	pushGroup.Post("/unsubscribe", pushHandler.Unsubscribe)
 	apiV1.Get("/push/vapid-public-key", pushHandler.VapidPublicKey)
 
-	apiV1.Post("/support", supportHandler.CreateTicket)
+	apiV1.Post("/support", limiter.New(limiter.Config{
+		Max:        5,
+		Expiration: 1 * time.Minute,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP()
+		},
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{"success": false, "message": "Too many requests"})
+		},
+	}), supportHandler.CreateTicket)
 
 	apiV1.Post("/subscribe/webhook", subHandler.MidtransWebhook)
 
@@ -448,10 +473,21 @@ func main() {
 		}
 	}()
 
+	shutdownCh := make(chan os.Signal, 1)
+	signal.Notify(shutdownCh, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-shutdownCh
+		logger.Log.Info("shutdown signal received, draining connections")
+		if err := app.ShutdownWithTimeout(15 * time.Second); err != nil {
+			logger.Log.Error("graceful shutdown failed", zap.Error(err))
+		}
+	}()
+
 	logger.Log.Info("Server starting", zap.String("port", cfg.App.Port))
 	if err := app.Listen(":" + cfg.App.Port); err != nil {
 		logger.Log.Fatal("Server failed to start", zap.Error(err))
 	}
+	logger.Log.Info("Server stopped")
 }
 
 func seedData() {
@@ -574,6 +610,7 @@ func seedGames() {
 		{Slug: "color-shift", Name: "Color Shift", Description: "Uji fokus dan refleks otak melawan efek Stroop warna vs kata.", Category: "arcade", IsActive: true},
 		{Slug: "stack-tower", Name: "Stack Tower", Description: "Tumpuk balok setinggi mungkin dengan presisi timing.", Category: "arcade", IsActive: true},
 		{Slug: "vector-slash", Name: "Vector Slash", Description: "Pertarungan aksi geometris dengan gestur garis dan kalkulasi vektor.", Category: "arcade", IsActive: true},
+		{Slug: "bastion-siege", Name: "Bastion Siege", Description: "Pertahanan benteng fisika balistik, pilar jembatan runtuh, dan ledakan barel berantai.", Category: "science", IsActive: true},
 		{Slug: "grid-relay-td", Name: "Grid Relay TD", Description: "Atur distribusi daya listrik dan bangun jaringan turret untuk menahan musuh geometris.", Category: "science", IsActive: true},
 		{Slug: "onet", Name: "Onet", Description: "Cocokkan tile berpasangan dengan jalur bersih. Maksimal 2 tikungan!", Category: "logic", IsActive: true},
 		{Slug: "trivia-challenge", Name: "Trivia Challenge", Description: "Tantang teman dengan set soal yang sama, bandingkan skor!", Category: "multiplayer", IsActive: true},
@@ -729,7 +766,15 @@ func seedAchievements() {
 	logger.Log.Info("seeded achievements", zap.Int("count", len(achievements)))
 }
 
+// seedUsers creates a local demo admin account for development only. It is
+// gated behind SEED_DEMO_USER=true so it can never run unattended in a real
+// deployment, and it never touches the role of an account that already
+// exists — an operator who demotes/disables the demo account must have that
+// decision stick across restarts.
 func seedUsers() {
+	if os.Getenv("SEED_DEMO_USER") != "true" {
+		return
+	}
 	users := []struct {
 		Username string
 		Email    string
@@ -741,8 +786,6 @@ func seedUsers() {
 		var count int64
 		database.DB.Model(&model.User{}).Where("email = ?", u.Email).Count(&count)
 		if count > 0 {
-			// Ensure existing seed users always have admin role
-			database.DB.Model(&model.User{}).Where("email = ?", u.Email).Update("role", "admin")
 			continue
 		}
 		hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), 12)
@@ -758,5 +801,5 @@ func seedUsers() {
 		}
 		database.DB.Create(&user)
 	}
-	logger.Log.Info("seeded users")
+	logger.Log.Info("seeded demo user")
 }

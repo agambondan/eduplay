@@ -665,6 +665,10 @@ func (s *wordChainService) GetGame(userID, gameID string) (*WordChainDetail, err
 		return nil, errors.New("Game tidak ditemukan")
 	}
 
+	if game.Player1ID != uid && (game.Player2ID == nil || *game.Player2ID != uid) {
+		return nil, errors.New("Game ini bukan untukmu")
+	}
+
 	resp := s.toResponse(&game, uid)
 	detail := &WordChainDetail{
 		WordChainGameResponse: *resp,

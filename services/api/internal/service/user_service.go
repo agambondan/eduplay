@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -15,6 +16,19 @@ import (
 	"github.com/agambondan/eduplay/services/api/pkg/cache"
 	"github.com/agambondan/eduplay/services/api/pkg/profanity"
 )
+
+// allowedAvatarTypes maps sniffed content types to a fixed, safe extension.
+// The client-supplied filename/extension is never trusted for anything —
+// using it verbatim would let a script-bearing file (e.g. .svg or .html
+// renamed to look like an image) get served back from the API's own origin.
+var allowedAvatarTypes = map[string]string{
+	"image/jpeg": ".jpg",
+	"image/png":  ".png",
+	"image/gif":  ".gif",
+	"image/webp": ".webp",
+}
+
+var ErrInvalidAvatarType = errors.New("File harus berupa gambar (jpg, png, gif, atau webp)")
 
 type UserService interface {
 	GetProfile(id string) (*model.User, error)
@@ -71,7 +85,19 @@ func (s *userService) UpdateStreak(id string) error {
 }
 
 func (s *userService) UploadAvatar(userID string, file multipart.File, header *multipart.FileHeader) (string, error) {
-	ext := filepath.Ext(header.Filename)
+	head := make([]byte, 512)
+	n, err := io.ReadFull(file, head)
+	if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
+		return "", err
+	}
+	head = head[:n]
+
+	contentType := http.DetectContentType(head)
+	ext, ok := allowedAvatarTypes[contentType]
+	if !ok {
+		return "", ErrInvalidAvatarType
+	}
+
 	filename := userID + ext
 	savePath := filepath.Join(s.cfg.AvatarUploadPath, filename)
 
@@ -85,6 +111,9 @@ func (s *userService) UploadAvatar(userID string, file multipart.File, header *m
 	}
 	defer dst.Close()
 
+	if _, err := dst.Write(head); err != nil {
+		return "", err
+	}
 	if _, err := io.Copy(dst, file); err != nil {
 		return "", err
 	}

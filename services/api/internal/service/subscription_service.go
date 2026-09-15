@@ -3,11 +3,15 @@ package service
 import (
 	"bytes"
 	"context"
+	"crypto/sha512"
+	"crypto/subtle"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/config"
@@ -15,6 +19,8 @@ import (
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
 )
+
+const midtransGrossAmount float64 = 50000
 
 type SubscriptionResponse struct {
 	ID          string `json:"id"`
@@ -87,6 +93,7 @@ func (s *subscriptionService) CreateSubscription(userID string) (*SubscriptionRe
 	now := time.Now()
 	sub := model.Subscription{
 		UserID:    uid,
+		OrderID:   &orderID,
 		Plan:      "premium",
 		Status:    "pending",
 		StartedAt: now,
@@ -179,16 +186,37 @@ func (s *subscriptionService) CancelSubscription(userID string) error {
 }
 
 func (s *subscriptionService) HandleMidtransWebhook(payload map[string]interface{}) error {
+	if s.cfg.Midtrans.ServerKey == "" {
+		return errors.New("midtrans not configured")
+	}
+
 	orderID, _ := payload["order_id"].(string)
 	txnStatus, _ := payload["transaction_status"].(string)
-	if orderID == "" || txnStatus == "" {
+	statusCode, _ := payload["status_code"].(string)
+	grossAmount, _ := payload["gross_amount"].(string)
+	signatureKey, _ := payload["signature_key"].(string)
+	if orderID == "" || txnStatus == "" || statusCode == "" || grossAmount == "" || signatureKey == "" {
 		return errors.New("invalid webhook payload")
 	}
 
+	sum := sha512.Sum512([]byte(orderID + statusCode + grossAmount + s.cfg.Midtrans.ServerKey))
+	expected := hex.EncodeToString(sum[:])
+	if subtle.ConstantTimeCompare([]byte(expected), []byte(signatureKey)) != 1 {
+		return errors.New("invalid signature")
+	}
+
+	amount, err := strconv.ParseFloat(grossAmount, 64)
+	if err != nil || amount != midtransGrossAmount {
+		return errors.New("invalid gross amount")
+	}
+
 	if txnStatus == "settlement" || txnStatus == "capture" {
-		database.DB.Model(&model.Subscription{}).
-			Where("id = ? AND status = ?", orderID, "pending").
+		result := database.DB.Model(&model.Subscription{}).
+			Where("order_id = ? AND status = ?", orderID, "pending").
 			Update("status", "active")
+		if result.Error != nil {
+			return result.Error
+		}
 	}
 	return nil
 }

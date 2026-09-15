@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"net/http"
 	"strconv"
 	"strings"
@@ -81,7 +82,7 @@ type AuthService interface {
 	GoogleLogin(req GoogleLoginRequest) (*AuthResponse, error)
 	GuestLogin() (*AuthResponse, error)
 	RefreshToken(tokenString string) (*RefreshResponse, error)
-	Logout(jti string, expiry time.Duration) error
+	Logout(jti string, expiry time.Duration, refreshToken string) error
 	RequestVerificationEmail(userID string) error
 	VerifyEmail(token string) error
 	ForgotPassword(req ForgotPasswordRequest) error
@@ -204,10 +205,12 @@ func (s *authService) generateAuthResponse(u *model.User) (*AuthResponse, error)
 	accessJTI := uuid.New().String()
 	refreshJTI := uuid.New().String()
 
+	now := time.Now()
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": u.ID.String(),
 		"jti": accessJTI,
-		"exp": time.Now().Add(accessExpiry).Unix(),
+		"iat": now.Unix(),
+		"exp": now.Add(accessExpiry).Unix(),
 		"typ": "access",
 	})
 	accessTokenString, err := accessToken.SignedString([]byte(s.cfg.JWT.Secret))
@@ -218,7 +221,8 @@ func (s *authService) generateAuthResponse(u *model.User) (*AuthResponse, error)
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": u.ID.String(),
 		"jti": refreshJTI,
-		"exp": time.Now().Add(refreshExpiry).Unix(),
+		"iat": now.Unix(),
+		"exp": now.Add(refreshExpiry).Unix(),
 		"typ": "refresh",
 	})
 	refreshTokenString, err := refreshToken.SignedString([]byte(s.cfg.JWT.Secret))
@@ -249,6 +253,7 @@ func (s *authService) GuestLogin() (*AuthResponse, error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":   guestID,
 		"jti":   uuid.New().String(),
+		"iat":   time.Now().Unix(),
 		"exp":   time.Now().Add(accessExpiry).Unix(),
 		"typ":   "access",
 		"guest": true,
@@ -291,6 +296,13 @@ func (s *authService) RefreshToken(tokenString string) (*RefreshResponse, error)
 	}
 
 	sub, _ := claims["sub"].(string)
+	if validAfter, err := database.RDB.Get(ctx, "user:tokens_valid_after:"+sub).Result(); err == nil && validAfter != "" {
+		iat, _ := claims["iat"].(float64)
+		if cutoff, err := strconv.ParseInt(validAfter, 10, 64); err == nil && int64(iat) < cutoff {
+			return nil, errors.New("token revoked")
+		}
+	}
+
 	var u model.User
 	if err := database.DB.Where("id = ?", sub).First(&u).Error; err != nil {
 		return nil, errors.New("user not found")
@@ -307,10 +319,12 @@ func (s *authService) RefreshToken(tokenString string) (*RefreshResponse, error)
 func (s *authService) generateRefreshTokens(sub string, refreshExpiry time.Duration) (*RefreshResponse, error) {
 	accessExpiry, _ := time.ParseDuration(s.cfg.JWT.AccessExpiry)
 	accessJTI := uuid.New().String()
+	now := time.Now()
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": sub,
 		"jti": accessJTI,
-		"exp": time.Now().Add(accessExpiry).Unix(),
+		"iat": now.Unix(),
+		"exp": now.Add(accessExpiry).Unix(),
 		"typ": "access",
 	})
 	accessTokenString, err := accessToken.SignedString([]byte(s.cfg.JWT.Secret))
@@ -322,7 +336,8 @@ func (s *authService) generateRefreshTokens(sub string, refreshExpiry time.Durat
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": sub,
 		"jti": refreshJTI,
-		"exp": time.Now().Add(refreshExpiry).Unix(),
+		"iat": now.Unix(),
+		"exp": now.Add(refreshExpiry).Unix(),
 		"typ": "refresh",
 	})
 	refreshTokenString, err := refreshToken.SignedString([]byte(s.cfg.JWT.Secret))
@@ -336,12 +351,37 @@ func (s *authService) generateRefreshTokens(sub string, refreshExpiry time.Durat
 	}, nil
 }
 
-func (s *authService) Logout(jti string, expiry time.Duration) error {
+// Logout blacklists both the access token (by jti/expiry, already verified
+// by AuthMiddleware) and, best-effort, the refresh token cookie — otherwise
+// a stolen refresh token would keep working after the user "logs out".
+func (s *authService) Logout(jti string, expiry time.Duration, refreshToken string) error {
 	ctx := context.Background()
-	err := database.RDB.Set(ctx, "jwt:blacklist:"+jti, "revoked", expiry).Err()
-	if err != nil {
+	if err := database.RDB.Set(ctx, "jwt:blacklist:"+jti, "revoked", expiry).Err(); err != nil {
 		logger.Log.Error("failed to blacklist token", zap.Error(err))
 		return err
+	}
+
+	if refreshToken == "" {
+		return nil
+	}
+	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte(s.cfg.JWT.Secret), nil
+	})
+	if err != nil || !token.Valid {
+		return nil
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims["typ"] != "refresh" {
+		return nil
+	}
+	refJTI, _ := claims["jti"].(string)
+	refExp, _ := claims["exp"].(float64)
+	if refJTI == "" || refExp == 0 {
+		return nil
+	}
+	refExpiry := time.Until(time.Unix(int64(refExp), 0))
+	if refExpiry > 0 {
+		database.RDB.Set(ctx, "jwt:blacklist:"+refJTI, "revoked", refExpiry)
 	}
 	return nil
 }
@@ -361,7 +401,7 @@ func (s *authService) sendVerificationEmail(u *model.User) {
 
 	html := `<div style="font-family: Inter, sans-serif; max-width: 480px; margin: 0 auto;">
 		<h2 style="color: #4F46E5;">Selamat datang di EduPlay!</h2>
-		<p>Halo ` + u.Username + `,</p>
+		<p>Halo ` + html.EscapeString(u.Username) + `,</p>
 		<p>Klik tombol di bawah untuk verifikasi email kamu:</p>
 		<a href="` + verifyURL + `" style="display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 8px; margin: 16px 0;">Verifikasi Email</a>
 		<p style="color: #6B7280; font-size: 14px;">Link ini berlaku 24 jam.</p>
@@ -463,7 +503,19 @@ func (s *authService) ResetPassword(req ResetPasswordRequest) error {
 	u.Password = string(hashedPassword)
 	u.ResetToken = nil
 	u.ResetTokenExpiry = nil
-	return s.userRepo.Update(u)
+	if err := s.userRepo.Update(u); err != nil {
+		return err
+	}
+
+	// Revoke every access/refresh token issued before this moment, so a
+	// session hijacked prior to the reset doesn't survive it.
+	maxRefreshExpiry, err := time.ParseDuration(s.cfg.JWT.RefreshExpiry)
+	if err != nil || maxRefreshExpiry <= 0 {
+		maxRefreshExpiry = 7 * 24 * time.Hour
+	}
+	database.RDB.Set(context.Background(), "user:tokens_valid_after:"+u.ID.String(),
+		time.Now().Unix(), maxRefreshExpiry)
+	return nil
 }
 
 // googleBool decodes the booleans in Google's tokeninfo response, which arrive

@@ -22,7 +22,7 @@ func (h *SubscriptionController) Subscribe(c *fiber.Ctx) error {
 
 	sub, err := h.svc.CreateSubscription(userID)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 
 	return response.Success(c, sub)
@@ -49,7 +49,7 @@ func (h *SubscriptionController) Cancel(c *fiber.Ctx) error {
 	}
 
 	if err := h.svc.CancelSubscription(userID); err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 
 	return response.Success(c, fiber.Map{"message": "Subscription cancelled"})

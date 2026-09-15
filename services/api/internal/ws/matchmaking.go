@@ -109,9 +109,7 @@ func (m *MatchmakingService) waitForMatch(ctx context.Context, userID, gameSlug,
 				continue
 			}
 
-			lockKey := fmt.Sprintf("matchmaking:lock:%s:%s", gameSlug, userID)
-			locked, _ := database.RDB.SetNX(ctx, lockKey, opponent, 5*time.Second).Result()
-			if !locked {
+			if !m.tryLockPair(ctx, gameSlug, userID, opponent) {
 				continue
 			}
 
@@ -150,6 +148,35 @@ func (m *MatchmakingService) waitForMatch(ctx context.Context, userID, gameSlug,
 	}
 
 	m.removeFromQueue(ctx, queueKey, userID)
+}
+
+// tryLockPair acquires a matchmaking lock on BOTH participants, in a fixed
+// (sorted) order so two goroutines racing to pair the same two users always
+// contend for locks in the same sequence rather than deadlocking each other.
+// Keying the lock only by the calling side's own ID (the previous behavior)
+// let two different callers — say A and C — each independently "win" a lock
+// keyed to themselves while both matching against the same opponent B, or
+// let A and B's own two independent queue goroutines each simultaneously
+// claim each other under two different keys. Locking both identities closes
+// both races: whoever else is mid-match with either A or B fails here.
+func (m *MatchmakingService) tryLockPair(ctx context.Context, gameSlug, a, b string) bool {
+	first, second := a, b
+	if first > second {
+		first, second = second, first
+	}
+	lockFirst := fmt.Sprintf("matchmaking:lock:%s:%s", gameSlug, first)
+	lockSecond := fmt.Sprintf("matchmaking:lock:%s:%s", gameSlug, second)
+
+	gotFirst, _ := database.RDB.SetNX(ctx, lockFirst, "1", 5*time.Second).Result()
+	if !gotFirst {
+		return false
+	}
+	gotSecond, _ := database.RDB.SetNX(ctx, lockSecond, "1", 5*time.Second).Result()
+	if !gotSecond {
+		database.RDB.Del(ctx, lockFirst)
+		return false
+	}
+	return true
 }
 
 func (m *MatchmakingService) removeFromQueue(ctx context.Context, queueKey, userID string) {

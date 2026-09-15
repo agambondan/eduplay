@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
+	"github.com/agambondan/eduplay/services/api/internal/repository"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
 	"github.com/google/uuid"
 )
@@ -47,10 +48,24 @@ type ScoreChallengeResult struct {
 	TargetScore int    `json:"target_score"`
 }
 
-type scoreChallengeService struct{}
+type scoreChallengeService struct {
+	gameRepo repository.GameRepository
+}
 
 func NewScoreChallengeService() ScoreChallengeService {
-	return &scoreChallengeService{}
+	return &scoreChallengeService{gameRepo: repository.NewGameRepository()}
+}
+
+// verifyRecordedScore rejects a claimed score that exceeds the user's own
+// authoritative highscore for that game (as validated by game_service's
+// SubmitScore) — a challenge can't be created or won with a fabricated
+// number the player never actually earned.
+func (s *scoreChallengeService) verifyRecordedScore(uid, gameID uuid.UUID, score int) error {
+	hs, err := s.gameRepo.GetHighscore(uid, gameID)
+	if err != nil || hs == nil || score > hs.Highscore {
+		return errors.New("Skor melebihi rekor tertinggi kamu untuk game ini")
+	}
+	return nil
 }
 
 func (s *scoreChallengeService) Create(userID, gameSlug, difficulty string, score int) (*ScoreChallengeResponse, error) {
@@ -62,6 +77,10 @@ func (s *scoreChallengeService) Create(userID, gameSlug, difficulty string, scor
 	var game model.Game
 	if err := database.DB.Where("slug = ?", gameSlug).First(&game).Error; err != nil {
 		return nil, errors.New("Game tidak ditemukan")
+	}
+
+	if err := s.verifyRecordedScore(uid, game.ID, score); err != nil {
+		return nil, err
 	}
 
 	shareLink := s.generateLink()
@@ -145,7 +164,7 @@ func (s *scoreChallengeService) Accept(link, userID string) (*ScoreChallengeDeta
 	}
 
 	if c.ChallengerID == uid {
-		return nil, errors.New("Tidak bisa接受 tantangan sendiri")
+		return nil, errors.New("Tidak bisa menerima tantangan sendiri")
 	}
 
 	c.OpponentID = &uid
@@ -174,6 +193,10 @@ func (s *scoreChallengeService) SubmitScore(link, userID string, score int) (*Sc
 
 	if c.OpponentScore != nil {
 		return nil, errors.New("Kamu sudah mengirimkan skor")
+	}
+
+	if err := s.verifyRecordedScore(uid, c.GameID, score); err != nil {
+		return nil, err
 	}
 
 	c.OpponentScore = &score

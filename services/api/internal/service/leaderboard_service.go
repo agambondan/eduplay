@@ -219,7 +219,8 @@ func maxInt(a, b int) int {
 func (s *leaderboardService) AddGameScore(gameID string, userID string, score float64) error {
 	keyAll := fmt.Sprintf("leaderboard:game:%s:all", gameID)
 	keyWeekly := fmt.Sprintf("leaderboard:game:%s:weekly", gameID)
-	s.repo.AddScore(keyAll, userID, score)
-	s.repo.AddScore(keyWeekly, userID, score)
-	return nil
+	if err := s.repo.AddScore(keyAll, userID, score); err != nil {
+		return err
+	}
+	return s.repo.AddScore(keyWeekly, userID, score)
 }

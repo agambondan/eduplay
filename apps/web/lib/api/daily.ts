@@ -15,15 +15,21 @@ export interface DailyHistory {
   total: number;
 }
 
+export interface DailyAnswer {
+  question_id: string;
+  answer: string;
+  time_taken: number;
+}
+
 export const dailyApi = {
   get: async () => {
     const res = await api.get<ApiResponse<DailyChallenge>>('/daily');
     return res.data.data;
   },
-  submit: async (challengeId: string, score: number) => {
+  submit: async (challengeId: string, answers: DailyAnswer[]) => {
     const res = await api.post<ApiResponse<{ xp_earned: number }>>('/daily/submit', {
       challenge_id: challengeId,
-      score,
+      answers,
     });
     return res.data.data;
   },

@@ -35,7 +35,7 @@ func (c *AdController) GetActiveAd(ctx *fiber.Ctx) error {
 func (c *AdController) List(ctx *fiber.Ctx) error {
 	ads, err := c.svc.List()
 	if err != nil {
-		return response.Error(ctx, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(ctx, err)
 	}
 	return response.Success(ctx, ads)
 }
@@ -49,7 +49,9 @@ func (c *AdController) Create(ctx *fiber.Ctx) error {
 		IsActive: ctx.FormValue("is_active") != "false",
 	}
 	if p := ctx.FormValue("priority"); p != "" {
-		fmt.Sscanf(p, "%d", &ad.Priority)
+		if _, err := fmt.Sscanf(p, "%d", &ad.Priority); err != nil {
+			return response.Error(ctx, fiber.StatusBadRequest, "Priority harus berupa angka")
+		}
 	}
 	if s := ctx.FormValue("start_at"); s != "" {
 		if t, err := time.Parse(time.RFC3339, s); err == nil {
@@ -82,7 +84,7 @@ func (c *AdController) Create(ctx *fiber.Ctx) error {
 	}
 
 	if err := c.svc.Create(ad); err != nil {
-		return response.Error(ctx, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(ctx, err)
 	}
 	return response.Success(ctx, ad)
 }
@@ -99,7 +101,7 @@ func (c *AdController) Update(ctx *fiber.Ctx) error {
 	}
 	ad, err := c.svc.Update(id, body)
 	if err != nil {
-		return response.Error(ctx, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(ctx, err)
 	}
 	return response.Success(ctx, ad)
 }
@@ -111,7 +113,7 @@ func (c *AdController) Delete(ctx *fiber.Ctx) error {
 		return response.Error(ctx, fiber.StatusBadRequest, "invalid id")
 	}
 	if err := c.svc.Delete(id); err != nil {
-		return response.Error(ctx, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(ctx, err)
 	}
 	return response.Success(ctx, nil)
 }

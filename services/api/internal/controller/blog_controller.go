@@ -63,7 +63,7 @@ func (h *BlogController) AdminCreate(c *fiber.Ctx) error {
 	}
 	post, err := h.svc.Create(req.Title, req.Content, req.Excerpt, req.Cat, req.Tag, req.Image, req.Publish)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, post)
 }

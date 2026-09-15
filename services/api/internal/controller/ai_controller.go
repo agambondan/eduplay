@@ -33,7 +33,7 @@ func (h *AIController) GenerateQuestions(c *fiber.Ctx) error {
 
 	questions, err := h.svc.GenerateQuestions(req.GameType, req.Difficulty, req.Count)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 
 	return response.Success(c, questions)

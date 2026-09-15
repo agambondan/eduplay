@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/agambondan/eduplay/services/api/internal/service"
 	"github.com/agambondan/eduplay/services/api/pkg/response"
+	"github.com/agambondan/eduplay/services/api/pkg/validator"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,7 +18,7 @@ func NewExperimentController(svc service.ExperimentService) *ExperimentControlle
 func (h *ExperimentController) List(c *fiber.Ctx) error {
 	items, err := h.svc.List()
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, items)
 }
@@ -33,6 +34,9 @@ func (h *ExperimentController) Create(c *fiber.Ctx) error {
 	var req CreateExperimentInput
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request")
+	}
+	if err := validator.Validate.Struct(&req); err != nil {
+		return response.ValidationError(c, err.Error())
 	}
 	traffic := req.Traffic
 	if traffic <= 0 || traffic > 1 {

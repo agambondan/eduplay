@@ -20,12 +20,18 @@ func NewLeaderboardController(svc service.LeaderboardService) *LeaderboardContro
 // @Tags leaderboard
 // @Produce json
 // @Param slug path string true "Game slug"
-// @Param period query string false "Period filter (all, daily, weekly, monthly)"
+// @Param period query string false "Period filter (all, weekly)"
 // @Success 200 {object} map[string]interface{}
 // @Router /leaderboard/game/{slug} [get]
 func (h *LeaderboardController) GetGameLeaderboard(c *fiber.Ctx) error {
 	slug := c.Params("slug")
 	period := c.Query("period", "all")
+	// Only "all" and "weekly" are actually tracked (see leaderboard_service);
+	// silently falling back to "all" for anything else (daily/monthly) would
+	// return the wrong leaderboard with no indication anything was ignored.
+	if period != "all" && period != "weekly" {
+		return response.Error(c, fiber.StatusBadRequest, "Period tidak didukung, gunakan 'all' atau 'weekly'")
+	}
 	userID, _ := c.Locals("user_id").(string)
 	result, err := h.svc.GetGameLeaderboard(slug, period, userID, 100)
 	if err != nil {
@@ -45,7 +51,7 @@ func (h *LeaderboardController) GetGlobalLeaderboard(c *fiber.Ctx) error {
 	userID, _ := c.Locals("user_id").(string)
 	result, err := h.svc.GetGlobalLeaderboard(userID, 100)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, result)
 }

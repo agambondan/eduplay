@@ -12,7 +12,9 @@ import (
 	"github.com/agambondan/eduplay/services/api/internal/repository"
 	"github.com/agambondan/eduplay/services/api/pkg/cache"
 	"github.com/agambondan/eduplay/services/api/pkg/database"
+	"github.com/agambondan/eduplay/services/api/pkg/logger"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -177,14 +179,19 @@ func (s *gameService) SubmitScore(userID string, slug string, req SubmitScoreReq
 		newHighscore = true
 	}
 
-	s.repo.UpsertHighscore(uid, g.ID, req.Score)
+	if err := s.repo.UpsertHighscore(uid, g.ID, req.Score); err != nil {
+		logger.Log.Error("failed to upsert highscore", zap.Error(err), zap.String("user_id", userID), zap.String("game", slug))
+	}
 
 	if s.leadSvc != nil {
-		s.leadSvc.AddGameScore(g.ID.String(), userID, float64(req.Score))
+		if err := s.leadSvc.AddGameScore(g.ID.String(), userID, float64(req.Score)); err != nil {
+			logger.Log.Error("failed to add leaderboard score", zap.Error(err), zap.String("user_id", userID), zap.String("game", slug))
+		}
 	}
 
 	cache.Del(ctx, "game_detail", slug)
 	cache.Del(ctx, "games", "all")
+	cache.Del(ctx, "user_profile", userID)
 	cache.DelByPrefix(ctx, "leaderboard_game")
 	cache.DelByPrefix(ctx, "leaderboard_global")
 

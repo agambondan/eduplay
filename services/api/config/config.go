@@ -38,8 +38,9 @@ type Config struct {
 		BaseURL  string
 	}
 	Resend struct {
-		APIKey string
-		From   string
+		APIKey    string
+		From      string
+		SupportTo string
 	}
 	Google struct {
 		ClientID string
@@ -77,8 +78,8 @@ func Load() (*Config, error) {
 	}
 	cfg.Redis.URL = os.Getenv("REDIS_URL")
 	cfg.JWT.Secret = os.Getenv("JWT_SECRET")
-	if cfg.App.Env == "production" && cfg.JWT.Secret == "" {
-		return nil, errors.New("JWT_SECRET is required in production")
+	if cfg.JWT.Secret == "" && os.Getenv("ALLOW_INSECURE_JWT_SECRET") != "true" {
+		return nil, errors.New("JWT_SECRET is required (set ALLOW_INSECURE_JWT_SECRET=true only for local development without it)")
 	}
 	cfg.JWT.AccessExpiry = os.Getenv("JWT_ACCESS_EXPIRY")
 	cfg.JWT.RefreshExpiry = os.Getenv("JWT_REFRESH_EXPIRY")
@@ -88,6 +89,10 @@ func Load() (*Config, error) {
 	cfg.AI.BaseURL = os.Getenv("AI_BASE_URL")
 	cfg.Resend.APIKey = os.Getenv("RESEND_API_KEY")
 	cfg.Resend.From = os.Getenv("RESEND_FROM")
+	cfg.Resend.SupportTo = os.Getenv("SUPPORT_NOTIFY_EMAIL")
+	if cfg.Resend.SupportTo == "" {
+		cfg.Resend.SupportTo = cfg.Resend.From
+	}
 	cfg.Google.ClientID = os.Getenv("GOOGLE_CLIENT_ID")
 	cfg.VAPID.PublicKey = os.Getenv("VAPID_PUBLIC_KEY")
 	cfg.VAPID.PrivateKey = os.Getenv("VAPID_PRIVATE_KEY")

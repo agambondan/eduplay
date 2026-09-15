@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/agambondan/eduplay/services/api/internal/model"
@@ -43,7 +44,7 @@ type DailyHistoryResponse struct {
 
 type DailyService interface {
 	GetTodayChallenge(userID string) (*DailyChallengeResponse, error)
-	SubmitChallenge(userID string, challengeID string, score int) (*DailySubmitResponse, error)
+	SubmitChallenge(userID string, challengeID string, answers []UserAnswer) (*DailySubmitResponse, error)
 	GetHistory(userID string) (*DailyHistoryResponse, error)
 }
 
@@ -88,6 +89,9 @@ func (s *dailyService) GetTodayChallenge(userID string) (*DailyChallengeResponse
 
 	var questions []map[string]interface{}
 	json.Unmarshal([]byte(dc.QuestionsJSON), &questions)
+	for _, q := range questions {
+		delete(q, "answer")
+	}
 
 	userSubmitted := false
 	if userID != "" {
@@ -109,7 +113,7 @@ func (s *dailyService) GetTodayChallenge(userID string) (*DailyChallengeResponse
 	}, nil
 }
 
-func (s *dailyService) SubmitChallenge(userID string, challengeID string, score int) (*DailySubmitResponse, error) {
+func (s *dailyService) SubmitChallenge(userID string, challengeID string, answers []UserAnswer) (*DailySubmitResponse, error) {
 	uid, _ := uuid.Parse(userID)
 	cid, _ := uuid.Parse(challengeID)
 
@@ -118,6 +122,12 @@ func (s *dailyService) SubmitChallenge(userID string, challengeID string, score 
 	if err == nil {
 		return nil, errors.New("already submitted today")
 	}
+
+	var dc model.DailyChallenge
+	if err := database.DB.First(&dc, "id = ?", cid).Error; err != nil {
+		return nil, errors.New("challenge not found")
+	}
+	score := scorePercent(dc.QuestionsJSON, answers)
 
 	submission := model.DailySubmission{
 		UserID:      uid,
@@ -158,6 +168,7 @@ func (s *dailyService) SubmitChallenge(userID string, challengeID string, score 
 	}
 
 	cache.Del(context.Background(), "daily_history", userID)
+	cache.Del(context.Background(), "user_profile", userID)
 
 	achievementsUnlocked := false
 	if s.achSvc != nil {
@@ -191,6 +202,26 @@ func (s *dailyService) SubmitChallenge(userID string, challengeID string, score 
 		StreakUpdated:        streakUpdated,
 		AchievementsUnlocked: achievementsUnlocked,
 	}, nil
+}
+
+// scorePercent grades submitted answers against the challenge's stored
+// correct answers (matched positionally) and returns a 0-100 score, so the
+// client's self-reported score can never be trusted directly.
+func scorePercent(questionsJSON string, answers []UserAnswer) int {
+	var questions []Question
+	if err := json.Unmarshal([]byte(questionsJSON), &questions); err != nil || len(questions) == 0 {
+		return 0
+	}
+	correct := 0
+	for i, q := range questions {
+		if i >= len(answers) {
+			break
+		}
+		if strings.EqualFold(strings.TrimSpace(answers[i].Answer), strings.TrimSpace(q.Answer)) {
+			correct++
+		}
+	}
+	return correct * 100 / len(questions)
 }
 
 func (s *dailyService) GetHistory(userID string) (*DailyHistoryResponse, error) {

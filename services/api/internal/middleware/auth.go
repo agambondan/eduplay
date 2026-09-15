@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"github.com/agambondan/eduplay/services/api/config"
@@ -11,6 +12,22 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+// tokenIssuedBeforeReset reports whether the token's iat predates a password
+// reset for that user (set by AuthService.ResetPassword), meaning the token
+// must be treated as revoked even though it isn't individually blacklisted.
+func tokenIssuedBeforeReset(ctx context.Context, sub string, claims jwt.MapClaims) bool {
+	val, err := database.RDB.Get(ctx, "user:tokens_valid_after:"+sub).Result()
+	if err != nil || val == "" {
+		return false
+	}
+	validAfter, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return false
+	}
+	iat, _ := claims["iat"].(float64)
+	return int64(iat) < validAfter
+}
 
 func AuthMiddleware(cfg *config.Config) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -54,6 +71,10 @@ func AuthMiddleware(cfg *config.Config) fiber.Handler {
 			return response.Error(c, fiber.StatusUnauthorized, "Invalid token claims")
 		}
 
+		if tokenIssuedBeforeReset(ctx, sub, claims) {
+			return response.Error(c, fiber.StatusUnauthorized, "Token revoked")
+		}
+
 		c.Locals("user", token)
 		c.Locals("user_id", sub)
 		return c.Next()
@@ -83,12 +104,10 @@ func OptionalAuthMiddleware(cfg *config.Config) fiber.Handler {
 				if ok && jti != "" {
 					ctx := context.Background()
 					val, _ := database.RDB.Get(ctx, "jwt:blacklist:"+jti).Result()
-					if val == "" {
-						sub, _ := claims["sub"].(string)
-						if sub != "" {
-							c.Locals("user", token)
-							c.Locals("user_id", sub)
-						}
+					sub, _ := claims["sub"].(string)
+					if val == "" && sub != "" && !tokenIssuedBeforeReset(ctx, sub, claims) {
+						c.Locals("user", token)
+						c.Locals("user_id", sub)
 					}
 				}
 			}

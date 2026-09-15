@@ -18,7 +18,7 @@ func NewWordChainController(svc service.WordChainService) *WordChainController {
 type CreateWordChainInput struct {
 	OpponentUsername string `json:"opponent_username"`
 	VsBot            bool   `json:"vs_bot"`
-	BotDifficulty    string `json:"bot_difficulty"`
+	BotDifficulty    string `json:"bot_difficulty" validate:"omitempty,oneof=easy medium hard"`
 }
 
 func (h *WordChainController) Create(c *fiber.Ctx) error {
@@ -29,6 +29,9 @@ func (h *WordChainController) Create(c *fiber.Ctx) error {
 	var req CreateWordChainInput
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+	if err := validator.Validate.Struct(&req); err != nil {
+		return response.ValidationError(c, err.Error())
 	}
 	result, err := h.svc.CreateGame(userID, req.OpponentUsername, req.VsBot, req.BotDifficulty)
 	if err != nil {
@@ -44,7 +47,7 @@ func (h *WordChainController) List(c *fiber.Ctx) error {
 	}
 	result, err := h.svc.GetActiveGames(userID)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, result)
 }

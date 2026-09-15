@@ -22,7 +22,7 @@ func (h *FriendController) ListFriends(c *fiber.Ctx) error {
 	}
 	friends, err := h.svc.ListFriends(userID)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, friends)
 }
@@ -34,7 +34,7 @@ func (h *FriendController) ListRequests(c *fiber.Ctx) error {
 	}
 	requests, err := h.svc.ListRequests(userID)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, requests)
 }
@@ -102,7 +102,7 @@ func (h *FriendController) SearchUsers(c *fiber.Ctx) error {
 	}
 	users, err := h.svc.SearchUsers(userID, q)
 	if err != nil {
-		return response.Error(c, fiber.StatusInternalServerError, err.Error())
+		return response.InternalError(c, err)
 	}
 	return response.Success(c, users)
 }
